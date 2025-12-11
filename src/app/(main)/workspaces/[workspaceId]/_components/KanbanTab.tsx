@@ -8,6 +8,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type KanbanColumn = {
   title: string;
@@ -17,6 +24,7 @@ type KanbanColumn = {
 type KanbanItem = {
   id: string;
   text: string;
+  description: string;
   status: string;
   priority: string;
   eta: string;
@@ -36,6 +44,16 @@ type EditingState = {
   colIdx: number;
   itemId: string;
   value: string;
+  description: string;
+  status: string;
+  priority: string;
+  eta: string;
+} | null;
+
+type NewItemModalState = {
+  colIdx: number;
+  text: string;
+  description: string;
   status: string;
   priority: string;
   eta: string;
@@ -58,8 +76,10 @@ export default function KanbanTab({ board }: KanbanTabProps) {
         items: col.items.map((item, itemIdx) => ({
           id: `${colIdx}-${itemIdx}-${item}`,
           text: item,
+          description: "",
           status: statusOptions[(colIdx + itemIdx) % statusOptions.length],
-          priority: priorityOptions[(colIdx + itemIdx) % priorityOptions.length],
+          priority:
+            priorityOptions[(colIdx + itemIdx) % priorityOptions.length],
           eta: etaOptions[itemIdx % etaOptions.length],
         })),
       })),
@@ -69,9 +89,10 @@ export default function KanbanTab({ board }: KanbanTabProps) {
   const [columns, setColumns] = useState<KanbanState[]>(initialState);
   const [dragging, setDragging] = useState<DragPayload | null>(null);
   const [activeDropCol, setActiveDropCol] = useState<number | null>(null);
-  const [editing, setEditing] = useState<EditingState>(null);
   const [editingModal, setEditingModal] = useState<EditingState>(null);
-  const [newBoardTitle, setNewBoardTitle] = useState("");
+  const [createBoardOpen, setCreateBoardOpen] = useState(false);
+  const [newBoardName, setNewBoardName] = useState("");
+  const [newItemModal, setNewItemModal] = useState<NewItemModalState>(null);
 
   const moveItem = (
     fromCol: number,
@@ -149,23 +170,14 @@ export default function KanbanTab({ board }: KanbanTabProps) {
     setActiveDropCol(colIdx);
   };
 
-  const addItem = (colIdx: number) => {
-    setColumns((prev) => {
-      const next = prev.map((col) => ({
-        ...col,
-        items: [...col.items],
-      }));
-      const column = next[colIdx];
-      if (!column) return prev;
-      const nextIdx = column.items.length;
-      column.items.push({
-        id: `${colIdx}-${nextIdx}-${Date.now()}`,
-        text: newItemLabel,
-        status: statusOptions[0],
-        priority: priorityOptions[0],
-        eta: etaOptions[0],
-      });
-      return next;
+  const openNewItemModal = (colIdx: number) => {
+    setNewItemModal({
+      colIdx,
+      text: "",
+      description: "",
+      status: statusOptions[0],
+      priority: priorityOptions[0],
+      eta: etaOptions[0],
     });
   };
 
@@ -174,6 +186,7 @@ export default function KanbanTab({ board }: KanbanTabProps) {
       colIdx,
       itemId: item.id,
       value: item.text,
+      description: item.description,
       status: item.status,
       priority: item.priority,
       eta: item.eta,
@@ -194,6 +207,7 @@ export default function KanbanTab({ board }: KanbanTabProps) {
       column.items[idx] = {
         ...column.items[idx],
         text: editingModal.value || newItemLabel,
+        description: editingModal.description,
         status: editingModal.status,
         priority: editingModal.priority,
         eta: editingModal.eta,
@@ -205,17 +219,47 @@ export default function KanbanTab({ board }: KanbanTabProps) {
 
   const cancelEdit = () => setEditingModal(null);
 
+  const createItem = () => {
+    if (!newItemModal) return;
+    setColumns((prev) => {
+      const next = prev.map((col) => ({
+        ...col,
+        items: [...col.items],
+      }));
+      const column = next[newItemModal.colIdx];
+      if (!column) return prev;
+      const nextIdx = column.items.length;
+      column.items.push({
+        id: `${newItemModal.colIdx}-${nextIdx}-${Date.now()}`,
+        text: newItemModal.text.trim() || newItemLabel,
+        description: newItemModal.description,
+        status: newItemModal.status,
+        priority: newItemModal.priority,
+        eta: newItemModal.eta,
+      });
+      return next;
+    });
+    setNewItemModal(null);
+  };
+
+  const cancelNewItem = () => setNewItemModal(null);
+
   const isDraggingItem = (itemId: string) => dragging?.itemId === itemId;
 
   const createBoard = () => {
-    const title = newBoardTitle.trim() || `Board ${columns.length + 1}`;
+    const title = newBoardName.trim() || `Board ${columns.length + 1}`;
     setColumns((prev) => [...prev, { title, items: [] }]);
-    setNewBoardTitle("");
+    setNewBoardName("");
+    setCreateBoardOpen(false);
   };
 
   const deleteBoard = (colIdx: number) => {
     setColumns((prev) => prev.filter((_, idx) => idx !== colIdx));
-    setEditing((prev) => {
+    setEditingModal((prev) => {
+      if (!prev) return prev;
+      return prev.colIdx >= colIdx ? null : prev;
+    });
+    setNewItemModal((prev) => {
       if (!prev) return prev;
       return prev.colIdx >= colIdx ? null : prev;
     });
@@ -224,19 +268,10 @@ export default function KanbanTab({ board }: KanbanTabProps) {
   return (
     <div className="m-4 mt-8 h-full min-h-0">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-        <input
-          value={newBoardTitle}
-          onChange={(e) => setNewBoardTitle(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") createBoard();
-          }}
-          placeholder="New board title"
-          className="w-full rounded-lg border border-white/10 bg-[#0b0b11] px-3 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/30"
-        />
         <button
           type="button"
-          onClick={createBoard}
-          className="whitespace-nowrap rounded-lg bg-white px-4 py-2 text-xs font-semibold text-black transition hover:bg-white/90"
+          onClick={() => setCreateBoardOpen(true)}
+          className="w-full sm:w-auto rounded-lg bg-white px-4 py-2 text-xs font-semibold text-black transition hover:bg-white/90"
         >
           Create board
         </button>
@@ -282,13 +317,18 @@ export default function KanbanTab({ board }: KanbanTabProps) {
                     onDragStart={onDragStart(colIdx, item.id)}
                     onDragOver={(event) => event.preventDefault()}
                     onDrop={onDropItem(colIdx, item.id)}
-                  onClick={() => startEditing(colIdx, item)}
+                    onClick={() => startEditing(colIdx, item)}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-2">
                         <span className="block font-medium text-white">
                           {item.text}
                         </span>
+                        {item.description && (
+                          <p className="text-xs text-white/70">
+                            {item.description}
+                          </p>
+                        )}
                         <div className="flex flex-wrap gap-2 text-[11px] text-white/70">
                           <span className="rounded-full bg-white/5 px-2 py-1">
                             Status: {item.status}
@@ -308,7 +348,7 @@ export default function KanbanTab({ board }: KanbanTabProps) {
               </ul>
               <button
                 type="button"
-                onClick={() => addItem(colIdx)}
+                onClick={() => openNewItemModal(colIdx)}
                 className="mt-3 flex w-full items-center justify-center rounded-lg border border-dashed border-white/15 px-3 py-2 text-xs font-medium text-white/70 hover:border-white/30 hover:text-white/90 transition-colors"
               >
                 + Add item
@@ -317,6 +357,202 @@ export default function KanbanTab({ board }: KanbanTabProps) {
           ))}
         </div>
       </div>
+      <Dialog open={createBoardOpen} onOpenChange={setCreateBoardOpen}>
+        <DialogContent className="bg-[#0b0b11] border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-white">Create board</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <label className="text-xs text-white/60" htmlFor="board-title">
+              Board title
+            </label>
+            <input
+              id="board-title"
+              autoFocus
+              value={newBoardName}
+              onChange={(e) => setNewBoardName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") createBoard();
+                if (e.key === "Escape") setCreateBoardOpen(false);
+              }}
+              className="w-full rounded-lg border border-white/10 bg-[#0f0f16] px-3 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/30"
+              placeholder="Enter board name"
+            />
+          </div>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setCreateBoardOpen(false)}
+              className="rounded-lg border border-white/10 px-3 py-2 text-xs font-medium text-white/70 hover:border-white/30 hover:text-white/90"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={createBoard}
+              className="rounded-lg bg-white px-4 py-2 text-xs font-semibold text-black hover:bg-white/90"
+            >
+              Create
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={!!newItemModal}
+        onOpenChange={(open) => !open && cancelNewItem()}
+      >
+        <DialogContent className="bg-[#0b0b11] border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-white">Add item</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <label className="text-xs text-white/60" htmlFor="new-item-title">
+              Title
+            </label>
+            <input
+              id="new-item-title"
+              autoFocus
+              value={newItemModal?.text ?? ""}
+              onChange={(e) =>
+                setNewItemModal((prev) =>
+                  prev ? { ...prev, text: e.target.value } : prev
+                )
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") createItem();
+                if (e.key === "Escape") cancelNewItem();
+              }}
+              className="w-full rounded-lg border border-white/10 bg-[#0f0f16] px-3 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/30"
+              placeholder="Item title"
+            />
+            <div className="space-y-1">
+              <label
+                className="text-xs text-white/60"
+                htmlFor="new-item-description"
+              >
+                Description
+              </label>
+              <textarea
+                id="new-item-description"
+                value={newItemModal?.description ?? ""}
+                onChange={(e) =>
+                  setNewItemModal((prev) =>
+                    prev ? { ...prev, description: e.target.value } : prev
+                  )
+                }
+                className="w-full rounded-lg border border-white/10 bg-[#0f0f16] px-3 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/30"
+                placeholder="Add a short description"
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="space-y-1">
+                <label
+                  className="text-xs text-white/60"
+                  htmlFor="new-item-status"
+                >
+                  Status
+                </label>
+                <Select
+                  value={newItemModal?.status ?? statusOptions[0]}
+                  onValueChange={(val) =>
+                    setNewItemModal((prev) =>
+                      prev ? { ...prev, status: val } : prev
+                    )
+                  }
+                >
+                  <SelectTrigger
+                    id="new-item-status"
+                    className="w-full border-white/10 bg-[#0f0f16] text-sm text-white"
+                  >
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#0f0f16] text-white">
+                    {statusOptions.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label
+                  className="text-xs text-white/60"
+                  htmlFor="new-item-priority"
+                >
+                  Priority
+                </label>
+                <Select
+                  value={newItemModal?.priority ?? priorityOptions[0]}
+                  onValueChange={(val) =>
+                    setNewItemModal((prev) =>
+                      prev ? { ...prev, priority: val } : prev
+                    )
+                  }
+                >
+                  <SelectTrigger
+                    id="new-item-priority"
+                    className="w-full border-white/10 bg-[#0f0f16] text-sm text-white"
+                  >
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#0f0f16] text-white">
+                    {priorityOptions.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-white/60" htmlFor="new-item-eta">
+                  ETA
+                </label>
+                <Select
+                  value={newItemModal?.eta ?? etaOptions[0]}
+                  onValueChange={(val) =>
+                    setNewItemModal((prev) =>
+                      prev ? { ...prev, eta: val } : prev
+                    )
+                  }
+                >
+                  <SelectTrigger
+                    id="new-item-eta"
+                    className="w-full border-white/10 bg-[#0f0f16] text-sm text-white"
+                  >
+                    <SelectValue placeholder="Select ETA" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#0f0f16] text-white">
+                    {etaOptions.map((eOpt) => (
+                      <SelectItem key={eOpt} value={eOpt}>
+                        {eOpt}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={cancelNewItem}
+              className="rounded-lg border border-white/10 px-3 py-2 text-xs font-medium text-white/70 hover:border-white/30 hover:text-white/90"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={createItem}
+              className="rounded-lg bg-white px-4 py-2 text-xs font-semibold text-black hover:bg-white/90"
+            >
+              Create
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Dialog
         open={!!editingModal}
         onOpenChange={(open) => !open && cancelEdit()}
@@ -345,69 +581,110 @@ export default function KanbanTab({ board }: KanbanTabProps) {
               className="w-full rounded-lg border border-white/10 bg-[#0f0f16] px-3 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/30"
               placeholder="Update item title"
             />
+            <div className="space-y-1">
+              <label
+                className="text-xs text-white/60"
+                htmlFor="edit-description"
+              >
+                Description
+              </label>
+              <textarea
+                id="edit-description"
+                value={editingModal?.description ?? ""}
+                onChange={(e) =>
+                  setEditingModal((prev) =>
+                    prev ? { ...prev, description: e.target.value } : prev
+                  )
+                }
+                className="w-full rounded-lg border border-white/10 bg-[#0f0f16] px-3 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/30"
+                placeholder="Add a short description"
+                rows={3}
+              />
+            </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="space-y-1">
                 <label className="text-xs text-white/60" htmlFor="edit-status">
                   Status
                 </label>
-                <select
-                  id="edit-status"
+                <Select
                   value={editingModal?.status ?? statusOptions[0]}
-                  onChange={(e) =>
+                  onValueChange={(val) =>
                     setEditingModal((prev) =>
-                      prev ? { ...prev, status: e.target.value } : prev
+                      prev ? { ...prev, status: val } : prev
                     )
                   }
-                  className="w-full rounded-lg border border-white/10 bg-[#0f0f16] px-2 py-2 text-sm text-white focus:border-white/30 focus:outline-none"
                 >
-                  {statusOptions.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger
+                    id="edit-status"
+                    className="w-full border-white/10 bg-[#0f0f16] text-sm text-white"
+                  >
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#0f0f16] text-white">
+                    {statusOptions.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1">
-                <label className="text-xs text-white/60" htmlFor="edit-priority">
+                <label
+                  className="text-xs text-white/60"
+                  htmlFor="edit-priority"
+                >
                   Priority
                 </label>
-                <select
-                  id="edit-priority"
+                <Select
                   value={editingModal?.priority ?? priorityOptions[0]}
-                  onChange={(e) =>
+                  onValueChange={(val) =>
                     setEditingModal((prev) =>
-                      prev ? { ...prev, priority: e.target.value } : prev
+                      prev ? { ...prev, priority: val } : prev
                     )
                   }
-                  className="w-full rounded-lg border border-white/10 bg-[#0f0f16] px-2 py-2 text-sm text-white focus:border-white/30 focus:outline-none"
                 >
-                  {priorityOptions.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger
+                    id="edit-priority"
+                    className="w-full border-white/10 bg-[#0f0f16] text-sm text-white"
+                  >
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#0f0f16] text-white">
+                    {priorityOptions.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1">
                 <label className="text-xs text-white/60" htmlFor="edit-eta">
                   ETA
                 </label>
-                <select
-                  id="edit-eta"
+                <Select
                   value={editingModal?.eta ?? etaOptions[0]}
-                  onChange={(e) =>
+                  onValueChange={(val) =>
                     setEditingModal((prev) =>
-                      prev ? { ...prev, eta: e.target.value } : prev
+                      prev ? { ...prev, eta: val } : prev
                     )
                   }
-                  className="w-full rounded-lg border border-white/10 bg-[#0f0f16] px-2 py-2 text-sm text-white focus:border-white/30 focus:outline-none"
                 >
-                  {etaOptions.map((eOpt) => (
-                    <option key={eOpt} value={eOpt}>
-                      {eOpt}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger
+                    id="edit-eta"
+                    className="w-full border-white/10 bg-[#0f0f16] text-sm text-white"
+                  >
+                    <SelectValue placeholder="Select ETA" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#0f0f16] text-white">
+                    {etaOptions.map((eOpt) => (
+                      <SelectItem key={eOpt} value={eOpt}>
+                        {eOpt}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>

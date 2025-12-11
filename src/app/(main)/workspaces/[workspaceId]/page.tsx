@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { UserButton } from "@clerk/nextjs";
 
 import { Button } from "@/components/ui/button";
@@ -82,6 +84,37 @@ type WorkspaceDetailPageProps = {
 export default function WorkspaceDetailPage({
   params,
 }: WorkspaceDetailPageProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const availableTabs = useMemo(
+    () => ["both", "document", "canvas", "kanban"],
+    []
+  );
+
+  const initialTab = useMemo(() => {
+    const fromUrl = searchParams?.get("tab") || "";
+    return availableTabs.includes(fromUrl) ? fromUrl : "both";
+  }, [availableTabs, searchParams]);
+
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
+
+  useEffect(() => {
+    const fromUrl = searchParams?.get("tab") || "";
+    const resolved = availableTabs.includes(fromUrl) ? fromUrl : "both";
+    setActiveTab(resolved);
+  }, [availableTabs, searchParams]);
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    const params = new URLSearchParams(
+      Array.from(searchParams?.entries() || [])
+    );
+    params.set("tab", value);
+    router.replace(`${pathname}?${params.toString()}`);
+  };
+
   const workspace = {
     name: "Workspace 1",
     updated: "less than a minute ago",
@@ -111,7 +144,11 @@ export default function WorkspaceDetailPage({
 
   return (
     <div className="flex min-h-screen flex-col bg-[#050509] text-foreground w-full">
-      <Tabs defaultValue="both" className="flex w-full flex-1 flex-col">
+      <Tabs
+        value={activeTab}
+        onValueChange={handleTabChange}
+        className="flex w-full flex-1 flex-col"
+      >
         {/* Top chrome */}
         <header className="flex flex-col gap-4 px-6 pt-4 sm:px-10 lg:px-16">
           <div className="flex items-center justify-between">
