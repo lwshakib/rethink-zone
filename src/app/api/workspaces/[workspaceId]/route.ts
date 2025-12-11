@@ -112,12 +112,12 @@ export async function PUT(
     const [workspace] = await db
       .update(workspacesTable)
       .set(updateData)
-      .where(eq(workspacesTable.id, workspaceId))
+      .where(and(eq(workspacesTable.id, workspaceId), eq(workspacesTable.clerkId, user.id)))
       .returning();
 
     if (!workspace) {
       return NextResponse.json(
-        { error: "Workspace not found." },
+        { error: "Unable to update workspace." },
         { status: 404 }
       );
     }
