@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
 import { UserButton } from "@clerk/nextjs";
 
 import { Button } from "@/components/ui/button";
-import { CustomTextLogo } from "@/components/logo";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import BothTab from "./_components/BothTab";
+import DocumentTab from "./_components/DocumentTab";
+import CanvasTab from "./_components/CanvasTab";
+import KanbanTab from "./_components/KanbanTab";
 
 const workspaces = [
   { id: 6, name: "Workspace 6", updated: "less than a minute ago" },
@@ -14,6 +17,26 @@ const workspaces = [
   { id: 3, name: "Workspace 3", updated: "less than a minute ago" },
   { id: 2, name: "Workspace 2", updated: "less than a minute ago" },
   { id: 1, name: "Workspace 1", updated: "about 24 hours ago" },
+];
+
+const dummyMembers = [
+  { id: 1, name: "Alex Doe", role: "Owner" },
+  { id: 2, name: "Jamie Lee", role: "Editor" },
+  { id: 3, name: "Taylor Kim", role: "Viewer" },
+  { id: 4, name: "Jordan Cruz", role: "Editor" },
+];
+
+const dummyFiles = [
+  { id: 1, name: "Pitch Deck.pdf", size: "3.4 MB", updated: "2h ago" },
+  { id: 2, name: "Roadmap.qmd", size: "512 KB", updated: "5h ago" },
+  { id: 3, name: "Notes.md", size: "86 KB", updated: "1d ago" },
+  { id: 4, name: "Screenshot.png", size: "1.2 MB", updated: "2d ago" },
+];
+
+const dummyActivity = [
+  { id: 1, action: "Alex shared Pitch Deck.pdf", time: "just now" },
+  { id: 2, action: "Jamie commented on Notes.md", time: "15m ago" },
+  { id: 3, action: "Taylor added Screenshot.png", time: "3h ago" },
 ];
 
 const generateGradientThumbnail = () => {
@@ -59,118 +82,115 @@ type WorkspaceDetailPageProps = {
 export default function WorkspaceDetailPage({
   params,
 }: WorkspaceDetailPageProps) {
-  const workspace = workspaces.find(
-    (item) => String(item.id) === params.workspaceId
-  );
+  const workspace = {
+    name: "Workspace 1",
+    updated: "less than a minute ago",
+    thumbnail: generateGradientThumbnail(),
+  };
 
-  const thumbnail = useMemo(() => generateGradientThumbnail(), [workspace?.id]);
+  const documentData = {
+    title: "Product Requirements",
+    updated: "Updated 2h ago",
+    summary:
+      "High-level overview of the problem, goals, constraints, and user stories for the next sprint.",
+  };
 
-  if (!workspace) {
-    return (
-      <div className="flex min-h-screen flex-col bg-[#050509] px-6 py-10 text-white sm:px-10 lg:px-16">
-        <div className="flex items-center justify-between">
-          <CustomTextLogo className="text-white" />
-          <Link
-            href="/workspaces"
-            className="text-sm text-white/70 transition hover:text-white"
-          >
-            Back to workspaces
-          </Link>
-        </div>
-        <div className="mt-16 text-center">
-          <p className="text-lg font-semibold">Workspace not found.</p>
-          <p className="mt-2 text-sm text-white/60">
-            Please return to the workspace list and try again.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const canvasData = {
+    title: "Canvas Draft",
+    updated: "Saved 45m ago",
+    summary:
+      "Sticky notes capturing brainstormed ideas for onboarding and retention experiments.",
+  };
+
+  const kanbanBoard = [
+    { title: "Backlog", items: ["User research notes", "QA checklist"] },
+    { title: "In Progress", items: ["Auth flows", "Dashboard polish"] },
+    { title: "Review", items: ["PR #142", "Copy update"] },
+    { title: "Done", items: ["Landing hero", "Pricing tweaks"] },
+  ];
 
   return (
     <div className="flex min-h-screen flex-col bg-[#050509] text-foreground w-full">
-      {/* Top chrome */}
-      <header className="flex items-center justify-between px-6 pt-4 sm:px-10 lg:px-16">
-        <div className="flex items-center gap-3">
-          <CustomTextLogo className="text-white" />
-        </div>
-        <div className="flex items-center gap-4 text-xs text-white/60">
-          <Link
-            href="/workspaces"
-            className="text-[11px] font-medium text-white/70 transition hover:text-white"
-          >
-            Back
-          </Link>
-          <UserButton
-            afterSignOutUrl="/"
-            appearance={{
-              elements: {
-                avatarBox: "w-8 h-8",
-              },
-            }}
-          />
-          <Button
-            size="sm"
-            className="h-8 rounded-full bg-white px-4 text-[11px] font-semibold text-black shadow-[0_0_40px_rgba(255,255,255,0.4)] hover:bg-white/90"
-          >
-            Share
-          </Button>
-        </div>
-      </header>
-
-      <main className="flex flex-1 items-start justify-center px-4 pb-12 pt-10 sm:px-8 lg:px-20">
-        <div className="w-full max-w-5xl space-y-8">
-          <div className="flex flex-col gap-3 text-white">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-semibold">{workspace.name}</h1>
-                <p className="mt-1 text-sm text-white/60">
-                  Last updated {workspace.updated}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="secondary"
-                  className="h-9 rounded-full bg-white/10 px-4 text-sm text-white hover:bg-white/15"
-                >
-                  Rename
-                </Button>
-                <Button className="h-9 rounded-full bg-white px-4 text-sm font-semibold text-black shadow-[0_0_30px_rgba(255,255,255,0.35)] hover:bg-white/90">
-                  Open
-                </Button>
-              </div>
+      <Tabs defaultValue="both" className="flex w-full flex-1 flex-col">
+        {/* Top chrome */}
+        <header className="flex flex-col gap-4 px-6 pt-4 sm:px-10 lg:px-16">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-semibold text-white/80">
+                {workspace.name}
+              </span>
             </div>
-            <div className="relative overflow-hidden rounded-3xl border border-white/5 bg-[#0b0b11]">
-              <div className="aspect-[16/9] w-full">
-                <img
-                  src={thumbnail}
-                  alt={`${workspace.name} cover`}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(255,255,255,0.12),transparent_30%),radial-gradient(circle_at_80%_60%,rgba(255,255,255,0.08),transparent_30%)]" />
+            <TabsList className="mx-auto flex w-fit rounded-full bg-white/5 p-1 text-white/80">
+              <TabsTrigger
+                value="both"
+                className="rounded-full px-4 py-1 text-sm data-[state=active]:bg-white/10 data-[state=active]:text-white"
+              >
+                Both
+              </TabsTrigger>
+              <TabsTrigger
+                value="document"
+                className="rounded-full px-4 py-1 text-sm data-[state=active]:bg-white/10 data-[state=active]:text-white"
+              >
+                Document
+              </TabsTrigger>
+              <TabsTrigger
+                value="canvas"
+                className="rounded-full px-4 py-1 text-sm data-[state=active]:bg-white/10 data-[state=active]:text-white"
+              >
+                Canvas
+              </TabsTrigger>
+              <TabsTrigger
+                value="kanban"
+                className="rounded-full px-4 py-1 text-sm data-[state=active]:bg-white/10 data-[state=active]:text-white"
+              >
+                Kanban Board
+              </TabsTrigger>
+            </TabsList>
+            <div className="flex items-center gap-4 text-xs text-white/60">
+              <Link
+                href="/workspaces"
+                className="text-[11px] font-medium text-white/70 transition hover:text-white"
+              >
+                Back
+              </Link>
+              <UserButton
+                afterSignOutUrl="/"
+                appearance={{
+                  elements: {
+                    avatarBox: "w-8 h-8",
+                  },
+                }}
+              />
+              <Button
+                size="sm"
+                className="h-8 rounded-full bg-white px-4 text-[11px] font-semibold text-black shadow-[0_0_40px_rgba(255,255,255,0.4)] hover:bg-white/90"
+              >
+                Share
+              </Button>
             </div>
           </div>
+        </header>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl border border-white/5 bg-[#0b0b11] p-4 text-white">
-              <div className="text-sm text-white/70">Members</div>
-              <div className="mt-2 text-2xl font-semibold">3</div>
-              <p className="mt-2 text-xs text-white/55">
-                Invite collaborators to this workspace.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-white/5 bg-[#0b0b11] p-4 text-white">
-              <div className="text-sm text-white/70">Files</div>
-              <div className="mt-2 text-2xl font-semibold">12</div>
-              <p className="mt-2 text-xs text-white/55">
-                Recent activity and shared assets appear here.
-              </p>
-            </div>
+        <main className="flex flex-1 items-start justify-center min-h-0">
+          <div className="w-full h-full space-y-6 text-white min-h-0">
+            <TabsContent value="both" className="">
+              <BothTab documentData={documentData} canvasData={canvasData} />
+            </TabsContent>
+
+            <TabsContent value="document" className="mt-2">
+              <DocumentTab />
+            </TabsContent>
+
+            <TabsContent value="canvas" className="mt-2 h-full">
+              <CanvasTab />
+            </TabsContent>
+
+            <TabsContent value="kanban" className="mt-2">
+              <KanbanTab board={kanbanBoard} />
+            </TabsContent>
           </div>
-        </div>
-      </main>
+        </main>
+      </Tabs>
     </div>
   );
 }
-

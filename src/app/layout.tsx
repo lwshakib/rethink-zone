@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
-import {shadcn} from "@clerk/themes";
+import { shadcn } from "@clerk/themes";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
-
 
 export const metadata: Metadata = {
   title: "Rethink Zone",
@@ -17,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-   <ClerkProvider appearance={shadcn}>
+    <ClerkProvider appearance={shadcn}>
       <html lang="en">
         <body className="antialiased">
           <ThemeProvider
