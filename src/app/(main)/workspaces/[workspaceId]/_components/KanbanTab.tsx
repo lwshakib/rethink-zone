@@ -65,28 +65,56 @@ const priorityOptions = ["Low", "Medium", "High"];
 const etaOptions = ["Today", "Tomorrow", "Next week"];
 
 type KanbanTabProps = {
-  board: KanbanColumn[];
+  board: Array<KanbanColumn | KanbanState>;
+  onChange?: (board: KanbanState[]) => void;
 };
 
-export default function KanbanTab({ board }: KanbanTabProps) {
+export default function KanbanTab({ board, onChange }: KanbanTabProps) {
   const initialState = useMemo<KanbanState[]>(
     () =>
       board.map((col, colIdx) => ({
         title: col.title,
-        items: col.items.map((item, itemIdx) => ({
-          id: `${colIdx}-${itemIdx}-${item}`,
-          text: item,
-          description: "",
-          status: statusOptions[(colIdx + itemIdx) % statusOptions.length],
-          priority:
-            priorityOptions[(colIdx + itemIdx) % priorityOptions.length],
-          eta: etaOptions[itemIdx % etaOptions.length],
-        })),
+        items: col.items.map((item: any, itemIdx: number) => {
+          const text =
+            typeof item === "string"
+              ? item
+              : typeof item?.text === "string"
+                ? item.text
+                : "Item";
+          return {
+            id:
+              typeof item?.id === "string"
+                ? item.id
+                : `${colIdx}-${itemIdx}-${text}`,
+            text,
+            description:
+              typeof item?.description === "string" ? item.description : "",
+            status:
+              typeof item?.status === "string"
+                ? item.status
+                : statusOptions[(colIdx + itemIdx) % statusOptions.length],
+            priority:
+              typeof item?.priority === "string"
+                ? item.priority
+                : priorityOptions[(colIdx + itemIdx) % priorityOptions.length],
+            eta:
+              typeof item?.eta === "string"
+                ? item.eta
+                : etaOptions[itemIdx % etaOptions.length],
+          };
+        }),
       })),
     [board]
   );
 
   const [columns, setColumns] = useState<KanbanState[]>(initialState);
+  const updateColumns = (updater: (prev: KanbanState[]) => KanbanState[]) => {
+    setColumns((prev) => {
+      const next = updater(prev);
+      onChange?.(next);
+      return next;
+    });
+  };
   const [dragging, setDragging] = useState<DragPayload | null>(null);
   const [activeDropCol, setActiveDropCol] = useState<number | null>(null);
   const [editingModal, setEditingModal] = useState<EditingState>(null);
@@ -100,7 +128,7 @@ export default function KanbanTab({ board }: KanbanTabProps) {
     toCol: number,
     beforeItemId?: string
   ) => {
-    setColumns((prev) => {
+    updateColumns((prev) => {
       const next = prev.map((col) => ({
         ...col,
         items: [...col.items],
@@ -195,7 +223,7 @@ export default function KanbanTab({ board }: KanbanTabProps) {
 
   const commitEdit = () => {
     if (!editingModal) return;
-    setColumns((prev) => {
+    updateColumns((prev) => {
       const next = prev.map((col) => ({
         ...col,
         items: [...col.items],
@@ -221,7 +249,7 @@ export default function KanbanTab({ board }: KanbanTabProps) {
 
   const createItem = () => {
     if (!newItemModal) return;
-    setColumns((prev) => {
+    updateColumns((prev) => {
       const next = prev.map((col) => ({
         ...col,
         items: [...col.items],
@@ -248,13 +276,13 @@ export default function KanbanTab({ board }: KanbanTabProps) {
 
   const createBoard = () => {
     const title = newBoardName.trim() || `Board ${columns.length + 1}`;
-    setColumns((prev) => [...prev, { title, items: [] }]);
+    updateColumns((prev) => [...prev, { title, items: [] }]);
     setNewBoardName("");
     setCreateBoardOpen(false);
   };
 
   const deleteBoard = (colIdx: number) => {
-    setColumns((prev) => prev.filter((_, idx) => idx !== colIdx));
+    updateColumns((prev) => prev.filter((_, idx) => idx !== colIdx));
     setEditingModal((prev) => {
       if (!prev) return prev;
       return prev.colIdx >= colIdx ? null : prev;

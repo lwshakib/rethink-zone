@@ -1,20 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { UserButton } from "@clerk/nextjs";
 
 import { Button } from "@/components/ui/button";
 import { CustomTextLogo } from "@/components/logo";
 
-const workspaces = [
-  { id: 6, name: "Workspace 6", updated: "less than a minute ago" },
-  { id: 5, name: "Workspace 5", updated: "less than a minute ago" },
-  { id: 4, name: "Workspace 4", updated: "less than a minute ago" },
-  { id: 3, name: "Workspace 3", updated: "less than a minute ago" },
-  { id: 2, name: "Workspace 2", updated: "less than a minute ago" },
-  { id: 1, name: "Workspace 1", updated: "about 24 hours ago" },
-];
+type Workspace = {
+  id: number;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+};
 
 const generateGradientThumbnail = () => {
   const gradients = [
@@ -52,12 +50,62 @@ const generateGradientThumbnail = () => {
 };
 
 export default function WorkspacesPage() {
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+
   const workspaceThumbnails = useMemo(() => {
     const thumbnails = new Map<number, string>();
     workspaces.forEach((workspace) => {
       thumbnails.set(workspace.id, generateGradientThumbnail());
     });
     return thumbnails;
+  }, [workspaces]);
+
+  const loadWorkspaces = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch("/api/workspaces");
+      if (!res.ok) {
+        throw new Error("Failed to load workspaces");
+      }
+      const data = await res.json();
+      setWorkspaces(data.workspaces ?? []);
+    } catch (err) {
+      console.error(err);
+      setError("Unable to load workspaces right now.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createWorkspace = async () => {
+    try {
+      setCreating(true);
+      setError(null);
+      const name = `Workspace ${new Date().toLocaleString()}`;
+      const res = await fetch("/api/workspaces", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to create workspace");
+      }
+      const data = await res.json();
+      setWorkspaces((prev) => [...prev, data.workspace]);
+    } catch (err) {
+      console.error(err);
+      setError("Unable to create workspace.");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  useEffect(() => {
+    loadWorkspaces();
   }, []);
 
   return (
@@ -79,9 +127,11 @@ export default function WorkspacesPage() {
           />
           <Button
             size="sm"
-            className="h-8 rounded-full bg-white px-4 text-[11px] font-semibold text-black shadow-[0_0_40px_rgba(255,255,255,0.4)] hover:bg-white/90"
+            onClick={createWorkspace}
+            disabled={creating}
+            className="h-8 rounded-full bg-white px-4 text-[11px] font-semibold text-black shadow-[0_0_40px_rgba(255,255,255,0.4)] hover:bg-white/90 disabled:opacity-60"
           >
-            New Workspace
+            {creating ? "Creating..." : "New Workspace"}
           </Button>
         </div>
       </header>
@@ -96,42 +146,54 @@ export default function WorkspacesPage() {
             <p className="mt-1 text-xs text-white/45">
               Manage your workspaces and continue where you left off.
             </p>
+            {error ? (
+              <p className="mt-2 text-xs text-red-300">{error}</p>
+            ) : null}
           </div>
 
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-            {workspaces.map((workspace) => {
-              const thumbnail = workspaceThumbnails.get(workspace.id);
+            {loading ? (
+              <div className="col-span-full text-white/70 text-sm">
+                Loading workspaces...
+              </div>
+            ) : workspaces.length === 0 ? (
+              <div className="col-span-full text-white/70 text-sm">
+                No workspaces yet. Create one to get started.
+              </div>
+            ) : (
+              workspaces.map((workspace) => {
+                const thumbnail = workspaceThumbnails.get(workspace.id);
+                return (
+                  <div key={workspace.id} className="flex flex-col gap-2">
+                    <Link
+                      href={`/workspaces/${workspace.id}`}
+                      className="group block w-full aspect-square rounded-3xl bg-[#101018] p-px text-left transition-transform duration-200 hover:-translate-y-1"
+                    >
+                      <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[1.3rem] bg-[#101018]">
+                        {thumbnail ? (
+                          <img
+                            src={thumbnail}
+                            alt={`${workspace.name} thumbnail`}
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
+                        ) : null}
+                        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(255,255,255,0.7),transparent_55%)] opacity-80" />
+                        <div className="relative flex items-center justify-center">
+                          <div className="size-10 rounded-full bg-white/90 shadow-[0_0_30px_rgba(255,255,255,0.6)]" />
+                        </div>
+                      </div>
+                    </Link>
 
-              return (
-                <div key={workspace.id} className="flex flex-col gap-2">
-                  <Link
-                    href={`/workspaces/${workspace.id}`}
-                    className="group block w-full aspect-square rounded-3xl bg-[#101018] p-px text-left transition-transform duration-200 hover:-translate-y-1"
-                  >
-                    <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[1.3rem] bg-[#101018]">
-                      {thumbnail ? (
-                        <img
-                          src={thumbnail}
-                          alt={`${workspace.name} thumbnail`}
-                          className="absolute inset-0 h-full w-full object-cover"
-                        />
-                      ) : null}
-                      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(255,255,255,0.7),transparent_55%)] opacity-80" />
-                      <div className="relative flex items-center justify-center">
-                        <div className="size-10 rounded-full bg-white/90 shadow-[0_0_30px_rgba(255,255,255,0.6)]" />
+                    <div className="px-1 text-[11px] text-white/90">
+                      <div className="font-medium">{workspace.name}</div>
+                      <div className="mt-0.5 text-[10px] text-white/65">
+                        Updated {new Date(workspace.updatedAt).toLocaleString()}
                       </div>
                     </div>
-                  </Link>
-
-                  <div className="px-1 text-[11px] text-white/90">
-                    <div className="font-medium">{workspace.name}</div>
-                    <div className="mt-0.5 text-[10px] text-white/65">
-                      {workspace.updated}
-                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
       </main>
