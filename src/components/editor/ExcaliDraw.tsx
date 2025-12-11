@@ -17,6 +17,32 @@ type ExcaliDrawProps = {
   onChange?: (data: Record<string, unknown>) => void;
 };
 
+// Sanitize initialData to fix serialization issues.
+// When saved to DB, Map objects (like collaborators) become plain objects.
+// Excalidraw expects collaborators to be a Map, so we convert it back.
+function sanitizeInitialData(
+  data: Record<string, unknown> | null | undefined
+): Record<string, unknown> | undefined {
+  if (!data) return undefined;
+
+  const sanitized = { ...data };
+
+  // Fix appState.collaborators - must be a Map, not a plain object
+  if (sanitized.appState && typeof sanitized.appState === "object") {
+    const appState = { ...(sanitized.appState as Record<string, unknown>) };
+
+    // Convert collaborators to Map if it's not already
+    if (appState.collaborators && !(appState.collaborators instanceof Map)) {
+      // If it's an object or array, convert to empty Map (collaborators are session-specific)
+      appState.collaborators = new Map();
+    }
+
+    sanitized.appState = appState;
+  }
+
+  return sanitized;
+}
+
 export default function ExcaliDraw({ initialData, onChange }: ExcaliDrawProps) {
   const { resolvedTheme, theme } = useTheme();
   const activeTheme = (theme === "system" ? resolvedTheme : theme) ?? "light";
@@ -24,7 +50,7 @@ export default function ExcaliDraw({ initialData, onChange }: ExcaliDrawProps) {
   // `onChange` back into `initialData`, it can loop infinitely. Capture the
   // first non-null initialData only, so subsequent updates don't reset the scene.
   const initialDataRef = useRef<Record<string, unknown> | undefined>(
-    initialData ?? undefined
+    sanitizeInitialData(initialData)
   );
 
   // Store onChange in a ref to keep handleChange stable across renders.
@@ -37,7 +63,7 @@ export default function ExcaliDraw({ initialData, onChange }: ExcaliDrawProps) {
 
   useEffect(() => {
     if (initialDataRef.current === undefined && initialData) {
-      initialDataRef.current = initialData;
+      initialDataRef.current = sanitizeInitialData(initialData);
     }
   }, [initialData]);
 

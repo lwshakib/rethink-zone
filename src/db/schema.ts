@@ -13,7 +13,7 @@ export const usersTable = pgTable("users", {
 
 export const workspacesTable = pgTable("workspaces", {
   id: uuid().primaryKey().defaultRandom(),
-  clerkId: varchar({ length: 255 }).notNull().unique(),
+  clerkId: varchar({ length: 255 }).notNull(),
   name: varchar({ length: 255 }).notNull(),
   documentData: jsonb("document_data")
     .$type<Record<string, unknown> | null>()

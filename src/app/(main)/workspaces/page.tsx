@@ -6,6 +6,17 @@ import { UserButton } from "@clerk/nextjs";
 
 import { Button } from "@/components/ui/button";
 import { CustomTextLogo } from "@/components/logo";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 type Workspace = {
   id: number;
@@ -49,11 +60,33 @@ const generateGradientThumbnail = () => {
   return `data:image/svg+xml;base64,${btoa(svgContent)}`;
 };
 
+const WorkspacesSkeleton = () => (
+  <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+    {[...Array(10)].map((_, idx) => (
+      <div key={idx} className="flex flex-col gap-2">
+        <div className="group block w-full aspect-square rounded-3xl bg-[#101018] p-px text-left">
+          <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[1.3rem] bg-[#101018]">
+            <Skeleton className="absolute inset-0 h-full w-full bg-white/10" />
+            <Skeleton className="relative size-12 rounded-full bg-white/20" />
+          </div>
+        </div>
+        <div className="px-1 text-[11px] text-white/90 space-y-1">
+          <Skeleton className="h-4 w-24 bg-white/20" />
+          <Skeleton className="h-3 w-28 bg-white/10" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 export default function WorkspacesPage() {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newWorkspaceName, setNewWorkspaceName] = useState("");
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const workspaceThumbnails = useMemo(() => {
     const thumbnails = new Map<number, string>();
@@ -85,7 +118,9 @@ export default function WorkspacesPage() {
     try {
       setCreating(true);
       setError(null);
-      const name = `Workspace ${new Date().toLocaleString()}`;
+      setCreateError(null);
+      const fallbackName = `Workspace ${new Date().toLocaleString()}`;
+      const name = newWorkspaceName.trim() || fallbackName;
       const res = await fetch("/api/workspaces", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -96,9 +131,11 @@ export default function WorkspacesPage() {
       }
       const data = await res.json();
       setWorkspaces((prev) => [...prev, data.workspace]);
+      setCreateDialogOpen(false);
+      setNewWorkspaceName("");
     } catch (err) {
       console.error(err);
-      setError("Unable to create workspace.");
+      setCreateError("Unable to create workspace.");
     } finally {
       setCreating(false);
     }
@@ -125,14 +162,70 @@ export default function WorkspacesPage() {
               },
             }}
           />
-          <Button
-            size="sm"
-            onClick={createWorkspace}
-            disabled={creating}
-            className="h-8 rounded-full bg-white px-4 text-[11px] font-semibold text-black shadow-[0_0_40px_rgba(255,255,255,0.4)] hover:bg-white/90 disabled:opacity-60"
-          >
-            {creating ? "Creating..." : "New Workspace"}
-          </Button>
+          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                size="sm"
+                disabled={creating}
+                className="h-8 rounded-full bg-white px-4 text-[11px] font-semibold text-black shadow-[0_0_40px_rgba(255,255,255,0.4)] hover:bg-white/90 disabled:opacity-60"
+              >
+                New Workspace
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-[#0c0c12] border-white/10">
+              <DialogHeader>
+                <DialogTitle className="text-white">Create workspace</DialogTitle>
+                <DialogDescription className="text-white/70">
+                  Give your workspace a name. You can change it later.
+                </DialogDescription>
+              </DialogHeader>
+              <form
+                className="space-y-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (!newWorkspaceName.trim()) {
+                    setCreateError("Please enter a workspace name.");
+                    return;
+                  }
+                  createWorkspace();
+                }}
+              >
+                <div className="space-y-2">
+                  <label className="text-sm text-white/80">Workspace name</label>
+                  <Input
+                    autoFocus
+                    value={newWorkspaceName}
+                    onChange={(e) => {
+                      setNewWorkspaceName(e.target.value);
+                      if (createError) setCreateError(null);
+                    }}
+                    placeholder="e.g. Product Discovery"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                  />
+                  {createError ? (
+                    <p className="text-xs text-red-300">{createError}</p>
+                  ) : null}
+                </div>
+                <DialogFooter className="sm:justify-end">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setCreateDialogOpen(false)}
+                    className="text-white/80 hover:text-white"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={creating || !newWorkspaceName.trim()}
+                    className="bg-white text-black hover:bg-white/90 disabled:opacity-60"
+                  >
+                    {creating ? "Creating..." : "Create"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </header>
 
@@ -151,50 +244,51 @@ export default function WorkspacesPage() {
             ) : null}
           </div>
 
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-            {loading ? (
-              <div className="col-span-full text-white/70 text-sm">
-                Loading workspaces...
-              </div>
-            ) : workspaces.length === 0 ? (
-              <div className="col-span-full text-white/70 text-sm">
-                No workspaces yet. Create one to get started.
-              </div>
-            ) : (
-              workspaces.map((workspace) => {
-                const thumbnail = workspaceThumbnails.get(workspace.id);
-                return (
-                  <div key={workspace.id} className="flex flex-col gap-2">
-                    <Link
-                      href={`/workspaces/${workspace.id}`}
-                      className="group block w-full aspect-square rounded-3xl bg-[#101018] p-px text-left transition-transform duration-200 hover:-translate-y-1"
-                    >
-                      <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[1.3rem] bg-[#101018]">
-                        {thumbnail ? (
-                          <img
-                            src={thumbnail}
-                            alt={`${workspace.name} thumbnail`}
-                            className="absolute inset-0 h-full w-full object-cover"
-                          />
-                        ) : null}
-                        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(255,255,255,0.7),transparent_55%)] opacity-80" />
-                        <div className="relative flex items-center justify-center">
-                          <div className="size-10 rounded-full bg-white/90 shadow-[0_0_30px_rgba(255,255,255,0.6)]" />
+          {loading ? (
+            <WorkspacesSkeleton />
+          ) : (
+            <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+              {workspaces.length === 0 ? (
+                <div className="col-span-full text-white/70 text-sm">
+                  No workspaces yet. Create one to get started.
+                </div>
+              ) : (
+                workspaces.map((workspace) => {
+                  const thumbnail = workspaceThumbnails.get(workspace.id);
+                  return (
+                    <div key={workspace.id} className="flex flex-col gap-2">
+                      <Link
+                        href={`/workspaces/${workspace.id}`}
+                        className="group block w-full aspect-square rounded-3xl bg-[#101018] p-px text-left transition-transform duration-200 hover:-translate-y-1"
+                      >
+                        <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[1.3rem] bg-[#101018]">
+                          {thumbnail ? (
+                            <img
+                              src={thumbnail}
+                              alt={`${workspace.name} thumbnail`}
+                              className="absolute inset-0 h-full w-full object-cover"
+                            />
+                          ) : null}
+                          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(255,255,255,0.7),transparent_55%)] opacity-80" />
+                          <div className="relative flex items-center justify-center">
+                            <div className="size-10 rounded-full bg-white/90 shadow-[0_0_30px_rgba(255,255,255,0.6)]" />
+                          </div>
+                        </div>
+                      </Link>
+
+                      <div className="px-1 text-[11px] text-white/90">
+                        <div className="font-medium">{workspace.name}</div>
+                        <div className="mt-0.5 text-[10px] text-white/65">
+                          Updated{" "}
+                          {new Date(workspace.updatedAt).toLocaleString()}
                         </div>
                       </div>
-                    </Link>
-
-                    <div className="px-1 text-[11px] text-white/90">
-                      <div className="font-medium">{workspace.name}</div>
-                      <div className="mt-0.5 text-[10px] text-white/65">
-                        Updated {new Date(workspace.updatedAt).toLocaleString()}
-                      </div>
                     </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
+                  );
+                })
+              )}
+            </div>
+          )}
         </div>
       </main>
     </div>

@@ -38,17 +38,15 @@ export async function POST(request: Request) {
     const { name, documentData, canvasData, kanbanBoard } =
       workspacePayloadSchema.parse(body);
 
-    const newWorkspace: typeof workspacesTable.$inferInsert = {
-      clerkId: user.id ?? "",
-      name,
-      documentData: (documentData ?? null) as Record<string, unknown> | null,
-      canvasData: (canvasData ?? null) as Record<string, unknown> | null,
-      kanbanBoard: (kanbanBoard ?? null) as Record<string, unknown> | null,
-    };
-
     const [workspace] = await db
       .insert(workspacesTable)
-      .values([newWorkspace])
+      .values({
+        clerkId: user.id,
+        name,
+        documentData: (documentData ?? null) as Record<string, unknown> | null,
+        canvasData: (canvasData ?? null) as Record<string, unknown> | null,
+        kanbanBoard: (kanbanBoard ?? null) as Record<string, unknown> | null,
+      })
       .returning();
 
     return NextResponse.json({ workspace }, { status: 201 });
