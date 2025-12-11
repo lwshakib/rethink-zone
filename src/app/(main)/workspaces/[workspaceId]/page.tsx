@@ -173,11 +173,11 @@ export default function WorkspaceDetailPage({
 
         <main className="flex flex-1 items-start justify-center min-h-0">
           <div className="w-full h-full space-y-6 text-white min-h-0">
-            <TabsContent value="both" className="">
+            <TabsContent value="both" className="h-full t-2">
               <BothTab documentData={documentData} canvasData={canvasData} />
             </TabsContent>
 
-            <TabsContent value="document" className="mt-2">
+            <TabsContent value="document" className="mt-2 h-full">
               <DocumentTab />
             </TabsContent>
 
@@ -185,7 +185,7 @@ export default function WorkspaceDetailPage({
               <CanvasTab />
             </TabsContent>
 
-            <TabsContent value="kanban" className="mt-2">
+            <TabsContent value="kanban" className="mt-2 h-full">
               <KanbanTab board={kanbanBoard} />
             </TabsContent>
           </div>
