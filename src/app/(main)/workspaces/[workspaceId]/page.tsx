@@ -12,6 +12,17 @@ import { UserButton } from "@clerk/nextjs";
 import { Block } from "@blocknote/core";
 
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Layers } from "lucide-react";
 import BothTab from "./_components/BothTab";
@@ -70,9 +81,11 @@ export default function WorkspaceDetailPage() {
   );
   const [kanbanData, setKanbanData] = useState<any[]>(defaultKanban);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Auto-save timer ref
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -169,6 +182,28 @@ export default function WorkspaceDetailPage() {
       setSaving(false);
     }
   }, [workspace, documentContent, canvasData, kanbanData]);
+
+  const deleteWorkspace = async () => {
+    if (!workspaceId) return;
+    try {
+      setDeleting(true);
+      setError(null);
+      const res = await fetch(`/api/workspaces/${workspaceId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        throw new Error("Failed to delete workspace");
+      }
+      router.push("/workspaces");
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+      setError("Unable to delete workspace.");
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
 
   // Auto-save: debounce save after 2 seconds of no changes
   useEffect(() => {
@@ -321,14 +356,53 @@ export default function WorkspaceDetailPage() {
                     },
                   }}
                 />
-                <Button
-                  size="sm"
-                  onClick={saveWorkspace}
-                  disabled={saving || !dirty}
-                  className="h-8 rounded-full bg-white px-4 text-[11px] font-semibold text-black shadow-[0_0_40px_rgba(255,255,255,0.4)] hover:bg-white/90 disabled:opacity-60"
-                >
-                  {saving ? "Saving..." : "Save"}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <AlertDialog
+                    open={deleteDialogOpen}
+                    onOpenChange={setDeleteDialogOpen}
+                  >
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 rounded-full border-white/20 px-3 text-[11px] text-white hover:bg-white/10"
+                      >
+                        Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="bg-[#0c0c12] text-white border-white/10">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Delete this workspace?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-white/70">
+                          This removes its documents, canvas data, and kanban
+                          board. You cannot undo this action.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="border-white/10 text-white/80 hover:bg-white/10">
+                          Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={deleteWorkspace}
+                          disabled={deleting}
+                          className="bg-red-500 text-white hover:bg-red-600"
+                        >
+                          {deleting ? "Deleting..." : "Delete workspace"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  <Button
+                    size="sm"
+                    onClick={saveWorkspace}
+                    disabled={saving || !dirty}
+                    className="h-8 rounded-full bg-white px-4 text-[11px] font-semibold text-black shadow-[0_0_40px_rgba(255,255,255,0.4)] hover:bg-white/90 disabled:opacity-60"
+                  >
+                    {saving ? "Saving..." : "Save"}
+                  </Button>
+                </div>
               </div>
             </div>
           </header>

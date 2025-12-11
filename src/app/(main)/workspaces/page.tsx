@@ -174,7 +174,9 @@ export default function WorkspacesPage() {
             </DialogTrigger>
             <DialogContent className="bg-[#0c0c12] border-white/10">
               <DialogHeader>
-                <DialogTitle className="text-white">Create workspace</DialogTitle>
+                <DialogTitle className="text-white">
+                  Create workspace
+                </DialogTitle>
                 <DialogDescription className="text-white/70">
                   Give your workspace a name. You can change it later.
                 </DialogDescription>
@@ -191,7 +193,9 @@ export default function WorkspacesPage() {
                 }}
               >
                 <div className="space-y-2">
-                  <label className="text-sm text-white/80">Workspace name</label>
+                  <label className="text-sm text-white/80">
+                    Workspace name
+                  </label>
                   <Input
                     autoFocus
                     value={newWorkspaceName}

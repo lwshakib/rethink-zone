@@ -122,4 +122,28 @@ export async function updateWorkspaceAction(
   }
 }
 
+export async function deleteWorkspaceAction(
+  workspaceId: number
+): Promise<ActionResult<true>> {
+  try {
+    if (!Number.isInteger(workspaceId) || workspaceId <= 0) {
+      return { success: false, error: "Invalid workspace id." };
+    }
+
+    const [deleted] = await db
+      .delete(workspacesTable)
+      .where(eq(workspacesTable.id, workspaceId))
+      .returning();
+
+    if (!deleted) {
+      return { success: false, error: "Workspace not found." };
+    }
+
+    return { success: true, data: true };
+  } catch (error) {
+    console.error("deleteWorkspaceAction failed", error);
+    return { success: false, error: "Unable to delete workspace." };
+  }
+}
+
 
