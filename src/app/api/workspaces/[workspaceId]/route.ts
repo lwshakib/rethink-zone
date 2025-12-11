@@ -47,13 +47,33 @@ export async function GET(request: Request, { params }: { params: { workspaceId:
   }
 }
 
-export async function PUT(request: Request, context: RouteContext) {
+export async function PUT(
+  request: Request,
+  { params }: { params: { workspaceId: string } }
+) {
   try {
-    const workspaceId = context.params.workspaceId;
+    const user = await currentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+    const { workspaceId } = await params;
     if (!workspaceId) {
       return NextResponse.json(
         { error: "Invalid workspace id." },
         { status: 400 }
+      );
+    }
+
+    const existingWorkspace = await db
+      .select()
+      .from(workspacesTable)
+      .where(and(eq(workspacesTable.id, workspaceId), eq(workspacesTable.clerkId, user.id)))
+      .limit(1);
+
+    if (!existingWorkspace[0]) {
+      return NextResponse.json(
+        { error: "Workspace not found." },
+        { status: 404 }
       );
     }
 

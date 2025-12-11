@@ -27,6 +27,14 @@ export default function ExcaliDraw({ initialData, onChange }: ExcaliDrawProps) {
     initialData ?? undefined
   );
 
+  // Store onChange in a ref to keep handleChange stable across renders.
+  // This prevents infinite loops caused by the callback being recreated
+  // when the parent re-renders (which triggers Excalidraw's onChange again).
+  const onChangeRef = useRef(onChange);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
   useEffect(() => {
     if (initialDataRef.current === undefined && initialData) {
       initialDataRef.current = initialData;
@@ -35,13 +43,13 @@ export default function ExcaliDraw({ initialData, onChange }: ExcaliDrawProps) {
 
   const handleChange = useCallback(
     (elements: any, appState: any, files: any) => {
-      onChange?.({
+      onChangeRef.current?.({
         elements,
         appState,
         files,
       });
     },
-    [onChange]
+    [] // No dependencies - uses ref instead
   );
 
   return (
