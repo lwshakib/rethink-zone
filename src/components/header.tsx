@@ -8,10 +8,10 @@ import { cn } from '@/lib/utils'
 import { useScroll } from 'motion/react'
 
 const menuItems = [
-    { name: 'Features', href: '#link' },
-    { name: 'Solution', href: '#link' },
-    { name: 'Pricing', href: '#link' },
-    { name: 'About', href: '#link' },
+    { name: 'Features', href: '/#features' },
+    { name: 'Solution', href: '/#flow' },
+    { name: 'Pricing', href: '/#pricing' },
+    { name: 'About', href: '/#about' },
 ]
 
 export const HeroHeader = () => {
@@ -19,6 +19,15 @@ export const HeroHeader = () => {
     const [scrolled, setScrolled] = React.useState(false)
 
     const { scrollYProgress } = useScroll()
+
+    const handleScrollTo = React.useCallback((href: string) => {
+        if (!href.startsWith('/#')) return
+        const targetId = href.split('#')[1]
+        const el = document.getElementById(targetId)
+        if (!el) return
+        const y = el.getBoundingClientRect().top + window.scrollY - 200
+        window.scrollTo({ top: y, behavior: 'smooth' })
+    }, [])
 
     React.useEffect(() => {
         const unsubscribe = scrollYProgress.on('change', (latest) => {
@@ -56,6 +65,13 @@ export const HeroHeader = () => {
                                         <li key={index}>
                                             <Link
                                                 href={item.href}
+                                                onClick={(e) => {
+                                                    if (item.href.startsWith('/#')) {
+                                                        e.preventDefault()
+                                                        handleScrollTo(item.href)
+                                                    }
+                                                    setMenuState(false)
+                                                }}
                                                 className="text-muted-foreground hover:text-accent-foreground block duration-150">
                                                 <span>{item.name}</span>
                                             </Link>
@@ -72,6 +88,13 @@ export const HeroHeader = () => {
                                         <li key={index}>
                                             <Link
                                                 href={item.href}
+                                                onClick={(e) => {
+                                                    if (item.href.startsWith('/#')) {
+                                                        e.preventDefault()
+                                                        handleScrollTo(item.href)
+                                                    }
+                                                    setMenuState(false)
+                                                }}
                                                 className="text-muted-foreground hover:text-accent-foreground block duration-150">
                                                 <span>{item.name}</span>
                                             </Link>
@@ -84,14 +107,14 @@ export const HeroHeader = () => {
                                     asChild
                                     variant="outline"
                                     size="sm">
-                                    <Link href="#">
+                                    <Link href="/sign-in">
                                         <span>Login</span>
                                     </Link>
                                 </Button>
                                 <Button
                                     asChild
                                     size="sm">
-                                    <Link href="#">
+                                    <Link href="/sign-up">
                                         <span>Sign Up</span>
                                     </Link>
                                 </Button>
