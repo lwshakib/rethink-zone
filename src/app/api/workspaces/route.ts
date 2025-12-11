@@ -13,7 +13,12 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
     const workspaces = await db
-      .select()
+      .select({
+        id: workspacesTable.id,
+        name: workspacesTable.name,
+        updatedAt: workspacesTable.updatedAt,
+        createdAt: workspacesTable.createdAt,
+      })
       .from(workspacesTable)
       .where(eq(workspacesTable.clerkId, user.id))
       .orderBy(desc(workspacesTable.updatedAt));
