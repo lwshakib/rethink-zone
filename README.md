@@ -20,6 +20,23 @@ Interactive workspace builder that blends a rich text editor, Excalidraw canvas,
 - BlockNote (rich text), Excalidraw (canvas), custom Kanban
 - shadcn/ui components with Radix + Lucide icons
 
+## Architecture at a Glance
+
+```mermaid
+flowchart LR
+  user([User]) -->|auth| clerk[Clerk]
+  user -->|UI| next[Next.js App Router]
+  next -->|API routes| api[Workspace APIs]
+  api -->|ORM| drizzle[Drizzle]
+  drizzle --> db[(Postgres)]
+  next --> blocknote[BlockNote Editor]
+  next --> excalidraw[Excalidraw Canvas]
+  next --> kanban[Kanban Board]
+  blocknote -->|autosave| api
+  excalidraw -->|autosave| api
+  kanban -->|autosave| api
+```
+
 ## Getting Started
 
 1. **Clone the repo**

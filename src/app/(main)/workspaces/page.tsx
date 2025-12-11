@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CustomTextLogo } from "@/components/logo";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useWorkspaceStore, Workspace } from "@/context";
 import {
   Dialog,
   DialogContent,
@@ -17,13 +18,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
-type Workspace = {
-  id: number;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
-};
 
 const generateGradientThumbnail = () => {
   const gradients = [
@@ -80,7 +74,7 @@ const WorkspacesSkeleton = () => (
 );
 
 export default function WorkspacesPage() {
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const { workspaces, setWorkspaces } = useWorkspaceStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -89,7 +83,7 @@ export default function WorkspacesPage() {
   const [createError, setCreateError] = useState<string | null>(null);
 
   const workspaceThumbnails = useMemo(() => {
-    const thumbnails = new Map<number, string>();
+    const thumbnails = new Map<string, string>();
     workspaces.forEach((workspace) => {
       thumbnails.set(workspace.id, generateGradientThumbnail());
     });
@@ -130,7 +124,7 @@ export default function WorkspacesPage() {
         throw new Error("Failed to create workspace");
       }
       const data = await res.json();
-      setWorkspaces((prev) => [...prev, data.workspace]);
+      setWorkspaces((prev) => [...prev, data.workspace as Workspace]);
       setCreateDialogOpen(false);
       setNewWorkspaceName("");
     } catch (err) {
