@@ -1,4 +1,4 @@
-import { Logo } from "@/components/logo";
+import { CustomTextLogo, Logo } from "@/components/logo";
 import Link from "next/link";
 
 const links = [
@@ -123,7 +123,7 @@ export default function FooterSection() {
         <div className="grid gap-12 md:grid-cols-5">
           <div className="md:col-span-2">
             <Link href="/" aria-label="go home" className="block size-fit">
-              <Logo />
+              <CustomTextLogo />
             </Link>
           </div>
 
@@ -146,7 +146,7 @@ export default function FooterSection() {
         </div>
         <div className="mt-12 flex flex-wrap items-end justify-between gap-6 border-t py-6">
           <span className="text-muted-foreground order-last block text-center text-sm md:order-first">
-            © {new Date().getFullYear()} Tailark, All rights reserved
+            © {new Date().getFullYear()} Rethink, All rights reserved
           </span>
           <div className="order-first flex flex-wrap justify-center gap-6 text-sm md:order-last">
             <Link
