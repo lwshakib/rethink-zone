@@ -102,9 +102,6 @@ export const CustomTextLogo = ({ className }: { className?: string }) => {
         className
       )}
     >
-      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-linear-to-br from-[#9B99FE] to-[#2BC8B7] text-xs font-bold uppercase text-white shadow-sm">
-        R
-      </span>
       <span className="text-base font-semibold tracking-tight text-foreground">
         Rethink
       </span>

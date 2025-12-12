@@ -13,12 +13,15 @@ import {
   type WorkspacePayload,
   type WorkspaceUpdatePayload,
 } from "@/lib/validations/workspace";
+import { currentUser } from "@clerk/nextjs/server";
 
 type ActionResult<T> =
   | { success: true; data: T }
   | { success: false; error: string };
 
-export async function listWorkspacesAction(): Promise<ActionResult<Workspace[]>> {
+export async function listWorkspacesAction(): Promise<
+  ActionResult<Workspace[]>
+> {
   try {
     const workspaces = await db
       .select()
@@ -33,10 +36,10 @@ export async function listWorkspacesAction(): Promise<ActionResult<Workspace[]>>
 }
 
 export async function getWorkspaceAction(
-  workspaceId: number
+  workspaceId: string
 ): Promise<ActionResult<Workspace>> {
   try {
-    if (!Number.isInteger(workspaceId) || workspaceId <= 0) {
+    if (typeof workspaceId !== "string" || workspaceId.trim().length === 0) {
       return { success: false, error: "Invalid workspace id." };
     }
 
@@ -61,15 +64,30 @@ export async function createWorkspaceAction(
   payload: WorkspacePayload
 ): Promise<ActionResult<Workspace>> {
   try {
+    const user = await currentUser();
+    if (!user) {
+      return { success: false, error: "Unauthorized." };
+    }
+
     const validated = workspacePayloadSchema.parse(payload);
 
     const [workspace] = await db
       .insert(workspacesTable)
       .values({
+        clerkId: user.id,
         name: validated.name,
-        documentData: validated.documentData ?? null,
-        canvasData: validated.canvasData ?? null,
-        kanbanBoard: validated.kanbanBoard ?? null,
+        documentData: (validated.documentData ?? null) as Record<
+          string,
+          unknown
+        > | null,
+        canvasData: (validated.canvasData ?? null) as Record<
+          string,
+          unknown
+        > | null,
+        kanbanBoard: (validated.kanbanBoard ?? null) as Record<
+          string,
+          unknown
+        > | null,
       } satisfies NewWorkspace)
       .returning();
 
@@ -81,11 +99,11 @@ export async function createWorkspaceAction(
 }
 
 export async function updateWorkspaceAction(
-  workspaceId: number,
+  workspaceId: string,
   payload: WorkspaceUpdatePayload
 ): Promise<ActionResult<Workspace>> {
   try {
-    if (!Number.isInteger(workspaceId) || workspaceId <= 0) {
+    if (typeof workspaceId !== "string" || workspaceId.trim().length === 0) {
       return { success: false, error: "Invalid workspace id." };
     }
 
@@ -94,13 +112,28 @@ export async function updateWorkspaceAction(
     const updateData: Partial<Workspace> = {
       ...(validated.name !== undefined ? { name: validated.name } : {}),
       ...(validated.documentData !== undefined
-        ? { documentData: validated.documentData }
+        ? {
+            documentData: (validated.documentData ?? null) as Record<
+              string,
+              unknown
+            > | null,
+          }
         : {}),
       ...(validated.canvasData !== undefined
-        ? { canvasData: validated.canvasData }
+        ? {
+            canvasData: (validated.canvasData ?? null) as Record<
+              string,
+              unknown
+            > | null,
+          }
         : {}),
       ...(validated.kanbanBoard !== undefined
-        ? { kanbanBoard: validated.kanbanBoard }
+        ? {
+            kanbanBoard: (validated.kanbanBoard ?? null) as Record<
+              string,
+              unknown
+            > | null,
+          }
         : {}),
       updatedAt: new Date(),
     };
@@ -123,10 +156,10 @@ export async function updateWorkspaceAction(
 }
 
 export async function deleteWorkspaceAction(
-  workspaceId: number
+  workspaceId: string
 ): Promise<ActionResult<true>> {
   try {
-    if (!Number.isInteger(workspaceId) || workspaceId <= 0) {
+    if (typeof workspaceId !== "string" || workspaceId.trim().length === 0) {
       return { success: false, error: "Invalid workspace id." };
     }
 
@@ -145,5 +178,3 @@ export async function deleteWorkspaceAction(
     return { success: false, error: "Unable to delete workspace." };
   }
 }
-
-
