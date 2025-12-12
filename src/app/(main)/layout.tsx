@@ -1,4 +1,4 @@
-import { getOrCreateUser } from "@/app/actions/user";
+import { getOrCreateUser } from "@/actions/user";
 
 export default async function MainLayout({
   children,
