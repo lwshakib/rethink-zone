@@ -34,7 +34,7 @@ export default function LoginPage() {
       }
 
       toast.success("Signed in successfully!");
-      router.push("/workflows");
+      router.push("/workspaces");
       router.refresh();
     } catch (error) {
       toast.error("An unexpected error occurred");
@@ -48,7 +48,7 @@ export default function LoginPage() {
     try {
       await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/workflows",
+        callbackURL: "/workspaces",
       });
     } catch (error) {
       toast.error("Failed to sign in with Google");
