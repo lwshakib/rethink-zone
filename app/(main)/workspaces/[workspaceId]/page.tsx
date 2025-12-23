@@ -40,6 +40,9 @@ import {
   Loader2,
 } from "lucide-react";
 import { Workspace } from "@/context";
+import DocumentTab from "@/features/document/document-tab";
+import CanvasTab from "@/features/canvas/canvas-tab";
+import KanbanTab from "@/features/kanban/kanban-tab";
 
 const LoadingState = () => (
   <div className="flex h-screen w-full items-center justify-center bg-[#050509]">
@@ -389,42 +392,21 @@ export default function WorkspaceDetailPage() {
               value="document"
               className="m-0 h-full w-full outline-none"
             >
-              <div className="flex h-full w-full items-center justify-center text-white/20">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="h-px w-12 bg-white/10" />
-                  <span className="text-xs font-medium uppercase tracking-[0.2em]">
-                    Document Module
-                  </span>
-                </div>
-              </div>
+              <DocumentTab />
             </TabsContent>
 
             <TabsContent
               value="canvas"
               className="m-0 h-full w-full outline-none"
             >
-              <div className="flex h-full w-full items-center justify-center text-white/20">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="h-px w-12 bg-white/10" />
-                  <span className="text-xs font-medium uppercase tracking-[0.2em]">
-                    Canvas Module
-                  </span>
-                </div>
-              </div>
+              <CanvasTab />
             </TabsContent>
 
             <TabsContent
               value="kanban"
               className="m-0 h-full w-full outline-none"
             >
-              <div className="flex h-full w-full items-center justify-center text-white/20">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="h-px w-12 bg-white/10" />
-                  <span className="text-xs font-medium uppercase tracking-[0.2em]">
-                    Kanban Module
-                  </span>
-                </div>
-              </div>
+              <KanbanTab />
             </TabsContent>
           </div>
         </main>

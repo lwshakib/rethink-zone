@@ -368,7 +368,7 @@ export default function KanbanArea({
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar min-h-[100px]">
+              <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar min-h-25">
                 {column.items.map((item) => (
                   <div
                     key={item.id}
