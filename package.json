@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "bun x prisma generate",
+    "db:generate": "bun x prisma generate",
+    "db:migrate": "bun x prisma generate && bun x prisma migrate dev --name init",
+    "db:studio": "bun x prisma studio",
+    "db:reset": "bun x prisma migrate reset"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
