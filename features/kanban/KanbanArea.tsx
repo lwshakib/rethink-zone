@@ -303,7 +303,7 @@ export default function KanbanArea({
   };
 
   return (
-    <div className="w-full h-full flex flex-col p-4 md:p-6 overflow-hidden bg-black/50 backdrop-blur-md">
+    <div className="w-full h-full flex flex-col p-4 md:p-6 overflow-hidden bg-background">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-white tracking-tight">

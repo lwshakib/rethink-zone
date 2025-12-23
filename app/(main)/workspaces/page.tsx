@@ -155,7 +155,7 @@ export default function WorkspacesPage() {
   }, []);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#050509] text-foreground w-full">
+    <div className="flex min-h-screen flex-col bg-background text-foreground w-full">
       {/* Top chrome */}
       <header className="flex items-center justify-between px-6 pt-4 sm:px-10 lg:px-16">
         <div className="flex items-center gap-3">

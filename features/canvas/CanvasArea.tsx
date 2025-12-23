@@ -1360,15 +1360,19 @@ const CanvasArea = () => {
     const rect = canvas.getBoundingClientRect();
     const screenX = clientX - rect.left;
     const screenY = clientY - rect.top;
-    // Inverse of: setTransform(dpr) -> translate(pan) -> scale(zoom)
-    const x = screenX / zoom - pan.x;
-    const y = screenY / zoom - pan.y;
+    // Inverse of: translate(pan) -> scale(zoom)
+    // Drawing: worldPoint -> (world * zoom) + pan = screen
+    // Inverse: screen -> (screen - pan) / zoom = world
+    const x = (screenX - pan.x) / zoom;
+    const y = (screenY - pan.y) / zoom;
     return { x, y };
   };
 
   const canvasToClient = (x: number, y: number) => {
-    const cssX = (x + pan.x) * zoom;
-    const cssY = (y + pan.y) * zoom;
+    // Forward of: translate(pan) -> scale(zoom)
+    // World to Screen: screen = (world * zoom) + pan
+    const cssX = x * zoom + pan.x;
+    const cssY = y * zoom + pan.y;
     return { x: cssX, y: cssY, cssX, cssY };
   };
 
@@ -4089,7 +4093,7 @@ const CanvasArea = () => {
   return (
     <div
       ref={canvasContainerRef}
-      className={`relative flex-1 min-h-[70vh] rounded-xl bg-[#0f0f0f] overflow-hidden ${getCursor()}`}
+      className={`relative w-full h-full bg-background overflow-hidden ${getCursor()}`}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       onWheel={handleWheel}

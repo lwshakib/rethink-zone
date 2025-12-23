@@ -45,7 +45,7 @@ import CanvasTab from "@/features/canvas/canvas-tab";
 import KanbanTab from "@/features/kanban/kanban-tab";
 
 const LoadingState = () => (
-  <div className="flex h-screen w-full items-center justify-center bg-[#050509]">
+  <div className="flex h-screen w-full items-center justify-center bg-background">
     <div className="flex flex-col items-center gap-4">
       <div className="relative flex h-12 w-12 items-center justify-center">
         <div className="absolute inset-0 animate-pink-glow rounded-full bg-blue-500/20 blur-xl"></div>
@@ -196,14 +196,14 @@ export default function WorkspaceDetailPage() {
   if (loading) return <LoadingState />;
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#050509] text-foreground w-full">
+    <div className="flex h-screen flex-col bg-background text-foreground w-full overflow-hidden">
       <Tabs
         value={activeTab}
         onValueChange={handleTabChange}
-        className="flex w-full flex-1 flex-col"
+        className="flex h-full w-full flex-col"
       >
         {/* Header Section */}
-        <header className="z-10 border-b border-white/5 bg-[#050509]/80 backdrop-blur-xl">
+        <header className="z-10  bg-background/80 backdrop-blur-xl">
           <div className="flex flex-col gap-4 px-6 py-4 sm:px-10 lg:px-16">
             <div className="flex items-center justify-between">
               {/* Left: Breadcrumbs & App Name */}
@@ -386,29 +386,27 @@ export default function WorkspaceDetailPage() {
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-hidden">
-          <div className="h-full w-full bg-[#050509]">
-            <TabsContent
-              value="document"
-              className="m-0 h-full w-full outline-none"
-            >
-              <DocumentTab />
-            </TabsContent>
+        <main className="flex-1 min-h-0 relative">
+          <TabsContent
+            value="document"
+            className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
+          >
+            <DocumentTab />
+          </TabsContent>
 
-            <TabsContent
-              value="canvas"
-              className="m-0 h-full w-full outline-none"
-            >
-              <CanvasTab />
-            </TabsContent>
+          <TabsContent
+            value="canvas"
+            className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
+          >
+            <CanvasTab />
+          </TabsContent>
 
-            <TabsContent
-              value="kanban"
-              className="m-0 h-full w-full outline-none"
-            >
-              <KanbanTab />
-            </TabsContent>
-          </div>
+          <TabsContent
+            value="kanban"
+            className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
+          >
+            <KanbanTab />
+          </TabsContent>
         </main>
       </Tabs>
     </div>
