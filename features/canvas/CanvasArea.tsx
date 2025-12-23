@@ -25,6 +25,28 @@ import {
   ZoomOut,
   Scan,
   RefreshCw,
+  Plus,
+  Search,
+  Sparkles,
+  Binary,
+  LayoutGrid,
+  Shapes,
+  Smile,
+  Monitor,
+  ChevronRight,
+  Code,
+  Image as ImageIcon,
+  ArrowUp,
+  ArrowDown,
+  CornerDownLeft,
+  Maximize,
+  Diamond,
+  Triangle,
+  Cylinder,
+  FileText,
+  Hexagon,
+  Star,
+  ChevronLeft,
 } from "lucide-react";
 
 type RectShape = {
@@ -69,6 +91,14 @@ type FrameShape = {
   height: number;
   frameNumber: number;
 };
+type PolyShape = {
+  id: string;
+  type: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
 type Connector = {
@@ -87,6 +117,7 @@ type HistoryEntry = {
   texts: TextShape[];
   frames: FrameShape[];
   connectors: Connector[];
+  polygons: PolyShape[];
 };
 
 const MIN_ZOOM = 0.1;
@@ -98,6 +129,10 @@ const makeId = () =>
 const CanvasArea = () => {
   const [zoom, setZoom] = useState(1);
   const [activeTool, setActiveTool] = useState("Hand");
+  const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
+  const [plusMenuView, setPlusMenuView] = useState<"categories" | "shape">(
+    "categories"
+  );
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const hydratedRef = useRef(false);
@@ -113,7 +148,11 @@ const CanvasArea = () => {
   const [images, setImages] = useState<ImageShape[]>([]);
   const [texts, setTexts] = useState<TextShape[]>([]);
   const [frames, setFrames] = useState<FrameShape[]>([]);
+  const [polygons, setPolygons] = useState<PolyShape[]>([]);
   const [connectors, setConnectors] = useState<Connector[]>([]);
+  const [pendingAddShapeLabel, setPendingAddShapeLabel] = useState<
+    string | null
+  >(null);
   const [history, setHistory] = useState<HistoryEntry[]>([
     {
       rectangles: [],
@@ -125,6 +164,7 @@ const CanvasArea = () => {
       texts: [],
       frames: [],
       connectors: [],
+      polygons: [],
     },
   ]);
   const [historyIndex, setHistoryIndex] = useState(0);
@@ -189,7 +229,8 @@ const CanvasArea = () => {
       | "frame"
       | "connector"
       | "line"
-      | "arrow";
+      | "arrow"
+      | "poly";
     index: number;
   } | null>(null);
   const dragModeRef = useRef<
@@ -245,6 +286,12 @@ const CanvasArea = () => {
   } | null>(null);
   const dragTextCornerRef = useRef<{ sx: number; sy: number } | null>(null);
   const dragFrameStartRef = useRef<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+  const dragPolyStartRef = useRef<{
     x: number;
     y: number;
     width: number;
@@ -334,6 +381,11 @@ const CanvasArea = () => {
   );
   const ensurePathId = useCallback(
     (items: PathShape[]) =>
+      items.map((p) => (p.id ? p : { ...p, id: makeId() })),
+    []
+  );
+  const ensurePolyId = useCallback(
+    (items: PolyShape[]) =>
       items.map((p) => (p.id ? p : { ...p, id: makeId() })),
     []
   );
@@ -469,6 +521,7 @@ const CanvasArea = () => {
       texts: overrides?.texts ?? texts,
       frames: overrides?.frames ?? frames,
       connectors: overrides?.connectors ?? connectors,
+      polygons: overrides?.polygons ?? polygons,
     }),
     [
       rectangles,
@@ -480,6 +533,7 @@ const CanvasArea = () => {
       texts,
       frames,
       connectors,
+      polygons,
     ]
   );
   const getContentBounds = useCallback(() => {
@@ -552,6 +606,14 @@ const CanvasArea = () => {
       xs.push(minX, maxX);
       ys.push(minY, maxY);
     });
+    polygons.forEach((p) => {
+      const minX = Math.min(p.x, p.x + (p.width ?? 0));
+      const maxX = Math.max(p.x, p.x + (p.width ?? 0));
+      const minY = Math.min(p.y, p.y + (p.height ?? 0));
+      const maxY = Math.max(p.y, p.y + (p.height ?? 0));
+      xs.push(minX, maxX);
+      ys.push(minY, maxY);
+    });
 
     if (!xs.length || !ys.length) return null;
     return {
@@ -571,6 +633,7 @@ const CanvasArea = () => {
     rectangles,
     texts,
     frames,
+    polygons,
   ]);
   const persistState = useCallback(
     (state: {
@@ -675,6 +738,13 @@ const CanvasArea = () => {
         if (!prev[index]) return prev;
         const next = prev.filter((_, i) => i !== index);
         pushHistory({ connectors: next });
+        return next;
+      });
+    } else if (kind === "poly") {
+      setPolygons((prev) => {
+        if (!prev[index]) return prev;
+        const next = prev.filter((_, i) => i !== index);
+        pushHistory({ polygons: next });
         return next;
       });
     }
@@ -795,6 +865,21 @@ const CanvasArea = () => {
           setSelectedShape({ kind: "arrow", index: next.length - 1 });
           return next;
         });
+      } else if (kind === "poly") {
+        const src = polygons[index];
+        if (!src) return;
+        setPolygons((prev) => {
+          const clone = {
+            ...src,
+            id: makeId(),
+            x: src.x + offset,
+            y: src.y + offset,
+          };
+          const next = [...prev, clone];
+          pushHistory({ polygons: next });
+          setSelectedShape({ kind: "poly", index: next.length - 1 });
+          return next;
+        });
       }
     },
     [
@@ -821,6 +906,7 @@ const CanvasArea = () => {
         | { kind: "line"; index: number }
         | { kind: "arrow"; index: number }
         | { kind: "connector"; index: number }
+        | { kind: "poly"; index: number }
     ) => {
       const offset = 0;
       if (picked.kind === "rect") {
@@ -925,9 +1011,33 @@ const CanvasArea = () => {
         pushHistory({ arrows: next });
         return { kind: "arrow", index: next.length - 1 } as const;
       }
+      if (picked.kind === "poly") {
+        const src = polygons[picked.index];
+        if (!src) return null;
+        const clone = {
+          ...src,
+          id: makeId(),
+          x: src.x + offset,
+          y: src.y + offset,
+        };
+        const next = [...polygons, clone];
+        setPolygons(next);
+        pushHistory({ polygons: next });
+        return { kind: "poly", index: next.length - 1 } as const;
+      }
       return null;
     },
-    [arrows, circles, frames, images, lines, pushHistory, rectangles, texts]
+    [
+      arrows,
+      circles,
+      frames,
+      images,
+      lines,
+      polygons,
+      pushHistory,
+      rectangles,
+      texts,
+    ]
   );
   const applySnapshot = useCallback(
     (entry: HistoryEntry) => {
@@ -941,6 +1051,7 @@ const CanvasArea = () => {
       const safeImages = ensureImageId(entry.images);
       const safeTexts = ensureTextId(entry.texts);
       const safeFrames = ensureFrameId(entry.frames);
+      const safePolygons = ensurePolyId(entry.polygons);
 
       const rectIds = new Set(safeRectangles.map((r) => r.id));
       const circleIds = new Set(safeCircles.map((c) => c.id));
@@ -962,6 +1073,7 @@ const CanvasArea = () => {
       setImages(safeImages);
       setTexts(safeTexts);
       setFrames(safeFrames);
+      setPolygons(safePolygons);
       setConnectors(safeConnectors);
       dragModeRef.current = "none";
       dragRectStartRef.current = null;
@@ -989,6 +1101,7 @@ const CanvasArea = () => {
       ensurePathId,
       ensureRectId,
       ensureTextId,
+      ensurePolyId,
     ]
   );
 
@@ -1139,6 +1252,17 @@ const CanvasArea = () => {
               )
           )
         );
+        setSelectedShape(null);
+        return true;
+      }
+    }
+
+    for (let i = polygons.length - 1; i >= 0; i--) {
+      const p = polygons[i];
+      const x2 = p.x + p.width;
+      const y2 = p.y + p.height;
+      if (point.x >= p.x && point.x <= x2 && point.y >= p.y && point.y <= y2) {
+        setPolygons((prev) => prev.filter((_, idx) => idx !== i));
         setSelectedShape(null);
         return true;
       }
@@ -1574,6 +1698,42 @@ const CanvasArea = () => {
 
     const point = toCanvasPoint(event);
 
+    if (tool === "PlusAdd" && pendingAddShapeLabel) {
+      const id = makeId();
+      const label = pendingAddShapeLabel;
+      const x = point.x;
+      const y = point.y;
+
+      if (label === "Rectangle") {
+        const next = [
+          ...rectangles,
+          { id, x: x - 60, y: y - 40, width: 120, height: 80 },
+        ];
+        setRectangles(next);
+        pushHistory({ rectangles: next });
+        setSelectedShape({ kind: "rect", index: next.length - 1 });
+      } else if (label === "Ellipse" || label === "Oval") {
+        const rx = label === "Ellipse" ? 50 : 70;
+        const ry = 50;
+        const next = [...circles, { id, x, y, rx, ry }];
+        setCircles(next);
+        pushHistory({ circles: next });
+        setSelectedShape({ kind: "circle", index: next.length - 1 });
+      } else {
+        const next = [
+          ...polygons,
+          { id, type: label, x: x - 60, y: y - 60, width: 120, height: 120 },
+        ];
+        setPolygons(next);
+        pushHistory({ polygons: next });
+        setSelectedShape({ kind: "poly", index: next.length - 1 });
+      }
+
+      setActiveTool("Select");
+      setPendingAddShapeLabel(null);
+      return;
+    }
+
     if (tool === "Select") {
       // hit-test shapes from topmost: images -> texts -> circles -> rectangles
       const hitImage = (() => {
@@ -1733,6 +1893,23 @@ const CanvasArea = () => {
         return null;
       })();
 
+      const hitPoly = (() => {
+        for (let i = polygons.length - 1; i >= 0; i--) {
+          const p = polygons[i];
+          const x2 = p.x + p.width;
+          const y2 = p.y + p.height;
+          if (
+            point.x >= p.x &&
+            point.x <= x2 &&
+            point.y >= p.y &&
+            point.y <= y2
+          ) {
+            return i;
+          }
+        }
+        return null;
+      })();
+
       let picked: {
         kind:
           | "image"
@@ -1742,7 +1919,8 @@ const CanvasArea = () => {
           | "frame"
           | "connector"
           | "line"
-          | "arrow";
+          | "arrow"
+          | "poly";
         index: number;
       } | null = null;
       // Check elements first (topmost priority), then frames last
@@ -1750,6 +1928,7 @@ const CanvasArea = () => {
       if (hitImage != null) picked = { kind: "image", index: hitImage };
       else if (hitText != null) picked = { kind: "text", index: hitText };
       else if (hitCircle != null) picked = { kind: "circle", index: hitCircle };
+      else if (hitPoly != null) picked = { kind: "poly", index: hitPoly };
       else if (hitLine != null) picked = { kind: "line", index: hitLine };
       else if (hitArrowShape != null)
         picked = { kind: "arrow", index: hitArrowShape };
@@ -2086,6 +2265,10 @@ const CanvasArea = () => {
             : hitEdge
             ? hitEdge.mode
             : "move";
+        } else if (workingPicked.kind === "poly") {
+          const p = polygons[workingPicked.index];
+          dragPolyStartRef.current = { ...p };
+          dragModeRef.current = "move";
         } else if (workingPicked.kind === "line") {
           const l = lines[workingPicked.index];
           const handleSize = 10 / zoom;
@@ -2571,6 +2754,15 @@ const CanvasArea = () => {
               idx === selectedShape.index
                 ? { ...f, x: base.x + dx, y: base.y + dy }
                 : f
+            )
+          );
+        } else if (selectedShape.kind === "poly" && dragPolyStartRef.current) {
+          const base = dragPolyStartRef.current;
+          setPolygons((prev) =>
+            prev.map((p, idx) =>
+              idx === selectedShape.index
+                ? { ...p, x: base.x + dx, y: base.y + dy }
+                : p
             )
           );
         } else if (selectedShape.kind === "line" && dragLineStartRef.current) {
@@ -3077,6 +3269,11 @@ const CanvasArea = () => {
           const r = rectangles[i];
           const rect = { x: r.x, y: r.y, width: r.width, height: r.height };
           if (intersects(box, rect)) return { kind: "rect" as const, index: i };
+        }
+        for (let i = polygons.length - 1; i >= 0; i--) {
+          const p = polygons[i];
+          const r = { x: p.x, y: p.y, width: p.width, height: p.height };
+          if (intersects(box, r)) return { kind: "poly" as const, index: i };
         }
         for (let i = frames.length - 1; i >= 0; i--) {
           const f = frames[i];
@@ -3617,6 +3814,114 @@ const CanvasArea = () => {
       ctx.restore();
     };
 
+    const drawPoly = (p: PolyShape, alpha = 0.9, isSelected = false) => {
+      ctx.save();
+      const { x, y, width, height, type } = p;
+      ctx.strokeStyle = isSelected
+        ? `rgba(83,182,255,0.9)`
+        : `rgba(255,255,255,${alpha})`;
+      ctx.lineWidth = isSelected ? 2.4 / zoom : 2 / zoom;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+
+      if (type === "Diamond") {
+        ctx.moveTo(x + width / 2, y);
+        ctx.lineTo(x + width, y + height / 2);
+        ctx.lineTo(x + width / 2, y + height);
+        ctx.lineTo(x, y + height / 2);
+        ctx.closePath();
+      } else if (type === "Triangle") {
+        ctx.moveTo(x + width / 2, y);
+        ctx.lineTo(x + width, y + height);
+        ctx.lineTo(x, y + height);
+        ctx.closePath();
+      } else if (type === "Parallelo...") {
+        const off = width * 0.2;
+        ctx.moveTo(x + off, y);
+        ctx.lineTo(x + width, y);
+        ctx.lineTo(x + width - off, y + height);
+        ctx.lineTo(x, y + height);
+        ctx.closePath();
+      } else if (type === "Trapezoid") {
+        const off = width * 0.2;
+        ctx.moveTo(x + off, y);
+        ctx.lineTo(x + width - off, y);
+        ctx.lineTo(x + width, y + height);
+        ctx.lineTo(x, y + height);
+        ctx.closePath();
+      } else if (type === "Hexagon") {
+        const qw = width * 0.25;
+        ctx.moveTo(x + qw, y);
+        ctx.lineTo(x + width - qw, y);
+        ctx.lineTo(x + width, y + height / 2);
+        ctx.lineTo(x + width - qw, y + height);
+        ctx.lineTo(x + qw, y + height);
+        ctx.lineTo(x, y + height / 2);
+        ctx.closePath();
+      } else if (type === "Star") {
+        const cx = x + width / 2;
+        const cy = y + height / 2;
+        const out = width / 2;
+        const inn = width / 4;
+        for (let i = 0; i < 10; i++) {
+          const ang = (i * Math.PI) / 5 - Math.PI / 2;
+          const r = i % 2 === 0 ? out : inn;
+          if (i === 0)
+            ctx.moveTo(cx + r * Math.cos(ang), cy + r * Math.sin(ang));
+          else ctx.lineTo(cx + r * Math.cos(ang), cy + r * Math.sin(ang));
+        }
+        ctx.closePath();
+      } else if (type === "Cylinder") {
+        const rh = height * 0.15;
+        ctx.ellipse(x + width / 2, y + rh, width / 2, rh, 0, 0, Math.PI * 2);
+        ctx.moveTo(x, y + rh);
+        ctx.lineTo(x, y + height - rh);
+        ctx.ellipse(
+          x + width / 2,
+          y + height - rh,
+          width / 2,
+          rh,
+          0,
+          0,
+          Math.PI,
+          false
+        );
+        ctx.lineTo(x + width, y + rh);
+      } else if (type === "Document") {
+        const c = Math.min(width, height) * 0.2;
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + width - c, y);
+        ctx.lineTo(x + width, y + c);
+        ctx.lineTo(x + width, y + height);
+        ctx.lineTo(x, y + height);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x + width - c, y);
+        ctx.lineTo(x + width - c, y + c);
+        ctx.lineTo(x + width, y + c);
+      }
+
+      ctx.stroke();
+
+      if (isSelected) {
+        const hs = 8 / zoom;
+        const hf = "rgba(83,182,255,1)";
+        [
+          { cx: x, cy: y },
+          { cx: x + width, cy: y },
+          { cx: x, cy: y + height },
+          { cx: x + width, cy: y + height },
+        ].forEach((h) => {
+          ctx.beginPath();
+          ctx.rect(h.cx - hs / 2, h.cy - hs / 2, hs, hs);
+          ctx.fillStyle = hf;
+          ctx.fill();
+        });
+      }
+      ctx.restore();
+    };
+
     const drawLine = (
       l: { x1: number; y1: number; x2: number; y2: number },
       alpha = 0.8,
@@ -3851,6 +4156,13 @@ const CanvasArea = () => {
         selectedShape?.kind === "circle" && selectedShape.index === idx
       )
     );
+    polygons.forEach((p, idx) =>
+      drawPoly(
+        p,
+        0.9,
+        selectedShape?.kind === "poly" && selectedShape.index === idx
+      )
+    );
     lines.forEach((l, idx) =>
       drawLine(
         l,
@@ -3987,6 +4299,7 @@ const CanvasArea = () => {
     lines,
     arrows,
     paths,
+    polygons,
     images,
     texts,
     frames,
@@ -4327,7 +4640,221 @@ const CanvasArea = () => {
         </button>
       </div>
 
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 rounded-full bg-[#1b1b1b] px-1.5 py-3 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
+      {/* Plus Menu Panel */}
+      <div className="absolute left-4 top-4 flex items-start gap-4 z-100">
+        <div className="flex flex-col items-center rounded-md bg-[#1b1b1b] px-1.5 py-1.5 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
+          <button
+            onClick={() => setIsPlusMenuOpen(!isPlusMenuOpen)}
+            className={`flex items-center justify-center h-9 w-9 rounded-md transition ${
+              isPlusMenuOpen
+                ? "bg-[#2a2a2a] text-white shadow"
+                : "text-white/80 hover:bg-white/10"
+            }`}
+            aria-label="Add"
+          >
+            <Plus
+              className={`h-4 w-4 transition-transform duration-200 ${
+                isPlusMenuOpen ? "rotate-45" : "rotate-0"
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Popover Menu - Sidebar style */}
+        {isPlusMenuOpen && (
+          <div className="flex flex-col rounded-xl bg-[#0f0f0f] shadow-2xl border border-white/10 w-85 overflow-hidden">
+            {/* Search Section */}
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
+              <Search className="h-4 w-4 text-white/40" />
+              <input
+                type="text"
+                placeholder="Insert item"
+                className="bg-transparent border-none outline-none text-sm text-white/90 w-full placeholder:text-white/30"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex-1 overflow-y-auto max-h-150 p-2 space-y-4">
+              {plusMenuView === "categories" ? (
+                <div className="space-y-4">
+                  {/* All Categories Section */}
+                  <div className="space-y-1">
+                    <div className="px-3 py-2 text-[11px] font-semibold text-white/40 uppercase tracking-wider">
+                      All Categories
+                    </div>
+
+                    <button className="flex items-center gap-4 w-full px-3 py-3 rounded-lg hover:bg-white/5 transition text-left group">
+                      <div className="h-9 w-9 flex items-center justify-center rounded-lg bg-white/5 border border-white/10">
+                        <Sparkles className="h-5 w-5 text-white/70" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-white/90">
+                          AI diagram
+                        </div>
+                        <div className="text-[11px] text-white/40 line-clamp-1">
+                          Generate diagram with natural language
+                        </div>
+                      </div>
+                    </button>
+
+                    {[
+                      {
+                        id: "code",
+                        icon: Binary,
+                        title: "Diagram as Code",
+                        desc: "Create diagrams using code",
+                      },
+                      {
+                        id: "catalog",
+                        icon: LayoutGrid,
+                        title: "Diagram Catalog",
+                        desc: "A catalog of 100+ Eraser diagrams",
+                      },
+                      {
+                        id: "shape",
+                        icon: Shapes,
+                        title: "Shape",
+                        desc: "Explore our various shapes",
+                      },
+                      {
+                        id: "icon",
+                        icon: Smile,
+                        title: "Icon",
+                        desc: "250+ icons available",
+                      },
+                      {
+                        id: "frame",
+                        icon: Monitor,
+                        title: "Device Frame",
+                        desc: "Phone, tablet, browser frames",
+                      },
+                    ].map((item, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          if (item.id === "shape") setPlusMenuView("shape");
+                        }}
+                        className="flex items-center gap-4 w-full px-3 py-3 rounded-lg hover:bg-white/5 transition text-left group"
+                      >
+                        <div className="h-9 w-9 flex items-center justify-center rounded-lg bg-white/5 border border-white/10">
+                          <item.icon className="h-5 w-5 text-white/70" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-white/90">
+                            {item.title}
+                          </div>
+                          <div className="text-[11px] text-white/40 line-clamp-1">
+                            {item.desc}
+                          </div>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-white/20 group-hover:text-white/40 transition" />
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Bottom Quick Actions */}
+                  <div className="grid grid-cols-3 gap-2 px-2 pb-2">
+                    {[
+                      { icon: Maximize, label: "Figure" },
+                      { icon: Code, label: "Code Block" },
+                      { icon: ImageIcon, label: "Image" },
+                    ].map((action, i) => (
+                      <button
+                        key={i}
+                        className="flex flex-col items-center gap-2 p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition group"
+                      >
+                        <action.icon className="h-6 w-6 text-white/60 group-hover:text-white/80" />
+                        <span className="text-[10px] font-medium text-white/40 group-hover:text-white/60">
+                          {action.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Shape Grid View */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider">
+                      <button
+                        onClick={() => setPlusMenuView("categories")}
+                        className="text-white/40 hover:text-white/60 transition"
+                      >
+                        All Categories
+                      </button>
+                      <span className="text-white/20">/</span>
+                      <span className="text-white/90">Shape</span>
+                    </div>
+
+                    <div className="grid grid-cols-5 gap-y-4 px-2">
+                      {[
+                        { icon: Square, label: "Rectangle" },
+                        { icon: Circle, label: "Ellipse" },
+                        { icon: Diamond, label: "Diamond" },
+                        { icon: Triangle, label: "Triangle" },
+                        { icon: Circle, label: "Oval", stretch: true },
+                        { icon: Square, label: "Parallelo...", slant: true },
+                        { icon: Square, label: "Trapezoid", trapezoid: true },
+                        { icon: Cylinder, label: "Cylinder" },
+                        { icon: FileText, label: "Document" },
+                        { icon: Hexagon, label: "Hexagon" },
+                        { icon: Star, label: "Star" },
+                      ].map((shape, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            setPendingAddShapeLabel(shape.label);
+                            setActiveTool("PlusAdd");
+                            setIsPlusMenuOpen(false);
+                          }}
+                          className="flex flex-col items-center gap-2 group"
+                        >
+                          <div className="h-12 w-12 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 group-hover:bg-white/10 group-hover:border-white/20 transition">
+                            <shape.icon
+                              className={`h-5 w-5 text-white/70 group-hover:text-white/90 transition ${
+                                shape.stretch ? "scale-x-125" : ""
+                              } ${shape.slant ? "-skew-x-12" : ""} ${
+                                shape.trapezoid
+                                  ? "[clip-path:polygon(20%_0%,80%_0%,100%_100%,0%_100%)]"
+                                  : ""
+                              }`}
+                            />
+                          </div>
+                          <span className="text-[10px] text-white/40 group-hover:text-white/60 text-center truncate w-full px-1">
+                            {shape.label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between px-4 py-2 bg-white/2 border-t border-white/5">
+              <div className="text-[11px] font-medium text-white/30">
+                Diagram Catalog
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 text-[10px] text-white/30">
+                  <div className="flex items-center">
+                    <ArrowUp className="h-3 w-3" />
+                    <ArrowDown className="h-3 w-3" />
+                  </div>
+                  <span>to navigate</span>
+                </div>
+                <div className="flex items-center gap-1 text-[10px] text-white/30">
+                  <CornerDownLeft className="h-3 w-3" />
+                  <span>enter to insert</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="absolute left-4 top-20 flex flex-col items-center gap-2 rounded-md bg-[#1b1b1b] px-1.5 py-3 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
         {[
           { icon: Hand, label: "Hand" },
           { icon: MousePointer2, label: "Select" },
@@ -4345,7 +4872,7 @@ const CanvasArea = () => {
             <button
               key={label}
               onClick={() => setActiveTool(label)}
-              className={`flex items-center justify-center h-9 w-9 rounded-full transition border border-white/10 ${
+              className={`flex items-center justify-center rounded-md h-9 w-9 transition ${
                 isActive
                   ? "bg-[#2a2a2a] text-white shadow"
                   : "text-white/80 hover:bg-white/10"
