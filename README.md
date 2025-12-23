@@ -34,7 +34,7 @@ Rethink Zone is a modern, full-stack workspace application that combines the pow
 
 - **Unified Workspace**: Edit documents, draw on canvas, and manage tasks all in one place
 - **Real-time Auto-save**: Changes are automatically saved with intelligent debouncing
-- **Secure Authentication**: Powered by Clerk for enterprise-grade security
+- **Secure Authentication**: Powered by Better-Auth with custom proxy handling
 - **Modern UI/UX**: Built with shadcn/ui components and Tailwind CSS 4
 - **Type-safe**: Full TypeScript support with Zod validation
 - **Production-ready**: Optimized for performance and scalability
@@ -47,7 +47,7 @@ Rethink Zone is a modern, full-stack workspace application that combines the pow
 - **🎨 Visual Canvas**: Excalidraw integration for infinite canvas drawing and diagramming
 - **📋 Kanban Board**: Custom-built kanban board with drag-and-drop functionality
 - **💾 Auto-save**: Intelligent debounced auto-save for all workspace content
-- **🔐 Authentication**: Secure user authentication and authorization via Clerk
+- **🔐 Authentication**: Secure user authentication and authorization via Better-Auth
 - **🌓 Theme Support**: Dark and light mode with `next-themes`
 - **📱 Responsive Design**: Fully responsive UI that works on all devices
 
@@ -56,7 +56,7 @@ Rethink Zone is a modern, full-stack workspace application that combines the pow
 - **Landing Page**: Marketing hero section with feature highlights and call-to-action
 - **Workspace Management**: Create, edit, and delete workspaces with ease
 - **Tabbed Interface**: Switch between combined view, document-only, canvas-only, and kanban views
-- **User Profile**: Integrated user profile management with Clerk
+- **User Profile**: Integrated user profile management
 - **Optimistic UI**: Smooth interactions with optimistic updates
 
 ## 🛠 Tech Stack
@@ -77,7 +77,7 @@ Rethink Zone is a modern, full-stack workspace application that combines the pow
 - **API**: Next.js API Routes
 - **Database**: [PostgreSQL](https://www.postgresql.org/)
 - **ORM**: [Prisma 7.1.0](https://www.prisma.io/)
-- **Authentication**: [Clerk](https://clerk.com/)
+- **Authentication**: [Better-Auth](https://www.better-auth.com/)
 
 ### Editor & Canvas
 
@@ -98,22 +98,22 @@ Rethink Zone is a modern, full-stack workspace application that combines the pow
 ```mermaid
 flowchart TB
     User[👤 User] -->|Browser| NextJS[Next.js App Router]
-    NextJS -->|Auth| Clerk[Clerk Authentication]
+    NextJS -->|Auth| BetterAuth[Better-Auth]
     NextJS -->|API Calls| APIRoutes[API Routes]
     APIRoutes -->|Query| Prisma[Prisma ORM]
     Prisma -->|Connect| Postgres[(PostgreSQL Database)]
-    
+
     NextJS -->|Render| BlockNote[BlockNote Editor]
     NextJS -->|Render| Excalidraw[Excalidraw Canvas]
     NextJS -->|Render| Kanban[Kanban Board]
-    
+
     BlockNote -->|Auto-save| APIRoutes
     Excalidraw -->|Auto-save| APIRoutes
     Kanban -->|Auto-save| APIRoutes
-    
+
     style User fill:#e1f5ff
     style NextJS fill:#0070f3
-    style Clerk fill:#6c47ff
+    style BetterAuth fill:#6c47ff
     style Postgres fill:#336791
     style Prisma fill:#2d3748
 ```
@@ -132,7 +132,7 @@ flowchart TB
 - **Node.js**: 18.0 or higher
 - **npm**: 9.0 or higher (or yarn/pnpm)
 - **PostgreSQL**: 12.0 or higher
-- **Clerk Account**: [Sign up](https://clerk.com/) for free
+- **Google Client ID**: For social login
 
 ### Installation
 
@@ -158,19 +158,20 @@ flowchart TB
    DATABASE_URL=postgresql://user:password@localhost:5432/rethink_zone?schema=public
 
    # Clerk Authentication
-   CLERK_SECRET_KEY=sk_test_...
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
-   ```
+   # Better-Auth
+   BETTER_AUTH_SECRET=your_secret
+   NEXT_PUBLIC_BASE_URL=http://localhost:3000
 
-   **Getting Clerk Keys:**
-   - Sign up at [clerk.com](https://clerk.com/)
-   - Create a new application
-   - Copy the API keys from the dashboard
+   # Social Login
+   GOOGLE_CLIENT_ID=your_id
+   GOOGLE_CLIENT_SECRET=your_secret
 
    **Setting up PostgreSQL:**
    - Install PostgreSQL locally or use a cloud service (Supabase, Neon, etc.)
    - Create a new database
    - Update `DATABASE_URL` with your connection string
+
+   ```
 
 4. **Run database migrations**
 
@@ -179,6 +180,7 @@ flowchart TB
    ```
 
    This will:
+
    - Generate Prisma Client
    - Create database tables
    - Set up indexes and relationships
@@ -248,7 +250,7 @@ rethink-zone/
 │   │   └── workspaces.ts
 │   ├── hooks/               # Custom React hooks
 │   ├── context/             # React context providers
-│   └── proxy.ts             # Proxy configuration
+│   └── proxy.ts             # Proxy middleware for auth & headers
 ├── generated/               # Generated files
 │   └── prisma/              # Generated Prisma Client
 ├── .gitignore
@@ -273,25 +275,25 @@ rethink-zone/
 
 ## 📜 Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server on `http://localhost:3000` |
-| `npm run build` | Create production build |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint to check code quality |
-| `npm run migrate:dev` | Generate Prisma Client and run migrations in development |
-| `npm run migrate:deploy` | Deploy migrations to production database |
-| `npm run studio` | Open Prisma Studio (database GUI) |
+| Command                  | Description                                              |
+| ------------------------ | -------------------------------------------------------- |
+| `npm run dev`            | Start development server on `http://localhost:3000`      |
+| `npm run build`          | Create production build                                  |
+| `npm run start`          | Start production server                                  |
+| `npm run lint`           | Run ESLint to check code quality                         |
+| `npm run migrate:dev`    | Generate Prisma Client and run migrations in development |
+| `npm run migrate:deploy` | Deploy migrations to production database                 |
+| `npm run studio`         | Open Prisma Studio (database GUI)                        |
 
 ## 🔐 Environment Variables
 
 ### Required Variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@localhost:5432/db` |
-| `CLERK_SECRET_KEY` | Clerk secret key for server-side auth | `sk_test_...` |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key for client-side | `pk_test_...` |
+| Variable               | Description                  | Example                                    |
+| ---------------------- | ---------------------------- | ------------------------------------------ |
+| `DATABASE_URL`         | PostgreSQL connection string | `postgresql://user:pass@localhost:5432/db` |
+| `BETTER_AUTH_SECRET`   | Better-Auth secret key       | `your_secret`                              |
+| `NEXT_PUBLIC_BASE_URL` | Base URL of the app          | `http://localhost:3000`                    |
 
 ### Optional Variables
 
@@ -304,16 +306,17 @@ rethink-zone/
 
 ```prisma
 model User {
-  id        String      @id @default(uuid())
-  clerkId   String      @unique
-  name      String
-  email     String      @unique
-  imageUrl  String
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  workspaces Workspace[]
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  workspaces    Workspace[]
 
-  @@index([clerkId])
+  @@unique([email])
+  @@map("user")
 }
 ```
 
@@ -321,17 +324,17 @@ model User {
 
 ```prisma
 model Workspace {
-  id          String    @id @default(uuid())
-  clerkId     String
-  user        User      @relation(fields: [clerkId], references: [clerkId])
-  name        String
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id])
+  name         String
   documentData Json?
-  canvasData  Json?
-  kanbanBoard Json?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  canvasData   Json?
+  kanbanBoard  Json?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  @@index([clerkId])
+  @@index([userId])
 }
 ```
 
@@ -367,7 +370,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - [Next.js](https://nextjs.org/) team for the amazing framework
-- [Clerk](https://clerk.com/) for authentication infrastructure
+- [Better-Auth](https://www.better-auth.com/) for authentication infrastructure
 - [Prisma](https://www.prisma.io/) for the excellent ORM
 - [BlockNote](https://www.blocknote.dev/) for the rich text editor
 - [Excalidraw](https://excalidraw.com/) for the canvas functionality

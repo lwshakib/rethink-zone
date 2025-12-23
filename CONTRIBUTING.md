@@ -98,9 +98,12 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
    ```
 
    Fill in your environment variables:
+
    - `DATABASE_URL`: Your PostgreSQL connection string
-   - `CLERK_SECRET_KEY`: Your Clerk secret key
-   - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`: Your Clerk publishable key
+   - `BETTER_AUTH_SECRET`: Your Better-Auth secret key
+   - `NEXT_PUBLIC_BASE_URL`: http://localhost:3000
+   - `GOOGLE_CLIENT_ID`: Your Google client ID
+   - `GOOGLE_CLIENT_SECRET`: Your Google client secret
 
 6. **Set up the database**
 
@@ -135,6 +138,7 @@ Use descriptive branch names that indicate the type of change:
 - `chore/description` - Build/tooling changes
 
 Examples:
+
 - `feature/add-dark-mode-toggle`
 - `fix/workspace-auto-save-bug`
 - `docs/update-readme-installation`
@@ -237,7 +241,7 @@ Order imports as follows:
 // ✅ Good
 import { useState } from "react";
 import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
+import { getUser } from "@/actions/user";
 
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
@@ -256,7 +260,7 @@ import type { Workspace } from "@/types/workspace";
 // ✅ Good
 export async function GET(request: Request) {
   try {
-    const user = await currentUser();
+    const user = await getUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -283,7 +287,7 @@ export async function GET(request: Request) {
 import { workspaceUpdateSchema } from "@/lib/validations/workspace";
 
 export async function PUT(request: Request) {
-  const user = await currentUser();
+  const user = await getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -369,21 +373,26 @@ test(workspace): add unit tests for workspace creation
 
 ```markdown
 ## Description
+
 Brief description of changes
 
 ## Type of Change
+
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Breaking change
 - [ ] Documentation update
 
 ## Testing
+
 How to test these changes
 
 ## Screenshots (if applicable)
+
 Add screenshots here
 
 ## Checklist
+
 - [ ] Code follows style guidelines
 - [ ] Self-review completed
 - [ ] Documentation updated
@@ -475,6 +484,7 @@ export async function updateWorkspace(
 ### README Updates
 
 When adding features, update:
+
 - Feature list in README
 - Installation instructions (if dependencies change)
 - Usage examples
@@ -491,9 +501,9 @@ If you have questions about contributing:
 ## Recognition
 
 Contributors will be:
+
 - **Listed in the README** (if desired)
 - **Mentioned in release notes** for significant contributions
 - **Thanked in the project** for their efforts
 
 Thank you for contributing to Rethink Zone! 🎉
-
