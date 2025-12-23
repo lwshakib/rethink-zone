@@ -1447,7 +1447,7 @@ const CanvasArea = () => {
         fontSize,
         index: null,
         pad,
-        boxWidth: 120,
+        boxWidth: 0,
         boxHeight: fontSize * 1.4,
       });
       setSelectedShape(null);
@@ -4102,11 +4102,20 @@ const CanvasArea = () => {
         <textarea
           autoFocus
           value={textEditor.value}
-          onChange={(e) =>
+          onChange={(e) => {
+            const val = e.target.value;
+            const measured = measureText(val, textEditor.fontSize);
             setTextEditor((prev) =>
-              prev ? { ...prev, value: e.target.value } : prev
-            )
-          }
+              prev
+                ? {
+                    ...prev,
+                    value: val,
+                    boxWidth: measured.width,
+                    boxHeight: measured.height,
+                  }
+                : prev
+            );
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
@@ -4139,21 +4148,25 @@ const CanvasArea = () => {
                 zoom +
               2
             }px`,
-            minWidth: `${40 * zoom}px`,
-            height: "auto",
+            minWidth: `${20 * zoom}px`,
+            height: `${
+              ((textEditor.boxHeight ?? textEditor.fontSize * 1.4) +
+                (textEditor.pad ?? 4 / zoom) * 2) *
+              zoom
+            }px`,
             background: "transparent",
             color: "white",
             border: "1.6px solid rgba(63,193,255,0.95)",
             outline: "none",
             borderRadius: 0,
             padding: `${(textEditor.pad ?? 4 / zoom) * zoom}px`,
-            fontSize: textEditor.fontSize,
+            fontSize: textEditor.fontSize * zoom,
             fontFamily: "sans-serif",
-            lineHeight: `${textEditor.fontSize * 1.2}px`,
+            lineHeight: `${textEditor.fontSize * 1.2 * zoom}px`,
             resize: "none",
             overflow: "hidden",
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
+            whiteSpace: "pre",
+            wordBreak: "initial",
           }}
           rows={Math.max(1, textEditor.value.split("\n").length)}
         />
@@ -4314,7 +4327,7 @@ const CanvasArea = () => {
         </button>
       </div>
 
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full bg-[#1b1b1b] px-2 py-1 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 rounded-full bg-[#1b1b1b] px-1.5 py-3 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
         {[
           { icon: Hand, label: "Hand" },
           { icon: MousePointer2, label: "Select" },
