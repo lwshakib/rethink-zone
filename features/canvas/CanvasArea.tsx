@@ -4168,11 +4168,11 @@ const CanvasArea = () => {
             key={`frame-button-${idx}`}
             className="absolute pointer-events-auto z-50"
             style={{
-              left: `${clientPos.cssX ?? clientPos.x}px`,
-              top: `${
-                (clientPos.cssY ?? clientPos.y) - 36 / Math.max(zoom, 0.0001)
-              }px`, // keep offset consistent at different zoom levels
-              transform: "translateX(-100%)", // Align to right edge
+              left: `${clientPos.x}px`,
+              top: `${clientPos.y}px`,
+              transform: `translate(-100%, -100%) scale(${zoom})`,
+              transformOrigin: "bottom right",
+              paddingBottom: "8px",
             }}
             onClick={(e) => {
               e.stopPropagation();
