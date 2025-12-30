@@ -6,7 +6,16 @@
   <h1>Rethink Zone</h1>
   
   **A premium, unified workspace that blends professional documents, an intelligent infinite canvas, and synchronized kanban boards.**
+
+  <p align="center">
+    <img src="public/dark.png" alt="Rethink Zone Dark Mode" width="800" style="border-radius: 12px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1);"/>
+  </p>
+  <p align="center">
+    <img src="public/light.png" alt="Rethink Zone Light Mode" width="800" style="border-radius: 12px; margin-top: 10px; border: 1px solid rgba(0,0,0,0.1);"/>
+  </p>
   
+  <br/>
+
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Next.js](https://img.shields.io/badge/Next.js-16.1.1-black)](https://nextjs.org/)
   [![React](https://img.shields.io/badge/React-19.2.3-blue)](https://react.dev/)
@@ -79,7 +88,25 @@ Rethink Zone is a modern, full-stack workspace application designed for product 
 
 ## 🏗 Architecture
 
-### Data Flow
+### System Flow
+```mermaid
+flowchart TD
+    User[Client Browser] --> NextApp[Next.js App Router]
+    NextApp --> Zustand[Zustand Store]
+    Zustand --> UI[React Components]
+    UI --> Canvas[Native Canvas Engine]
+    UI --> Editor[BlockNote Editor]
+    UI --> Kanban[Kanban Feature]
+    
+    Canvas --> Actions[Server Actions / API]
+    Editor --> Actions
+    Kanban --> Actions
+    
+    Actions --> Prisma[Prisma ORM]
+    Prisma --> DB[(PostgreSQL)]
+```
+
+### Data Synergy
 1. **Interaction**: User performs an action (edits a block, moves a task, draws a line).
 2. **Optimistic Update**: Zustand updates the local state immediately for zero-latency UI.
 3. **Synchronized Persistence**: Debounced calls to Next.js API routes persist changes to PostgreSQL via Prisma.
