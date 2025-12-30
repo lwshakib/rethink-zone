@@ -1,389 +1,158 @@
 # Rethink Zone
 
 <div align="center">
-  <img src="public/app.png" alt="Rethink Zone App Demo" width="800"/>
+  <img src="public/favicon_io/android-chrome-512x512.png" alt="Rethink Zone Logo" width="128"/>
   
-  **Interactive workspace builder that blends a rich text editor, Excalidraw canvas, and kanban board into a single experience.**
+  <h1>Rethink Zone</h1>
+  
+  **A premium, unified workspace that blends professional documents, an intelligent infinite canvas, and synchronized kanban boards.**
   
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  [![Next.js](https://img.shields.io/badge/Next.js-16.0.8-black)](https://nextjs.org/)
-  [![React](https://img.shields.io/badge/React-19.2.1-blue)](https://react.dev/)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
+  [![Next.js](https://img.shields.io/badge/Next.js-16.1.1-black)](https://nextjs.org/)
+  [![React](https://img.shields.io/badge/React-19.2.3-blue)](https://react.dev/)
+  [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38bdf8)](https://tailwindcss.com/)
+  [![Better-Auth](https://img.shields.io/badge/Better--Auth-1.4.7-6c47ff)](https://www.better-auth.com/)
 </div>
+
+---
 
 ## 📋 Table of Contents
 
 - [Overview](#overview)
-- [Features](#features)
+- [Key Features](#key-features)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
 - [Getting Started](#getting-started)
 - [Project Structure](#project-structure)
 - [Scripts](#scripts)
-- [Environment Variables](#environment-variables)
-- [Database Schema](#database-schema)
 - [Contributing](#contributing)
-- [Code of Conduct](#code-of-conduct)
 - [License](#license)
 
 ## 🎯 Overview
 
-Rethink Zone is a modern, full-stack workspace application that combines the power of document editing, visual canvas drawing, and project management into a unified platform. Built with Next.js 16 and React 19, it provides a seamless experience for teams to collaborate, brainstorm, and organize their work.
+Rethink Zone is a modern, full-stack workspace application designed for product teams who need to switch fluidly between structured writing, visual brainstorming, and task execution. Built with **Next.js 16**, **React 19**, and **Tailwind CSS 4**, it provides a cohesive, premium experience where your project's narrative and visuals stay in perfect sync.
 
-### Key Highlights
+### Why Rethink Zone?
 
-- **Unified Workspace**: Edit documents, draw on canvas, and manage tasks all in one place
-- **Real-time Auto-save**: Changes are automatically saved with intelligent debouncing
-- **Secure Authentication**: Powered by Better-Auth with custom proxy handling
-- **Modern UI/UX**: Built with shadcn/ui components and Tailwind CSS 4
-- **Type-safe**: Full TypeScript support with Zod validation
-- **Production-ready**: Optimized for performance and scalability
+- **Unified Flow**: No more tab-switching. Documents, canvases, and boards coexist in a single, intuitive interface.
+- **Premium Aesthetics**: Glassmorphism, modern typography, and theme-aware components provide a world-class user experience.
+- **Intelligence Built-in**: An intelligent canvas and editor that adapt to your theme and context in real-time.
+- **Reliable Persistence**: Optimized with optimistic UI updates and robust server-side synchronization via Prisma.
 
-## ✨ Features
+## ✨ Key Features
 
-### Core Features
+### 📝 Premium Document Editor
+- **Paper-like Experience**: A focused, distraction-free writing environment.
+- **Block-based Editing**: Powered by BlockNote with support for slash commands and rich media.
+- **Theme Awareness**: Intelligent dark/light mode switching for optimal readability.
 
-- **📝 Rich Text Editor**: Powered by BlockNote with slash commands, block-based editing, and markdown support
-- **🎨 Visual Canvas**: Excalidraw integration for infinite canvas drawing and diagramming
-- **📋 Kanban Board**: Custom-built kanban board with drag-and-drop functionality
-- **💾 Auto-save**: Intelligent debounced auto-save for all workspace content
-- **🔐 Authentication**: Secure user authentication and authorization via Better-Auth
-- **🌓 Theme Support**: Dark and light mode with `next-themes`
-- **📱 Responsive Design**: Fully responsive UI that works on all devices
+### 🎨 Intelligent Infinite Canvas
+- **Custom Native Engine**: Built with a high-performance native canvas engine for smooth interactions.
+- **Theme-aware Drawing**: Strokes, fills, and grids automatically adapt to your workspace theme.
+- **Rich Elements**: Integrated support for connectors, sticky notes, icons, and cloud architecture components.
 
-### User Experience
+### 📋 Synchronized Kanban Board
+- **Integrated Lifecycle**: Move tasks from backlog to done without leaving your project context.
+- **Premium UI**: Fully themed task cards with priority tracking and ETA management.
+- **Drag-and-Drop**: Smooth, intuitive task organization.
 
-- **Landing Page**: Marketing hero section with feature highlights and call-to-action
-- **Workspace Management**: Create, edit, and delete workspaces with ease
-- **Tabbed Interface**: Switch between combined view, document-only, canvas-only, and kanban views
-- **User Profile**: Integrated user profile management
-- **Optimistic UI**: Smooth interactions with optimistic updates
+### 🔐 Robust Infrastructure
+- **Secure Auth**: Powered by Better-Auth with secure session management.
+- **Optimistic Persistence**: Real-time autosave with conflict resolution.
+- **Split-View Mode**: Simultaneous document and canvas viewing for maximum productivity.
 
 ## 🛠 Tech Stack
 
 ### Frontend
-
-- **Framework**: [Next.js 16.0.8](https://nextjs.org/) (App Router)
-- **UI Library**: [React 19.2.1](https://react.dev/)
-- **Language**: [TypeScript 5.0](https://www.typescriptlang.org/)
+- **Framework**: [Next.js 16.1.1](https://nextjs.org/) (App Router)
+- **UI Library**: [React 19.2.3](https://react.dev/)
 - **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
-- **UI Components**: [shadcn/ui](https://ui.shadcn.com/) + [Radix UI](https://www.radix-ui.com/)
-- **Icons**: [Lucide React](https://lucide.dev/)
-- **Animations**: [Framer Motion](https://www.framer.com/motion/)
-- **Forms**: [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/)
+- **Components**: [shadcn/ui](https://ui.shadcn.com/) + [Radix UI](https://www.radix-ui.com/)
+- **State Management**: [Zustand 5.0.9](https://zustand-demo.pmnd.rs/)
+- **Animations**: [Motion 12.2](https://www.framer.com/motion/)
 
 ### Backend
-
-- **API**: Next.js API Routes
+- **ORM**: [Prisma 7.2.0](https://www.prisma.io/)
 - **Database**: [PostgreSQL](https://www.postgresql.org/)
-- **ORM**: [Prisma 7.1.0](https://www.prisma.io/)
-- **Authentication**: [Better-Auth](https://www.better-auth.com/)
-
-### Editor & Canvas
-
-- **Rich Text**: [BlockNote](https://www.blocknote.dev/) - Block-based editor
-- **Canvas**: [Excalidraw](https://excalidraw.com/) - Vector drawing tool
-- **Kanban**: Custom implementation with drag-and-drop
-
-### Development Tools
-
-- **Linting**: ESLint with Next.js config
-- **Package Manager**: npm
-- **Build Tool**: Next.js built-in bundler
+- **Auth**: [Better-Auth 1.4.7](https://www.better-auth.com/)
+- **Server Actions**: Native Next.js server actions for secure data mutations.
 
 ## 🏗 Architecture
 
-### High-Level Architecture
-
-```mermaid
-flowchart TB
-    User[👤 User] -->|Browser| NextJS[Next.js App Router]
-    NextJS -->|Auth| BetterAuth[Better-Auth]
-    NextJS -->|API Calls| APIRoutes[API Routes]
-    APIRoutes -->|Query| Prisma[Prisma ORM]
-    Prisma -->|Connect| Postgres[(PostgreSQL Database)]
-
-    NextJS -->|Render| BlockNote[BlockNote Editor]
-    NextJS -->|Render| Excalidraw[Excalidraw Canvas]
-    NextJS -->|Render| Kanban[Kanban Board]
-
-    BlockNote -->|Auto-save| APIRoutes
-    Excalidraw -->|Auto-save| APIRoutes
-    Kanban -->|Auto-save| APIRoutes
-
-    style User fill:#e1f5ff
-    style NextJS fill:#0070f3
-    style BetterAuth fill:#6c47ff
-    style Postgres fill:#336791
-    style Prisma fill:#2d3748
-```
-
 ### Data Flow
-
-1. **Authentication**: User signs in via Clerk → Clerk validates → User session created
-2. **Workspace Access**: User requests workspace → API validates ownership → Data fetched from Postgres
-3. **Content Editing**: User edits content → Debounced auto-save → API updates database
-4. **Data Persistence**: All changes saved to PostgreSQL via Prisma ORM
+1. **Interaction**: User performs an action (edits a block, moves a task, draws a line).
+2. **Optimistic Update**: Zustand updates the local state immediately for zero-latency UI.
+3. **Synchronized Persistence**: Debounced calls to Next.js API routes persist changes to PostgreSQL via Prisma.
+4. **Theme Management**: `next-themes` coordinates CSS variables across native Canvas drawings and React components.
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-
 - **Node.js**: 18.0 or higher
-- **npm**: 9.0 or higher (or yarn/pnpm)
-- **PostgreSQL**: 12.0 or higher
-- **Google Client ID**: For social login
+- **Bun** (Recommended) or npm
+- **PostgreSQL**: Local instance or managed service (Supabase, Neon)
 
 ### Installation
 
 1. **Clone the repository**
-
    ```bash
    git clone https://github.com/lwshakib/rethink-zone.git
    cd rethink-zone
    ```
 
 2. **Install dependencies**
-
    ```bash
    npm install
+   # or
+   bun install
    ```
 
-3. **Set up environment variables**
-
-   Create a `.env.local` file in the root directory:
-
+3. **Environment Setup**
+   Create a `.env` file:
    ```env
-   # Database
-   DATABASE_URL=postgresql://user:password@localhost:5432/rethink_zone?schema=public
-
-   # Clerk Authentication
-   # Better-Auth
-   BETTER_AUTH_SECRET=your_secret
-   NEXT_PUBLIC_BASE_URL=http://localhost:3000
-
-   # Social Login
-   GOOGLE_CLIENT_ID=your_id
-   GOOGLE_CLIENT_SECRET=your_secret
-
-   **Setting up PostgreSQL:**
-   - Install PostgreSQL locally or use a cloud service (Supabase, Neon, etc.)
-   - Create a new database
-   - Update `DATABASE_URL` with your connection string
-
+   DATABASE_URL="postgresql://user:password@localhost:5432/rethink"
+   BETTER_AUTH_SECRET="your-secret-here"
+   NEXT_PUBLIC_BASE_URL="http://localhost:3000"
    ```
 
-4. **Run database migrations**
-
+4. **Initialize Database**
    ```bash
-   npm run migrate:dev
+   npm run db:migrate
    ```
 
-   This will:
-
-   - Generate Prisma Client
-   - Create database tables
-   - Set up indexes and relationships
-
-5. **Start the development server**
-
+5. **Start Developing**
    ```bash
    npm run dev
    ```
-
-6. **Open your browser**
-
-   Navigate to [http://localhost:3000](http://localhost:3000)
-
-   - Landing page: `http://localhost:3000`
-   - Sign in: `http://localhost:3000/sign-in`
-   - Sign up: `http://localhost:3000/sign-up`
-   - Workspaces: `http://localhost:3000/workspaces` (requires authentication)
 
 ## 📁 Project Structure
 
 ```
 rethink-zone/
-├── prisma/
-│   ├── migrations/          # Database migration files
-│   └── schema.prisma        # Prisma schema definition
-├── public/
-│   ├── app.png              # App demo screenshot
-│   ├── logo.svg             # Application logo
-│   └── favicon_io/          # Favicon assets
-├── src/
-│   ├── app/                 # Next.js App Router
-│   │   ├── (auth)/          # Authentication routes
-│   │   │   ├── sign-in/     # Sign in page
-│   │   │   └── sign-up/     # Sign up page
-│   │   ├── (main)/          # Main application routes
-│   │   │   └── workspaces/  # Workspace pages
-│   │   │       ├── page.tsx              # Workspace list
-│   │   │       └── [workspaceId]/        # Workspace detail
-│   │   │           ├── page.tsx          # Workspace view
-│   │   │           └── _components/      # Workspace components
-│   │   │               ├── BothTab.tsx   # Combined view
-│   │   │               ├── DocumentTab.tsx
-│   │   │               ├── CanvasTab.tsx
-│   │   │               └── KanbanTab.tsx
-│   │   ├── api/             # API routes
-│   │   │   └── workspaces/  # Workspace API endpoints
-│   │   ├── globals.css      # Global styles
-│   │   ├── layout.tsx       # Root layout
-│   │   └── page.tsx         # Landing page
-│   ├── components/          # React components
-│   │   ├── ui/              # shadcn/ui components
-│   │   ├── editor/          # Editor components
-│   │   │   ├── DynamicEditor.tsx
-│   │   │   ├── editor.tsx
-│   │   │   └── ExcaliDraw.tsx
-│   │   ├── hero-section.tsx # Landing page hero
-│   │   ├── footer-section.tsx
-│   │   ├── header.tsx
-│   │   └── ...
-│   ├── lib/                 # Utility functions
-│   │   ├── prisma.ts        # Prisma client instance
-│   │   ├── utils.ts         # Helper functions
-│   │   └── validations/     # Zod schemas
-│   ├── actions/             # Server actions
-│   │   ├── user.ts
-│   │   └── workspaces.ts
-│   ├── hooks/               # Custom React hooks
-│   ├── context/             # React context providers
-│   └── proxy.ts             # Proxy middleware for auth & headers
-├── generated/               # Generated files
-│   └── prisma/              # Generated Prisma Client
-├── .gitignore
-├── components.json          # shadcn/ui configuration
-├── eslint.config.mjs        # ESLint configuration
-├── next.config.ts           # Next.js configuration
-├── package.json
-├── postcss.config.mjs       # PostCSS configuration
-├── prisma.config.ts         # Prisma configuration
-├── tsconfig.json            # TypeScript configuration
-└── README.md
+├── app/                  # Next.js App Router (Routes & API)
+├── components/           # Reusable UI & Core Layout Components
+├── features/             # Feature-specific logic (Canvas, Document, Kanban)
+├── actions/              # Server-side actions
+├── context/              # Global state management (Zustand)
+├── lib/                  # Shared utilities and configurations
+├── prisma/               # Database schema and migrations
+├── public/               # Static assets
+└── validations/          # Zod schemas for data integrity
 ```
-
-### Key Directories Explained
-
-- **`src/app`**: Next.js App Router directory containing routes, layouts, and API endpoints
-- **`src/components`**: Reusable React components including UI primitives and feature-specific components
-- **`src/lib`**: Shared utilities, database client, and validation schemas
-- **`src/actions`**: Server actions for data mutations
-- **`prisma`**: Database schema and migrations
-- **`public`**: Static assets served by Next.js
 
 ## 📜 Scripts
 
-| Command                  | Description                                              |
-| ------------------------ | -------------------------------------------------------- |
-| `npm run dev`            | Start development server on `http://localhost:3000`      |
-| `npm run build`          | Create production build                                  |
-| `npm run start`          | Start production server                                  |
-| `npm run lint`           | Run ESLint to check code quality                         |
-| `npm run migrate:dev`    | Generate Prisma Client and run migrations in development |
-| `npm run migrate:deploy` | Deploy migrations to production database                 |
-| `npm run studio`         | Open Prisma Studio (database GUI)                        |
-
-## 🔐 Environment Variables
-
-### Required Variables
-
-| Variable               | Description                  | Example                                    |
-| ---------------------- | ---------------------------- | ------------------------------------------ |
-| `DATABASE_URL`         | PostgreSQL connection string | `postgresql://user:pass@localhost:5432/db` |
-| `BETTER_AUTH_SECRET`   | Better-Auth secret key       | `your_secret`                              |
-| `NEXT_PUBLIC_BASE_URL` | Base URL of the app          | `http://localhost:3000`                    |
-
-### Optional Variables
-
-- `NODE_ENV`: Environment mode (`development`, `production`, `test`)
-- `PORT`: Server port (default: 3000)
-
-## 🗄 Database Schema
-
-### User Model
-
-```prisma
-model User {
-  id            String    @id
-  name          String
-  email         String
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  workspaces    Workspace[]
-
-  @@unique([email])
-  @@map("user")
-}
-```
-
-### Workspace Model
-
-```prisma
-model Workspace {
-  id           String    @id @default(uuid())
-  userId       String
-  user         User      @relation(fields: [userId], references: [id])
-  name         String
-  documentData Json?
-  canvasData   Json?
-  kanbanBoard  Json?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  @@index([userId])
-}
-```
-
-### Relationships
-
-- **User → Workspace**: One-to-many (one user can have many workspaces)
-- **Workspace → User**: Many-to-one (each workspace belongs to one user)
+| Command | Description |
+| :--- | :--- |
+| `npm run dev` | Starts the development server |
+| `npm run build` | Builds the application for production |
+| `npm run db:migrate` | Runs migrations and generates Prisma client |
+| `npm run db:studio` | Opens the Prisma database GUI |
+| `npm run lint` | Runs ESLint for code quality checks |
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
-
-- How to set up your development environment
-- Our coding standards and conventions
-- How to submit pull requests
-- Our issue reporting guidelines
-
-## 📜 Code of Conduct
-
-This project adheres to a Code of Conduct that all contributors are expected to follow. Please read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before participating.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👤 Author
-
-**Shakib Khan**
-
-- GitHub: [@lwshakib](https://github.com/lwshakib)
-- Project: [Rethink Zone](https://github.com/lwshakib/rethink-zone)
-
-## 🙏 Acknowledgments
-
-- [Next.js](https://nextjs.org/) team for the amazing framework
-- [Better-Auth](https://www.better-auth.com/) for authentication infrastructure
-- [Prisma](https://www.prisma.io/) for the excellent ORM
-- [BlockNote](https://www.blocknote.dev/) for the rich text editor
-- [Excalidraw](https://excalidraw.com/) for the canvas functionality
-- [shadcn](https://ui.shadcn.com/) for the beautiful UI components
-- All contributors and users of this project
-
-## 📞 Support
-
-If you encounter any issues or have questions:
-
-1. Check existing [Issues](https://github.com/lwshakib/rethink-zone/issues)
-2. Create a new issue with detailed information
-3. Review the documentation above
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for detailed instructions on how to get involved.
 
 ---
 

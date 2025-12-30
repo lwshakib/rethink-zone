@@ -76,12 +76,13 @@ const defaultBoard: KanbanColumn[] = [
 ];
 
 export default function KanbanArea({
-  board = defaultBoard,
+  board,
   onChange,
 }: KanbanAreaProps) {
+  const safeBoard = board || defaultBoard;
   const initialState = useMemo<KanbanState[]>(
     () =>
-      board.map((col, colIdx) => ({
+      safeBoard.map((col, colIdx) => ({
         title: col.title,
         items: (col.items || []).map((item: any, itemIdx: number) => {
           const text =
@@ -385,7 +386,7 @@ export default function KanbanArea({
                   >
                     <div className="space-y-3">
                       <div className="flex justify-between items-start gap-2">
-                        <span className="font-semibold text-sm text-white leading-tight">
+                        <span className="font-semibold text-sm text-foreground leading-tight">
                           {item.text}
                         </span>
                         <div
@@ -399,16 +400,16 @@ export default function KanbanArea({
                       </div>
 
                       {item.description && (
-                        <p className="text-xs text-white/40 line-clamp-2 leading-relaxed">
+                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
                           {item.description}
                         </p>
                       )}
 
                       <div className="flex flex-wrap gap-2 pt-1">
-                        <span className="rounded-lg bg-white/5 px-2 py-1 text-[10px] font-medium text-white/60">
+                        <span className="rounded-lg bg-accent/50 px-2 py-1 text-[10px] font-medium text-muted-foreground border border-border/50">
                           {item.status}
                         </span>
-                        <span className="rounded-lg bg-white/5 px-2 py-1 text-[10px] font-medium text-white/60">
+                        <span className="rounded-lg bg-accent/50 px-2 py-1 text-[10px] font-medium text-muted-foreground border border-border/50">
                           {item.eta}
                         </span>
                       </div>
@@ -419,7 +420,7 @@ export default function KanbanArea({
                 <button
                   type="button"
                   onClick={() => openNewItemModal(colIdx)}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 py-3 text-xs font-semibold text-white/30 hover:border-white/30 hover:text-white/70 hover:bg-white/5 transition-all"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-xs font-bold text-muted-foreground/60 hover:border-primary/40 hover:text-foreground hover:bg-accent/20 transition-all active:scale-[0.98]"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -428,7 +429,7 @@ export default function KanbanArea({
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="2.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
@@ -445,14 +446,14 @@ export default function KanbanArea({
 
       {/* Dialogs */}
       <Dialog open={createBoardOpen} onOpenChange={setCreateBoardOpen}>
-        <DialogContent className="bg-[#0b0b11] border-white/10 text-white max-w-sm rounded-2xl">
+        <DialogContent className="bg-card border-border text-foreground max-w-sm rounded-2xl shadow-2xl backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">New Column</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label
-                className="text-[10px] font-bold uppercase tracking-wider text-white/40"
+                className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
                 htmlFor="board-title"
               >
                 Column Name
@@ -466,7 +467,7 @@ export default function KanbanArea({
                   if (e.key === "Enter") createBoard();
                   if (e.key === "Escape") setCreateBoardOpen(false);
                 }}
-                className="w-full rounded-xl border border-white/10 bg-[#0f0f16] px-4 py-3 text-sm text-white outline-none transition-all focus:border-white/30"
+                className="w-full rounded-xl border border-border bg-accent/30 px-4 py-3 text-sm text-foreground outline-none transition-all focus:ring-1 focus:ring-primary/20 placeholder:text-muted-foreground/40"
                 placeholder="e.g. Backlog"
               />
             </div>
@@ -475,14 +476,14 @@ export default function KanbanArea({
             <button
               type="button"
               onClick={() => setCreateBoardOpen(false)}
-              className="flex-1 rounded-xl border border-white/10 px-4 py-2.5 text-xs font-bold text-white/50 hover:text-white hover:bg-white/5 transition-all"
+              className="flex-1 rounded-xl border border-border px-4 py-2.5 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-accent transition-all active:scale-[0.98]"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={createBoard}
-              className="flex-1 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-black hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="flex-1 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground hover:bg-primary/90 shadow-lg active:scale-[0.98] transition-all"
             >
               Create
             </button>
@@ -494,14 +495,14 @@ export default function KanbanArea({
         open={!!newItemModal}
         onOpenChange={(open) => !open && cancelNewItem()}
       >
-        <DialogContent className="bg-[#0b0b11] border-white/10 text-white max-w-md rounded-2xl">
+        <DialogContent className="bg-card border-border text-foreground max-w-md rounded-2xl shadow-2xl backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Add Task</DialogTitle>
           </DialogHeader>
           <div className="space-y-5 py-4">
             <div className="space-y-2">
               <label
-                className="text-[10px] font-bold uppercase tracking-wider text-white/40"
+                className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
                 htmlFor="new-item-title"
               >
                 Title
@@ -515,13 +516,13 @@ export default function KanbanArea({
                     prev ? { ...prev, text: e.target.value } : prev
                   )
                 }
-                className="w-full rounded-xl border border-white/10 bg-[#0f0f16] px-4 py-3 text-sm text-white outline-none focus:border-white/30 transition-all"
+                className="w-full rounded-xl border border-border bg-accent/30 px-4 py-3 text-sm text-foreground outline-none focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/40"
                 placeholder="Task title"
               />
             </div>
             <div className="space-y-2">
               <label
-                className="text-[10px] font-bold uppercase tracking-wider text-white/40"
+                className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
                 htmlFor="new-item-description"
               >
                 Description
@@ -534,14 +535,14 @@ export default function KanbanArea({
                     prev ? { ...prev, description: e.target.value } : prev
                   )
                 }
-                className="w-full rounded-xl border border-white/10 bg-[#0f0f16] px-4 py-3 text-sm text-white outline-none focus:border-white/30 transition-all resize-none"
+                className="w-full rounded-xl border border-border bg-accent/30 px-4 py-3 text-sm text-foreground outline-none focus:ring-1 focus:ring-primary/20 transition-all resize-none placeholder:text-muted-foreground/40"
                 placeholder="What needs to be done?"
                 rows={3}
               />
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   Status
                 </label>
                 <Select
@@ -552,15 +553,15 @@ export default function KanbanArea({
                     )
                   }
                 >
-                  <SelectTrigger className="w-full rounded-xl border-white/10 bg-[#0f0f16] text-sm text-white focus:ring-0">
+                  <SelectTrigger className="w-full h-11 rounded-xl border-border bg-accent/30 text-sm text-foreground focus:ring-1 focus:ring-primary/20">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#0f0f16] border-white/10 text-white rounded-xl">
+                  <SelectContent className="bg-card border-border text-foreground rounded-xl shadow-xl">
                     {statusOptions.map((s) => (
                       <SelectItem
                         key={s}
                         value={s}
-                        className="focus:bg-white/10 focus:text-white rounded-lg"
+                        className="focus:bg-accent focus:text-foreground rounded-lg"
                       >
                         {s}
                       </SelectItem>
@@ -569,7 +570,7 @@ export default function KanbanArea({
                 </Select>
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   Priority
                 </label>
                 <Select
@@ -580,15 +581,15 @@ export default function KanbanArea({
                     )
                   }
                 >
-                  <SelectTrigger className="w-full rounded-xl border-white/10 bg-[#0f0f16] text-sm text-white focus:ring-0">
+                  <SelectTrigger className="w-full h-11 rounded-xl border-border bg-accent/30 text-sm text-foreground focus:ring-1 focus:ring-primary/20">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#0f0f16] border-white/10 text-white rounded-xl">
+                  <SelectContent className="bg-card border-border text-foreground rounded-xl shadow-xl">
                     {priorityOptions.map((p) => (
                       <SelectItem
                         key={p}
                         value={p}
-                        className="focus:bg-white/10 focus:text-white rounded-lg"
+                        className="focus:bg-accent focus:text-foreground rounded-lg"
                       >
                         {p}
                       </SelectItem>
@@ -597,7 +598,7 @@ export default function KanbanArea({
                 </Select>
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   ETA
                 </label>
                 <Select
@@ -608,15 +609,15 @@ export default function KanbanArea({
                     )
                   }
                 >
-                  <SelectTrigger className="w-full rounded-xl border-white/10 bg-[#0f0f16] text-sm text-white focus:ring-0">
+                  <SelectTrigger className="w-full h-11 rounded-xl border-border bg-accent/30 text-sm text-foreground focus:ring-1 focus:ring-primary/20">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#0f0f16] border-white/10 text-white rounded-xl">
+                  <SelectContent className="bg-card border-border text-foreground rounded-xl shadow-xl">
                     {etaOptions.map((eOpt) => (
                       <SelectItem
                         key={eOpt}
                         value={eOpt}
-                        className="focus:bg-white/10 focus:text-white rounded-lg"
+                        className="focus:bg-accent focus:text-foreground rounded-lg"
                       >
                         {eOpt}
                       </SelectItem>
@@ -630,14 +631,14 @@ export default function KanbanArea({
             <button
               type="button"
               onClick={cancelNewItem}
-              className="flex-1 rounded-xl border border-white/10 px-4 py-2.5 text-xs font-bold text-white/50 hover:text-white hover:bg-white/5 transition-all"
+              className="flex-1 rounded-xl border border-border px-4 py-2.5 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-accent transition-all active:scale-[0.98]"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={createItem}
-              className="flex-1 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-black hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="flex-1 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground hover:bg-primary/90 shadow-lg active:scale-[0.98] transition-all"
             >
               Create Task
             </button>
@@ -649,14 +650,14 @@ export default function KanbanArea({
         open={!!editingModal}
         onOpenChange={(open) => !open && cancelEdit()}
       >
-        <DialogContent className="bg-[#0b0b11] border-white/10 text-white max-w-md rounded-2xl">
+        <DialogContent className="bg-card border-border text-foreground max-w-md rounded-2xl shadow-2xl backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Edit Task</DialogTitle>
           </DialogHeader>
           <div className="space-y-5 py-4">
             <div className="space-y-2">
               <label
-                className="text-[10px] font-bold uppercase tracking-wider text-white/40"
+                className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
                 htmlFor="edit-title"
               >
                 Title
@@ -670,13 +671,13 @@ export default function KanbanArea({
                     prev ? { ...prev, value: e.target.value } : prev
                   )
                 }
-                className="w-full rounded-xl border border-white/10 bg-[#0f0f16] px-4 py-3 text-sm text-white outline-none focus:border-white/30 transition-all"
+                className="w-full rounded-xl border border-border bg-accent/30 px-4 py-3 text-sm text-foreground outline-none focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/40"
                 placeholder="Update task title"
               />
             </div>
             <div className="space-y-2">
               <label
-                className="text-[10px] font-bold uppercase tracking-wider text-white/40"
+                className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
                 htmlFor="edit-description"
               >
                 Description
@@ -689,14 +690,14 @@ export default function KanbanArea({
                     prev ? { ...prev, description: e.target.value } : prev
                   )
                 }
-                className="w-full rounded-xl border border-white/10 bg-[#0f0f16] px-4 py-3 text-sm text-white outline-none focus:border-white/30 transition-all resize-none"
+                className="w-full rounded-xl border border-border bg-accent/30 px-4 py-3 text-sm text-foreground outline-none focus:ring-1 focus:ring-primary/20 transition-all resize-none placeholder:text-muted-foreground/40"
                 placeholder="Add more details"
                 rows={3}
               />
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   Status
                 </label>
                 <Select
@@ -707,15 +708,15 @@ export default function KanbanArea({
                     )
                   }
                 >
-                  <SelectTrigger className="w-full rounded-xl border-white/10 bg-[#0f0f16] text-sm text-white focus:ring-0">
+                  <SelectTrigger className="w-full h-11 rounded-xl border-border bg-accent/30 text-sm text-foreground focus:ring-1 focus:ring-primary/20">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#0f0f16] border-white/10 text-white rounded-xl">
+                  <SelectContent className="bg-card border-border text-foreground rounded-xl shadow-xl">
                     {statusOptions.map((s) => (
                       <SelectItem
                         key={s}
                         value={s}
-                        className="focus:bg-white/10 focus:text-white rounded-lg"
+                        className="focus:bg-accent focus:text-foreground rounded-lg"
                       >
                         {s}
                       </SelectItem>
@@ -724,7 +725,7 @@ export default function KanbanArea({
                 </Select>
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   Priority
                 </label>
                 <Select
@@ -735,15 +736,15 @@ export default function KanbanArea({
                     )
                   }
                 >
-                  <SelectTrigger className="w-full rounded-xl border-white/10 bg-[#0f0f16] text-sm text-white focus:ring-0">
+                  <SelectTrigger className="w-full h-11 rounded-xl border-border bg-accent/30 text-sm text-foreground focus:ring-1 focus:ring-primary/20">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#0f0f16] border-white/10 text-white rounded-xl">
+                  <SelectContent className="bg-card border-border text-foreground rounded-xl shadow-xl">
                     {priorityOptions.map((p) => (
                       <SelectItem
                         key={p}
                         value={p}
-                        className="focus:bg-white/10 focus:text-white rounded-lg"
+                        className="focus:bg-accent focus:text-foreground rounded-lg"
                       >
                         {p}
                       </SelectItem>
@@ -752,7 +753,7 @@ export default function KanbanArea({
                 </Select>
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-white/40">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   ETA
                 </label>
                 <Select
@@ -763,15 +764,15 @@ export default function KanbanArea({
                     )
                   }
                 >
-                  <SelectTrigger className="w-full rounded-xl border-white/10 bg-[#0f0f16] text-sm text-white focus:ring-0">
+                  <SelectTrigger className="w-full h-11 rounded-xl border-border bg-accent/30 text-sm text-foreground focus:ring-1 focus:ring-primary/20">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#0f0f16] border-white/10 text-white rounded-xl">
+                  <SelectContent className="bg-card border-border text-foreground rounded-xl shadow-xl">
                     {etaOptions.map((eOpt) => (
                       <SelectItem
                         key={eOpt}
                         value={eOpt}
-                        className="focus:bg-white/10 focus:text-white rounded-lg"
+                        className="focus:bg-accent focus:text-foreground rounded-lg"
                       >
                         {eOpt}
                       </SelectItem>
@@ -785,14 +786,14 @@ export default function KanbanArea({
             <button
               type="button"
               onClick={cancelEdit}
-              className="flex-1 rounded-xl border border-white/10 px-4 py-2.5 text-xs font-bold text-white/50 hover:text-white hover:bg-white/5 transition-all"
+              className="flex-1 rounded-xl border border-border px-4 py-2.5 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-accent transition-all active:scale-[0.98]"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={commitEdit}
-              className="flex-1 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-black hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="flex-1 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground hover:bg-primary/90 shadow-lg active:scale-[0.98] transition-all"
             >
               Save Changes
             </button>
@@ -809,11 +810,11 @@ export default function KanbanArea({
           background: transparent;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
+          background: var(--border);
           border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.2);
+          background: var(--accent);
         }
       `}</style>
     </div>

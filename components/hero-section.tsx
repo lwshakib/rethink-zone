@@ -44,31 +44,31 @@ const featureCards = [
   {
     title: "Move ideas to delivery",
     description:
-      "Track work with the built-in kanban board so brainstorms become shipped tasks.",
+      "Track work with a fully theme-aware kanban board that turns brainstorms into shipped tasks.",
     icon: Kanban,
   },
   {
-    title: "Rich writing experience",
+    title: "Premium writing experience",
     description:
-      "Slash commands, block-based editing, and autosave keep notes fast and dependable.",
+      "A focused, paper-like editor with slash commands and theme-aware styling for professional clarity.",
     icon: FilePenLine,
   },
   {
-    title: "Secure by default",
+    title: "Intelligent Canvas",
     description:
-      "Authentication, protected routes, and database-backed workspaces out of the box.",
+      "A dynamic whiteboard that automatically adapts its colors and grid to your workspace theme.",
     icon: ShieldCheck,
   },
   {
     title: "Realtime-ready UX",
     description:
-      "Smooth motion, optimistic UI, and saved state so teams stay in flow.",
+      "Smooth motion, optimistic UI, and saved state so your focus remains on the work.",
     icon: Sparkles,
   },
   {
-    title: "Visual collaboration",
+    title: "Visual architecture",
     description:
-      "Drop diagrams, stickies, and arrows to map flows before you commit to code.",
+      "Drop diagrams, connectors, and icons to map complex flows with precision.",
     icon: ArrowRight,
   },
 ];
@@ -126,9 +126,9 @@ export default function HeroSection() {
                   preset="fade-in-blur"
                   speedSegment={0.3}
                   as="h1"
-                  className="mt-6 max-w-3xl text-balance text-5xl font-semibold md:text-6xl lg:mt-10"
+                  className="mt-6 max-w-3xl text-balance text-5xl font-semibold tracking-tight md:text-6xl lg:mt-10"
                 >
-                  Rethink the way you write, sketch, and ship in one workspace.
+                  Rethink the way you write, sketch, and ship in one place.
                 </TextEffect>
                 <TextEffect
                   per="line"
@@ -136,11 +136,11 @@ export default function HeroSection() {
                   speedSegment={0.3}
                   delay={0.5}
                   as="p"
-                  className="mt-6 max-w-2xl text-pretty text-lg text-muted-foreground"
+                  className="mt-6 max-w-2xl text-pretty text-lg text-muted-foreground leading-relaxed"
                 >
-                  Rethink Zone combines rich documents, an infinite canvas, and
-                  a kanban board so product teams can capture ideas, align
-                  decisions, and move work forward without losing context.
+                  Rethink Zone combines premium document editing, an intelligent
+                  infinite canvas, and a synchronized kanban board so product teams
+                  can align decisions and ship work without losing context.
                 </TextEffect>
 
                 <AnimatedGroup
@@ -196,7 +196,7 @@ export default function HeroSection() {
                       className="size-2 rounded-full bg-sky-500"
                       aria-hidden
                     />
-                    Split view: document + canvas + kanban
+                    Document + Canvas + Kanban
                   </div>
                 </div>
               </div>
@@ -218,14 +218,14 @@ export default function HeroSection() {
                 <div className="inset-shadow-2xs ring-background dark:inset-shadow-white/20 bg-background relative mx-auto max-w-5xl overflow-hidden rounded-3xl border p-4 shadow-lg shadow-zinc-950/15 ring-1">
                   <Image
                     className="bg-background aspect-15/8 relative hidden rounded-2xl dark:block"
-                    src="/app.png"
+                    src="/dark.png"
                     alt="app screen"
                     width="2700"
                     height="1440"
                   />
                   <Image
                     className="z-2 border-border/25 aspect-15/8 relative rounded-2xl border dark:hidden"
-                    src="/app.png"
+                    src="/light.png"
                     alt="app screen"
                     width="2700"
                     height="1440"
@@ -243,8 +243,7 @@ export default function HeroSection() {
                   Why teams pick Rethink Zone
                 </p>
                 <p className="text-muted-foreground mt-1 text-sm">
-                  Purpose-built for the document, canvas, and kanban flow
-                  already in the app.
+                  A unified experience where docs, canvas, and kanban share the same DNA.
                 </p>
               </div>
               <Link
@@ -285,9 +284,8 @@ export default function HeroSection() {
             <div className="grid gap-8 rounded-3xl border bg-gradient-to-br from-foreground/[0.03] via-transparent to-foreground/[0.04] p-8 md:grid-cols-[1.2fr_1fr] md:p-10">
               <div className="space-y-4">
                 <p className="text-sm font-semibold text-foreground/80">Flow</p>
-                <h3 className="text-3xl font-semibold leading-tight">
-                  Capture ideas, design collaboratively, and organize delivery
-                  without leaving your workspace.
+                <h3 className="text-3xl font-semibold leading-tight tracking-tight">
+                  Capture ideas, design collaboratively, and organize delivery.
                 </h3>
                 <p className="text-muted-foreground text-base">
                   The landing page now mirrors the core product: documents for
@@ -336,24 +334,20 @@ export default function HeroSection() {
                 </p>
                 <ul className="space-y-3 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
-                    <span className="mt-1 size-1.5 rounded-full bg-emerald-500" />
-                    Split tab that shows document and canvas simultaneously so
-                    decisions stay connected.
+                    <span className="mt-1-5 size-1.5 rounded-full bg-emerald-500 shrink-0" />
+                    Dedicated Document workspace with a premium paper-like layout for focused writing.
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="mt-1 size-1.5 rounded-full bg-sky-500" />
-                    Kanban that saves automatically as your boards change,
-                    matching the in-app experience.
+                    <span className="mt-1-5 size-1.5 rounded-full bg-sky-500 shrink-0" />
+                    Intelligent Canvas that supports theme-aware drawing, sticky notes, and icons.
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="mt-1 size-1.5 rounded-full bg-indigo-500" />
-                    Authenticated entry points (`/sign-in`, `/sign-up`) routing
-                    directly into `/workspaces`.
+                    <span className="mt-1-5 size-1.5 rounded-full bg-indigo-500 shrink-0" />
+                    Synchronized Kanban that automatically persists status across your team.
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="mt-1 size-1.5 rounded-full bg-amber-500" />
-                    Motion-powered hero with preview screens that align with the
-                    product UI.
+                    <span className="mt-1-5 size-1.5 rounded-full bg-amber-500 shrink-0" />
+                    Split view mode to keep your project narrative tied directly to its visual flows.
                   </li>
                 </ul>
                 <Button asChild size="lg" className="mt-auto rounded-xl">
@@ -369,11 +363,10 @@ export default function HeroSection() {
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-foreground/80">
-                  Workspace views
+                  Adaptive workspace
                 </p>
                 <p className="text-muted-foreground mt-1 text-sm">
-                  Every view in the product has a landing-page twin so visitors
-                  know what they get.
+                  Seamlessly toggle between specialized views while your data stays in sync.
                 </p>
               </div>
               <Button
@@ -389,24 +382,24 @@ export default function HeroSection() {
             <div className="mt-10 grid gap-6 md:grid-cols-2">
               {[
                 {
-                  title: "Document view",
-                  body: "Write specs, decisions, and meeting notes with slash commands and autosave.",
+                  title: "Document View",
+                  body: "Focused, professional writing experience with block-based editing and themed clarity.",
                   icon: FilePenLine,
                 },
                 {
-                  title: "Canvas view",
-                  body: "Sketch flows, add stickies, and align on architecture before you commit.",
+                  title: "Canvas View",
+                  body: "Intelligent whiteboarding that adapts to your theme for sketches, flows, and diagrams.",
                   icon: LayoutPanelLeft,
                 },
                 {
-                  title: "Split view",
-                  body: "See document and canvas side-by-side so narrative and visuals stay connected.",
-                  icon: Sparkles,
+                  title: "Kanban Board",
+                  body: "Full task management lifecycle from backlog to done, fully theme-aware and responsive.",
+                  icon: Kanban,
                 },
                 {
-                  title: "Kanban board",
-                  body: "Move work from backlog to done without leaving context, just like in-app.",
-                  icon: Kanban,
+                  title: "Cloud Persistence",
+                  body: "Autosave ensures your work is always safe, persisting every change in real-time.",
+                  icon: Zap,
                 },
               ].map((card) => (
                 <div
@@ -444,24 +437,20 @@ export default function HeroSection() {
                 </h3>
                 <ul className="space-y-3 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="mt-0.5 size-4 text-emerald-500" />
-                    Clerk authentication and protected routes keep workspaces
-                    private by default.
+                    <CheckCircle2 className="mt-0.5 size-4 text-emerald-500 shrink-0" />
+                    Next-themes support ensures a beautiful experience in both light and dark modes.
                   </li>
                   <li className="flex items-start gap-2">
-                    <Database className="mt-0.5 size-4 text-sky-500" />
-                    Drizzle ORM + API routes persist documents, canvas data, and
-                    kanban boards.
+                    <Database className="mt-0.5 size-4 text-sky-500 shrink-0" />
+                    Database-backed persistence for documents, canvas data, and task boards.
                   </li>
                   <li className="flex items-start gap-2">
-                    <Zap className="mt-0.5 size-4 text-amber-500" />
-                    Autosave with optimistic updates mirrors the in-app behavior
-                    shown above.
+                    <Zap className="mt-0.5 size-4 text-amber-500 shrink-0" />
+                    Optimistic UI updates for a lag-free experience even on slower connections.
                   </li>
                   <li className="flex items-start gap-2">
-                    <UsersRound className="mt-0.5 size-4 text-indigo-500" />
-                    Multi-tab navigation (document, canvas, both, kanban) for
-                    every workspace.
+                    <UsersRound className="mt-0.5 size-4 text-indigo-500 shrink-0" />
+                    Modern workspace management with intuitive multi-tab navigation.
                   </li>
                 </ul>
                 <div className="flex flex-wrap gap-3">

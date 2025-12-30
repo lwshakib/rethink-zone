@@ -214,7 +214,7 @@ export default function WorkspaceDetailPage() {
         className="flex h-full w-full flex-col"
       >
         {/* Header Section */}
-        <header className="z-10 bg-background/80 backdrop-blur-xl border-b border-border">
+        <header className="z-10 bg-background/80 backdrop-blur-xl">
           <div className="flex flex-col gap-4 px-4 py-4 ">
             <div className="flex items-center justify-between">
               {/* Left: Breadcrumbs & App Name */}
@@ -257,24 +257,24 @@ export default function WorkspaceDetailPage() {
               </div>
 
               {/* Middle: Improved TabsList */}
-              <TabsList className="hidden h-10 items-center justify-center rounded-full bg-muted p-1 md:flex">
+              <TabsList className="hidden h-11 items-center justify-center rounded-full bg-muted/50 p-1 md:flex border border-border/50 backdrop-blur-sm">
                 <TabsTrigger
                   value="document"
-                  className="rounded-full px-6 py-1.5 text-xs font-medium transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-[0_0_20px_rgba(255,255,255,0.1)] dark:data-[state=active]:shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+                  className="rounded-full px-6 py-1.5 text-xs font-bold transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 active:scale-95"
                 >
                   Document
                 </TabsTrigger>
                 <TabsTrigger
                   value="canvas"
-                  className="rounded-full px-6 py-1.5 text-xs font-medium transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-[0_0_20px_rgba(255,255,255,0.1)] dark:data-[state=active]:shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+                  className="rounded-full px-6 py-1.5 text-xs font-bold transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 active:scale-95"
                 >
                   Canvas
                 </TabsTrigger>
                 <TabsTrigger
                   value="kanban"
-                  className="rounded-full px-6 py-1.5 text-xs font-medium transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-[0_0_20px_rgba(255,255,255,0.1)] dark:data-[state=active]:shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+                  className="rounded-full px-6 py-1.5 text-xs font-bold transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 active:scale-95"
                 >
-                  Kanban Board
+                  Kanban
                 </TabsTrigger>
               </TabsList>
 

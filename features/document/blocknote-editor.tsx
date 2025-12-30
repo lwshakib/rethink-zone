@@ -16,32 +16,60 @@ import * as Tabs from "@/components/ui/tabs";
 import * as Toggle from "@/components/ui/toggle";
 import * as Tooltip from "@/components/ui/tooltip";
 
+import { useTheme } from "next-themes";
+
 const BlockNoteEditor = ({ initialContent, onChange }: { initialContent?: any, onChange?: (content: any) => void }) => {
+  const { resolvedTheme } = useTheme();
   const editor = useCreateBlockNote({
     initialContent: initialContent ? (initialContent as any) : undefined,
   });
 
   return (
-    <BlockNoteView
-      editor={editor}
-      onChange={() => {
-        onChange?.(editor.document);
-      }}
-      shadCNComponents={{
-        Badge,
-        Button,
-        Card,
-        DropdownMenu,
-        Form,
-        Input,
-        Label,
-        Popover,
-        Select,
-        Tabs,
-        Toggle,
-        Tooltip,
-      }}
-    />
+    <div className="blocknote-premium-container h-full w-full">
+      <BlockNoteView
+        editor={editor}
+        theme={resolvedTheme === "dark" ? "dark" : "light"}
+        onChange={() => {
+          onChange?.(editor.document);
+        }}
+        shadCNComponents={{
+          Badge,
+          Button,
+          Card,
+          DropdownMenu,
+          Form,
+          Input,
+          Label,
+          Popover,
+          Select,
+          Tabs,
+          Toggle,
+          Tooltip,
+        }}
+      />
+      <style jsx global>{`
+        .blocknote-premium-container .bn-editor {
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+          background: transparent !important;
+        }
+        .blocknote-premium-container .bn-container {
+          background: transparent !important;
+        }
+        .blocknote-premium-container .bn-editor [data-content-editable] {
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+          min-height: 200px;
+        }
+        .blocknote-premium-container .bn-block-outer {
+           margin-left: 0 !important;
+        }
+        /* Make internal UI elements feel more like our theme */
+        .bn-menu-item, .bn-button {
+          border-radius: 8px !important;
+        }
+      `}</style>
+    </div>
   );
 };
 

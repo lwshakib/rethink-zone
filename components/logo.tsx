@@ -33,7 +33,7 @@ export const LogoIcon = ({
     >
       <g
         transform="translate(5 0)"
-        fill={uniColor ? "currentColor" : "url(#logo-gradient)"}
+        fill="currentColor"
         fillRule="evenodd"
         clipRule="evenodd"
       >
@@ -41,17 +41,7 @@ export const LogoIcon = ({
       </g>
 
       <defs>
-        <linearGradient
-          id="logo-gradient"
-          x1="24"
-          y1="0"
-          x2="24"
-          y2="48"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop stopColor="#9B99FE" />
-          <stop offset="1" stopColor="#2BC8B7" />
-        </linearGradient>
+      
       </defs>
     </svg>
   );
