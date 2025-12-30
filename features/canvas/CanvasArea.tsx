@@ -5562,7 +5562,7 @@ const CanvasArea = ({ initialData, onChange }: CanvasAreaProps) => {
                           ? "GENERAL ICONS"
                           : "CUSTOM ICONS"
                         : plusMenuView === "provider-icons"
-                          ? plusMenuSubView.toUpperCase()
+                          ? (plusMenuSubView || "").toUpperCase()
                           : "CLOUD PROVIDERS"}
               </div>
               <div className="flex items-center gap-4">
