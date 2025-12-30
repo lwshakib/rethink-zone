@@ -1194,15 +1194,21 @@ const CanvasArea = ({ initialData, onChange }: CanvasAreaProps) => {
       const safeFrames = ensureFrameId(entry.frames);
       const safePolygons = ensurePolyId(entry.polygons);
 
-      const rectIds = new Set(safeRectangles.map((r) => r.id));
-      const circleIds = new Set(safeCircles.map((c) => c.id));
+      const allShapeIds = new Set([
+        ...safeRectangles.map((r) => r.id),
+        ...safeCircles.map((c) => c.id),
+        ...safeLines.map((l) => l.id),
+        ...safeArrows.map((a) => a.id),
+        ...safePaths.map((p) => p.id),
+        ...safeImages.map((i) => i.id),
+        ...safeTexts.map((t) => t.id),
+        ...safeFrames.map((f) => f.id),
+        ...safePolygons.map((p) => p.id),
+      ]);
+
       const safeConnectors = (entry.connectors || []).filter((c) => {
-        const hasFrom =
-          (c.from.kind === "rect" && rectIds.has(c.from.shapeId)) ||
-          (c.from.kind === "circle" && circleIds.has(c.from.shapeId));
-        const hasTo =
-          (c.to.kind === "rect" && rectIds.has(c.to.shapeId)) ||
-          (c.to.kind === "circle" && circleIds.has(c.to.shapeId));
+        const hasFrom = allShapeIds.has(c.from.shapeId);
+        const hasTo = allShapeIds.has(c.to.shapeId);
         return hasFrom && hasTo;
       });
 
@@ -5528,7 +5534,7 @@ const CanvasArea = ({ initialData, onChange }: CanvasAreaProps) => {
                         {
                           name: "Network",
                           desc: "Generic and Cisco icons available",
-                          src: null, 
+                          src: null,
                         },
                         {
                           name: "OCI",
