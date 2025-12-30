@@ -7,6 +7,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import ReactDOMServer from "react-dom/server";
 import {
   Redo2,
   Undo2,
@@ -47,6 +48,28 @@ import {
   Hexagon,
   Star,
   ChevronLeft,
+  Activity,
+  Airplay,
+  AlertCircle,
+  AlertOctagon,
+  AlertTriangle,
+  AlignCenter,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
+  Anchor,
+  Aperture,
+  Archive,
+  ArrowDownLeft,
+  ArrowDownRight,
+  ArrowUpLeft,
+  ArrowUpRight,
+  Smile as SmileIcon,
+  Cloud,
+  Layers,
+  Zap,
+  ArrowRight as ArrowRightIcon,
+  ArrowLeft as ArrowLeftIcon,
 } from "lucide-react";
 
 type RectShape = {
@@ -126,13 +149,87 @@ const ZOOM_STEP = 0.1;
 const makeId = () =>
   `${Date.now().toString(36)}-${Math.random().toString(16).slice(2, 8)}`;
 
+const GENERAL_ICONS = [
+  { name: "activity", icon: Activity },
+  { name: "airplay", icon: Airplay },
+  { name: "alert-circle", icon: AlertCircle },
+  { name: "alert-octagon", icon: AlertOctagon },
+  { name: "alert-triangle", icon: AlertTriangle },
+  { name: "align-center", icon: AlignCenter },
+  { name: "align-justify", icon: AlignJustify },
+  { name: "align-left", icon: AlignLeft },
+  { name: "align-right", icon: AlignRight },
+  { name: "anchor", icon: Anchor },
+  { name: "aperture", icon: Aperture },
+  { name: "archive", icon: Archive },
+  { name: "arrow-down", icon: ArrowDown },
+  { name: "arrow-down-left", icon: ArrowDownLeft },
+  { name: "arrow-down-right", icon: ArrowDownRight },
+  { name: "arrow-left", icon: ArrowLeftIcon },
+  { name: "arrow-right", icon: ArrowRightIcon },
+  { name: "arrow-up", icon: ArrowUp },
+  { name: "arrow-up-left", icon: ArrowUpLeft },
+  { name: "arrow-up-right", icon: ArrowUpRight },
+];
+
 const CanvasArea = () => {
   const [zoom, setZoom] = useState(1);
   const [activeTool, setActiveTool] = useState("Hand");
   const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
-  const [plusMenuView, setPlusMenuView] = useState<"categories" | "shape">(
-    "categories"
-  );
+  const [plusMenuView, setPlusMenuView] = useState<
+    "categories" | "shape" | "icon" | "cloud-icon" | "provider-icons"
+  >("categories");
+  const [plusMenuSubView, setPlusMenuSubView] = useState<string | null>(null);
+  const [allIconsLibrary, setAllIconsLibrary] = useState<string[]>([]);
+  const [visibleIconsLimit, setVisibleIconsLimit] = useState(60);
+  const [iconSearchQuery, setIconSearchQuery] = useState("");
+  const [isLibraryLoading, setIsLibraryLoading] = useState(true);
+  const [pendingAddIcon, setPendingAddIcon] = useState<{
+    name: string;
+    src: string;
+  } | null>(null);
+
+  useEffect(() => {
+    setIsLibraryLoading(true);
+    fetch("/icons-library/list.json")
+      .then((res) => res.json())
+      .then((data) => {
+        setAllIconsLibrary(data);
+        setIsLibraryLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load icons:", err);
+        setIsLibraryLoading(false);
+      });
+  }, []);
+
+  const filteredLibraryIcons = useMemo(() => {
+    if (!plusMenuSubView && plusMenuView !== "provider-icons") return [];
+
+    return allIconsLibrary.filter((path) => {
+      const matchCategory =
+        (plusMenuSubView === "AWS" && path.includes("aws-icons")) ||
+        (plusMenuSubView === "Azure" && path.includes("azure-icons")) ||
+        (plusMenuSubView === "GCP" && path.includes("gcp-icons")) ||
+        (plusMenuSubView === "Kubernetes" && path.includes("kubernetes-icons")) ||
+        (plusMenuSubView === "OCI" && path.includes("oci-icons")) ||
+        (plusMenuSubView === "Tech Logo" && path.includes("seti-icons"));
+
+      if (!matchCategory) return false;
+
+      if (iconSearchQuery) {
+        const name = path.split("/").pop()?.toLowerCase() || "";
+        return name.includes(iconSearchQuery.toLowerCase());
+      }
+
+      return true;
+    });
+  }, [allIconsLibrary, plusMenuSubView, iconSearchQuery, plusMenuView]);
+
+  useEffect(() => {
+    // Reset limit when changing view
+    setVisibleIconsLimit(60);
+  }, [plusMenuView, plusMenuSubView]);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const hydratedRef = useRef(false);
@@ -222,15 +319,15 @@ const CanvasArea = () => {
   const isDrawingFrameRef = useRef(false);
   const [selectedShape, setSelectedShape] = useState<{
     kind:
-      | "rect"
-      | "circle"
-      | "image"
-      | "text"
-      | "frame"
-      | "connector"
-      | "line"
-      | "arrow"
-      | "poly";
+    | "rect"
+    | "circle"
+    | "image"
+    | "text"
+    | "frame"
+    | "connector"
+    | "line"
+    | "arrow"
+    | "poly";
     index: number;
   } | null>(null);
   const dragModeRef = useRef<
@@ -1645,12 +1742,12 @@ const CanvasArea = () => {
         prev.map((t, idx) =>
           idx === textEditor.index
             ? {
-                ...t,
-                text: value,
-                fontSize: textEditor.fontSize,
-                width: measured.width,
-                height: measured.height,
-              }
+              ...t,
+              text: value,
+              fontSize: textEditor.fontSize,
+              width: measured.width,
+              height: measured.height,
+            }
             : t
         )
       );
@@ -1734,6 +1831,29 @@ const CanvasArea = () => {
       return;
     }
 
+    if (activeTool === "IconAdd" && pendingAddIcon) {
+      const id = makeId();
+      const x = point.x;
+      const y = point.y;
+      const next = [
+        ...images,
+        {
+          id,
+          src: pendingAddIcon.src,
+          x: x - 24,
+          y: y - 24,
+          width: 48,
+          height: 48,
+        },
+      ];
+      setImages(next);
+      pushHistory({ images: next });
+      setSelectedShape({ kind: "image", index: next.length - 1 });
+      setActiveTool("Select");
+      setPendingAddIcon(null);
+      return;
+    }
+
     if (tool === "Select") {
       // hit-test shapes from topmost: images -> texts -> circles -> rectangles
       const hitImage = (() => {
@@ -1748,6 +1868,20 @@ const CanvasArea = () => {
             point.y <= y2
           ) {
             return i;
+          }
+          // Check handles if selected
+          if (selectedShape?.kind === "image" && selectedShape.index === i) {
+            const hs = 12 / zoom;
+            const handles = [
+              { x: im.x + im.width, y: im.y + im.height },
+              { x: im.x + im.width / 2, y: im.y },
+              { x: im.x + im.width / 2, y: im.y + im.height },
+              { x: im.x, y: im.y + im.height / 2 },
+              { x: im.x + im.width, y: im.y + im.height / 2 },
+            ];
+            if (handles.some(h => Math.abs(point.x - h.x) <= hs / 2 && Math.abs(point.y - h.y) <= hs / 2)) {
+              return i;
+            }
           }
         }
         return null;
@@ -1765,6 +1899,25 @@ const CanvasArea = () => {
             point.y <= y2
           ) {
             return i;
+          }
+          // Check handles if selected
+          if (selectedShape?.kind === "text" && selectedShape.index === i) {
+            const pad = 4 / zoom;
+            const hs = 10 / zoom;
+            const x = t.x - pad;
+            const y = t.y - pad;
+            const w = t.width + pad * 2;
+            const h = t.height + pad * 2;
+            const handles = [
+              { x: x + w, y: y + h },
+              { x: x + w / 2, y: y },
+              { x: x + w / 2, y: y + h },
+              { x: x, y: y + h / 2 },
+              { x: x + w, y: y + h / 2 },
+            ];
+            if (handles.some(h => Math.abs(point.x - h.x) <= hs / 2 && Math.abs(point.y - h.y) <= hs / 2)) {
+              return i;
+            }
           }
         }
         return null;
@@ -1823,6 +1976,15 @@ const CanvasArea = () => {
           const l = lines[i];
           const dist = distToSegment(point.x, point.y, l.x1, l.y1, l.x2, l.y2);
           if (dist <= 6 / zoom) return i;
+
+          // Check handles if selected
+          if (selectedShape?.kind === "line" && selectedShape.index === i) {
+            const hs = 10 / zoom;
+            if (Math.hypot(point.x - l.x1, point.y - l.y1) <= hs / 2 ||
+              Math.hypot(point.x - l.x2, point.y - l.y2) <= hs / 2) {
+              return i;
+            }
+          }
         }
         return null;
       })();
@@ -1832,6 +1994,15 @@ const CanvasArea = () => {
           const l = arrows[i];
           const dist = distToSegment(point.x, point.y, l.x1, l.y1, l.x2, l.y2);
           if (dist <= 6 / zoom) return i;
+
+          // Check handles if selected
+          if (selectedShape?.kind === "arrow" && selectedShape.index === i) {
+            const hs = 10 / zoom;
+            if (Math.hypot(point.x - l.x1, point.y - l.y1) <= hs / 2 ||
+              Math.hypot(point.x - l.x2, point.y - l.y2) <= hs / 2) {
+              return i;
+            }
+          }
         }
         return null;
       })();
@@ -1849,6 +2020,19 @@ const CanvasArea = () => {
           ) {
             return i;
           }
+          // Check handles if selected
+          if (selectedShape?.kind === "rect" && selectedShape.index === i) {
+            const hs = 12 / zoom;
+            const handles = [
+              { x: r.x, y: r.y }, { x: r.x + r.width, y: r.y },
+              { x: r.x, y: r.y + r.height }, { x: r.x + r.width, y: r.y + r.height },
+              { x: r.x + r.width / 2, y: r.y }, { x: r.x + r.width / 2, y: r.y + r.height },
+              { x: r.x, y: r.y + r.height / 2 }, { x: r.x + r.width, y: r.y + r.height / 2 }
+            ];
+            if (handles.some(h => Math.abs(point.x - h.x) <= hs / 2 && Math.abs(point.y - h.y) <= hs / 2)) {
+              return i;
+            }
+          }
         }
         return null;
       })();
@@ -1865,6 +2049,20 @@ const CanvasArea = () => {
             point.y <= y2
           ) {
             return i;
+          }
+          // Check handles if selected
+          if (selectedShape?.kind === "frame" && selectedShape.index === i) {
+            const hs = 12 / zoom;
+            const handles = [
+              { x: f.x + f.width, y: f.y + f.height },
+              { x: f.x + f.width / 2, y: f.y },
+              { x: f.x + f.width / 2, y: f.y + f.height },
+              { x: f.x, y: f.y + f.height / 2 },
+              { x: f.x + f.width, y: f.y + f.height / 2 },
+            ];
+            if (handles.some(h => Math.abs(point.x - h.x) <= hs / 2 && Math.abs(point.y - h.y) <= hs / 2)) {
+              return i;
+            }
           }
         }
         return null;
@@ -1906,21 +2104,38 @@ const CanvasArea = () => {
           ) {
             return i;
           }
+          // Check handles if selected
+          if (selectedShape?.kind === "poly" && selectedShape.index === i) {
+            const pad = 4 / zoom;
+            const hs = 16 / zoom; // Generous hit area for handles
+            const x = p.x - pad;
+            const y = p.y - pad;
+            const w = p.width + pad * 2;
+            const h = p.height + pad * 2;
+            const handles = [
+              { x: x, y: y }, { x: x + w, y: y }, { x: x, y: y + h }, { x: x + w, y: y + h },
+              { x: x + w / 2, y: y }, { x: x + w / 2, y: y + h },
+              { x: x, y: y + h / 2 }, { x: x + w, y: y + h / 2 }
+            ];
+            if (handles.some(h => Math.abs(point.x - h.x) <= hs / 2 && Math.abs(point.y - h.y) <= hs / 2)) {
+              return i;
+            }
+          }
         }
         return null;
       })();
 
       let picked: {
         kind:
-          | "image"
-          | "text"
-          | "circle"
-          | "rect"
-          | "frame"
-          | "connector"
-          | "line"
-          | "arrow"
-          | "poly";
+        | "image"
+        | "text"
+        | "circle"
+        | "rect"
+        | "frame"
+        | "connector"
+        | "line"
+        | "arrow"
+        | "poly";
         index: number;
       } | null = null;
       // Check elements first (topmost priority), then frames last
@@ -2001,13 +2216,13 @@ const CanvasArea = () => {
           dragRectCornerRef.current = hitCorner
             ? { sx: hitCorner.sx, sy: hitCorner.sy }
             : hitEdge
-            ? { sx: hitEdge.sx, sy: hitEdge.sy }
-            : null;
+              ? { sx: hitEdge.sx, sy: hitEdge.sy }
+              : null;
           dragModeRef.current = hitCorner
             ? "resize-br"
             : hitEdge
-            ? hitEdge.mode
-            : "move";
+              ? hitEdge.mode
+              : "move";
         } else if (workingPicked.kind === "circle") {
           const c = circles[workingPicked.index];
           const handleSize = 12 / zoom;
@@ -2063,13 +2278,13 @@ const CanvasArea = () => {
           dragCircleCornerRef.current = hitCorner
             ? { sx: hitCorner.sx, sy: hitCorner.sy }
             : hitEdge
-            ? { sx: hitEdge.sx, sy: hitEdge.sy }
-            : null;
+              ? { sx: hitEdge.sx, sy: hitEdge.sy }
+              : null;
           dragModeRef.current = hitCorner
             ? "resize-circle"
             : hitEdge
-            ? hitEdge.mode
-            : "move";
+              ? hitEdge.mode
+              : "move";
         } else if (workingPicked.kind === "image") {
           const im = images[workingPicked.index];
           const handleSize = 10 / zoom;
@@ -2130,13 +2345,13 @@ const CanvasArea = () => {
           dragImageCornerRef.current = hitCorner
             ? { sx: hitCorner.sx, sy: hitCorner.sy }
             : hitEdge
-            ? { sx: hitEdge.sx, sy: hitEdge.sy }
-            : null;
+              ? { sx: hitEdge.sx, sy: hitEdge.sy }
+              : null;
           dragModeRef.current = hitCorner
             ? "resize-image"
             : hitEdge
-            ? hitEdge.mode
-            : "move";
+              ? hitEdge.mode
+              : "move";
         } else if (workingPicked.kind === "text") {
           const t = texts[workingPicked.index];
           const handleSize = 10 / zoom;
@@ -2194,13 +2409,13 @@ const CanvasArea = () => {
           dragTextCornerRef.current = hitCorner
             ? { sx: hitCorner.sx, sy: hitCorner.sy }
             : hitEdge
-            ? { sx: hitEdge.sx, sy: hitEdge.sy }
-            : null;
+              ? { sx: hitEdge.sx, sy: hitEdge.sy }
+              : null;
           dragModeRef.current = hitCorner
             ? "resize-text"
             : hitEdge
-            ? hitEdge.mode
-            : "move";
+              ? hitEdge.mode
+              : "move";
         } else if (workingPicked.kind === "frame") {
           const f = frames[workingPicked.index];
           const handleSize = 10 / zoom;
@@ -2258,17 +2473,80 @@ const CanvasArea = () => {
           dragFrameCornerRef.current = hitCorner
             ? { sx: hitCorner.sx, sy: hitCorner.sy }
             : hitEdge
-            ? { sx: hitEdge.sx, sy: hitEdge.sy }
-            : null;
+              ? { sx: hitEdge.sx, sy: hitEdge.sy }
+              : null;
           dragModeRef.current = hitCorner
             ? "resize-frame"
             : hitEdge
-            ? hitEdge.mode
-            : "move";
+              ? hitEdge.mode
+              : "move";
         } else if (workingPicked.kind === "poly") {
           const p = polygons[workingPicked.index];
+          const handleSize = 12 / zoom;
+          const pad = 4 / zoom;
+          const left = p.x - pad;
+          const top = p.y - pad;
+          const w = p.width + pad * 2;
+          const h = p.height + pad * 2;
+
+          const corners = [
+            { x: left, y: top, sx: -1, sy: -1 },
+            { x: left + w, y: top, sx: 1, sy: -1 },
+            { x: left, y: top + h, sx: -1, sy: 1 },
+            { x: left + w, y: top + h, sx: 1, sy: 1 },
+          ];
+          const edges = [
+            {
+              x: left + w / 2,
+              y: top,
+              sx: 0,
+              sy: -1,
+              mode: "resize-rect-v" as const,
+            },
+            {
+              x: left + w / 2,
+              y: top + h,
+              sx: 0,
+              sy: 1,
+              mode: "resize-rect-v" as const,
+            },
+            {
+              x: left,
+              y: top + h / 2,
+              sx: -1,
+              sy: 0,
+              mode: "resize-rect-h" as const,
+            },
+            {
+              x: left + w,
+              y: top + h / 2,
+              sx: 1,
+              sy: 0,
+              mode: "resize-rect-h" as const,
+            },
+          ];
+          const hitCorner = corners.find(
+            (c) =>
+              Math.abs(point.x - c.x) <= handleSize &&
+              Math.abs(point.y - c.y) <= handleSize
+          );
+          const hitEdge = edges.find(
+            (e) =>
+              Math.abs(point.x - e.x) <= handleSize &&
+              Math.abs(point.y - e.y) <= handleSize
+          );
+
           dragPolyStartRef.current = { ...p };
-          dragModeRef.current = "move";
+          dragRectCornerRef.current = hitCorner
+            ? { sx: hitCorner.sx, sy: hitCorner.sy }
+            : hitEdge
+              ? { sx: hitEdge.sx, sy: hitEdge.sy }
+              : null;
+          dragModeRef.current = hitCorner
+            ? "resize-br"
+            : hitEdge
+              ? hitEdge.mode
+              : "move";
         } else if (workingPicked.kind === "line") {
           const l = lines[workingPicked.index];
           const handleSize = 10 / zoom;
@@ -2284,9 +2562,9 @@ const CanvasArea = () => {
           dragLineStartRef.current = { ...l };
           dragRectCornerRef.current = hitHandle
             ? {
-                sx: hitHandle.anchor === "start" ? -1 : 1,
-                sy: hitHandle.anchor === "start" ? -1 : 1,
-              }
+              sx: hitHandle.anchor === "start" ? -1 : 1,
+              sy: hitHandle.anchor === "start" ? -1 : 1,
+            }
             : null;
           dragModeRef.current = hitHandle ? "resize-line" : "move";
         } else if (workingPicked.kind === "arrow") {
@@ -2304,9 +2582,9 @@ const CanvasArea = () => {
           dragArrowStartRef.current = { ...l };
           dragRectCornerRef.current = hitHandle
             ? {
-                sx: hitHandle.anchor === "start" ? -1 : 1,
-                sy: hitHandle.anchor === "start" ? -1 : 1,
-              }
+              sx: hitHandle.anchor === "start" ? -1 : 1,
+              sy: hitHandle.anchor === "start" ? -1 : 1,
+            }
             : null;
           dragModeRef.current = hitHandle ? "resize-arrow" : "move";
         }
@@ -2445,9 +2723,9 @@ const CanvasArea = () => {
         setPendingConnector((prev) =>
           prev
             ? {
-                ...prev,
-                previewPoint: nearest ? nearest.point : point,
-              }
+              ...prev,
+              previewPoint: nearest ? nearest.point : point,
+            }
             : null
         );
       }
@@ -2677,6 +2955,41 @@ const CanvasArea = () => {
               newCursor = "move";
             }
           }
+        } else if (selectedShape.kind === "poly") {
+          const p = polygons[selectedShape.index];
+          if (p) {
+            const handleSize = 10 / zoom;
+            const pad = 4 / zoom;
+            const left = p.x - pad;
+            const top = p.y - pad;
+            const w = p.width + pad * 2;
+            const h = p.height + pad * 2;
+            const handles = [
+              { x: left, y: top, cursor: "nw-resize" },
+              { x: left + w, y: top, cursor: "ne-resize" },
+              { x: left, y: top + h, cursor: "sw-resize" },
+              { x: left + w, y: top + h, cursor: "se-resize" },
+              { x: left + w / 2, y: top, cursor: "n-resize" },
+              { x: left + w / 2, y: top + h, cursor: "s-resize" },
+              { x: left, y: top + h / 2, cursor: "w-resize" },
+              { x: left + w, y: top + h / 2, cursor: "e-resize" },
+            ];
+            const hitHandle = handles.find(
+              (h) =>
+                Math.abs(point.x - h.x) <= handleSize &&
+                Math.abs(point.y - h.y) <= handleSize
+            );
+            if (hitHandle) {
+              newCursor = hitHandle.cursor;
+            } else if (
+              point.x >= p.x &&
+              point.x <= p.x + p.width &&
+              point.y >= p.y &&
+              point.y <= p.y + p.height
+            ) {
+              newCursor = "move";
+            }
+          }
         }
       }
 
@@ -2771,12 +3084,12 @@ const CanvasArea = () => {
             prev.map((l, idx) =>
               idx === selectedShape.index
                 ? {
-                    ...l,
-                    x1: base.x1 + dx,
-                    y1: base.y1 + dy,
-                    x2: base.x2 + dx,
-                    y2: base.y2 + dy,
-                  }
+                  ...l,
+                  x1: base.x1 + dx,
+                  y1: base.y1 + dy,
+                  x2: base.x2 + dx,
+                  y2: base.y2 + dy,
+                }
                 : l
             )
           );
@@ -2789,12 +3102,12 @@ const CanvasArea = () => {
             prev.map((l, idx) =>
               idx === selectedShape.index
                 ? {
-                    ...l,
-                    x1: base.x1 + dx,
-                    y1: base.y1 + dy,
-                    x2: base.x2 + dx,
-                    y2: base.y2 + dy,
-                  }
+                  ...l,
+                  x1: base.x1 + dx,
+                  y1: base.y1 + dy,
+                  x2: base.x2 + dx,
+                  y2: base.y2 + dy,
+                }
                 : l
             )
           );
@@ -2856,12 +3169,12 @@ const CanvasArea = () => {
         let newRx = Math.max(
           minR,
           dragCircleStartRef.current.rx +
-            dx * (effectiveSx === 0 ? 0 : effectiveSx)
+          dx * (effectiveSx === 0 ? 0 : effectiveSx)
         );
         let newRy = Math.max(
           minR,
           dragCircleStartRef.current.ry +
-            dy * (effectiveSy === 0 ? 0 : effectiveSy)
+          dy * (effectiveSy === 0 ? 0 : effectiveSy)
         );
         if (event.shiftKey) {
           const m = Math.max(newRx, newRy);
@@ -2970,13 +3283,13 @@ const CanvasArea = () => {
           prev.map((t, idx) =>
             idx === selectedShape.index
               ? {
-                  ...t,
-                  x: newX,
-                  y: newY,
-                  fontSize: newFont,
-                  width: measured.width,
-                  height: measured.height,
-                }
+                ...t,
+                x: newX,
+                y: newY,
+                fontSize: newFont,
+                width: measured.width,
+                height: measured.height,
+              }
               : t
           )
         );
@@ -3009,6 +3322,39 @@ const CanvasArea = () => {
             idx === selectedShape.index
               ? { ...f, x: newX, y: newY, width: newW, height: newH }
               : f
+          )
+        );
+        return;
+      }
+
+      if (
+        (dragModeRef.current === "resize-br" ||
+          dragModeRef.current === "resize-rect-h" ||
+          dragModeRef.current === "resize-rect-v") &&
+        dragPolyStartRef.current &&
+        selectedShape.kind === "poly"
+      ) {
+        const base = dragPolyStartRef.current;
+        const corner = dragRectCornerRef.current ?? { sx: 1, sy: 1 };
+        const dx = point.x - pointerStartRef.current.x;
+        const dy = point.y - pointerStartRef.current.y;
+        const minSize = 4 / zoom;
+        const effectiveSx =
+          dragModeRef.current === "resize-rect-v" ? 0 : corner.sx;
+        const effectiveSy =
+          dragModeRef.current === "resize-rect-h" ? 0 : corner.sy;
+
+        const newW = Math.max(minSize, base.width + dx * effectiveSx);
+        const newH = Math.max(minSize, base.height + dy * effectiveSy);
+
+        const newX = effectiveSx < 0 ? base.x + (base.width - newW) : base.x;
+        const newY = effectiveSy < 0 ? base.y + (base.height - newH) : base.y;
+
+        setPolygons((prev) =>
+          prev.map((p, idx) =>
+            idx === selectedShape.index
+              ? { ...p, x: newX, y: newY, width: newW, height: newH }
+              : p
           )
         );
         return;
@@ -3114,10 +3460,10 @@ const CanvasArea = () => {
       setCurrentLine((prev) =>
         prev
           ? {
-              ...prev,
-              x2,
-              y2,
-            }
+            ...prev,
+            x2,
+            y2,
+          }
           : null
       );
     }
@@ -3138,10 +3484,10 @@ const CanvasArea = () => {
       setCurrentArrow((prev) =>
         prev
           ? {
-              ...prev,
-              x2,
-              y2,
-            }
+            ...prev,
+            x2,
+            y2,
+          }
           : null
       );
     }
@@ -3304,6 +3650,7 @@ const CanvasArea = () => {
         dragTextStartRef.current = null;
         dragTextCornerRef.current = null;
         dragFrameStartRef.current = null;
+        dragPolyStartRef.current = null;
         dragFrameCornerRef.current = null;
         dragLineStartRef.current = null;
         dragArrowStartRef.current = null;
@@ -3517,10 +3864,14 @@ const CanvasArea = () => {
           imageCacheRef.current[im.src] = tag;
           setRerenderTick((t) => t + 1);
         };
+        tag.onerror = () => {
+          imageCacheRef.current[im.src] = tag;
+          setRerenderTick((t) => t + 1);
+        };
         tag.src = im.src;
         imageCacheRef.current[im.src] = tag;
       }
-      if (tag.complete) {
+      if (tag.complete && tag.naturalWidth > 0) {
         ctx.save();
         ctx.globalAlpha = alpha;
         ctx.drawImage(tag, im.x, im.y, im.width, im.height);
@@ -3905,17 +4256,34 @@ const CanvasArea = () => {
       ctx.stroke();
 
       if (isSelected) {
+        const pad = 4 / zoom;
+        const left = x - pad;
+        const top = y - pad;
+        const totalW = width + pad * 2;
+        const totalH = height + pad * 2;
         const hs = 8 / zoom;
+        const stroke = "rgba(83,182,255,0.9)";
         const hf = "rgba(83,182,255,1)";
-        [
-          { cx: x, cy: y },
-          { cx: x + width, cy: y },
-          { cx: x, cy: y + height },
-          { cx: x + width, cy: y + height },
-        ].forEach((h) => {
+
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 1.6 / zoom;
+        ctx.setLineDash([]);
+        ctx.strokeRect(left, top, totalW, totalH);
+
+        const handles = [
+          { cx: left, cy: top },
+          { cx: left + totalW, cy: top },
+          { cx: left, cy: top + totalH },
+          { cx: left + totalW, cy: top + totalH },
+          { cx: left + totalW / 2, cy: top },
+          { cx: left + totalW / 2, cy: top + totalH },
+          { cx: left, cy: top + totalH / 2 },
+          { cx: left + totalW, cy: top + totalH / 2 },
+        ];
+        ctx.fillStyle = hf;
+        handles.forEach((h) => {
           ctx.beginPath();
           ctx.rect(h.cx - hs / 2, h.cy - hs / 2, hs, hs);
-          ctx.fillStyle = hf;
           ctx.fill();
         });
       }
@@ -4421,11 +4789,11 @@ const CanvasArea = () => {
             setTextEditor((prev) =>
               prev
                 ? {
-                    ...prev,
-                    value: val,
-                    boxWidth: measured.width,
-                    boxHeight: measured.height,
-                  }
+                  ...prev,
+                  value: val,
+                  boxWidth: measured.width,
+                  boxHeight: measured.height,
+                }
                 : prev
             );
           }}
@@ -4442,31 +4810,27 @@ const CanvasArea = () => {
           ref={textAreaRef}
           style={{
             position: "absolute",
-            left: `${
-              canvasToClient(
-                textEditor.canvasX - (textEditor.pad ?? 0),
-                textEditor.canvasY - (textEditor.pad ?? 0)
-              ).x
-            }px`,
-            top: `${
-              canvasToClient(
-                textEditor.canvasX - (textEditor.pad ?? 0),
-                textEditor.canvasY - (textEditor.pad ?? 0)
-              ).y
-            }px`,
+            left: `${canvasToClient(
+              textEditor.canvasX - (textEditor.pad ?? 0),
+              textEditor.canvasY - (textEditor.pad ?? 0)
+            ).x
+              }px`,
+            top: `${canvasToClient(
+              textEditor.canvasX - (textEditor.pad ?? 0),
+              textEditor.canvasY - (textEditor.pad ?? 0)
+            ).y
+              }px`,
             zIndex: 10,
-            width: `${
-              ((textEditor.boxWidth ?? 120) +
-                (textEditor.pad ?? 4 / zoom) * 2) *
-                zoom +
+            width: `${((textEditor.boxWidth ?? 120) +
+              (textEditor.pad ?? 4 / zoom) * 2) *
+              zoom +
               2
-            }px`,
+              }px`,
             minWidth: `${20 * zoom}px`,
-            height: `${
-              ((textEditor.boxHeight ?? textEditor.fontSize * 1.4) +
-                (textEditor.pad ?? 4 / zoom) * 2) *
+            height: `${((textEditor.boxHeight ?? textEditor.fontSize * 1.4) +
+              (textEditor.pad ?? 4 / zoom) * 2) *
               zoom
-            }px`,
+              }px`,
             background: "transparent",
             color: "white",
             border: "1.6px solid rgba(63,193,255,0.95)",
@@ -4553,11 +4917,10 @@ const CanvasArea = () => {
               }}
             >
               <div
-                className={`rounded-full border ${
-                  isHover
-                    ? "bg-white border-white shadow-md"
-                    : "border-white/60 bg-white/20"
-                }`}
+                className={`rounded-full border ${isHover
+                  ? "bg-white border-white shadow-md"
+                  : "border-white/60 bg-white/20"
+                  }`}
                 style={{
                   width: `${10}px`,
                   height: `${10}px`,
@@ -4577,15 +4940,17 @@ const CanvasArea = () => {
         />
       )}
 
-      <div className="absolute left-4 bottom-4 flex items-center gap-2 rounded-full bg-[#1b1b1b] px-2 py-1 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
+      <div
+        onWheel={(e) => e.stopPropagation()}
+        className="absolute left-4 bottom-4 flex items-center gap-2 rounded-full bg-[#1b1b1b] px-2 py-1 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
+      >
         <button
           onClick={handleUndo}
           disabled={!canUndo}
-          className={`flex items-center justify-center h-9 w-9 rounded-full transition border border-white/10 ${
-            canUndo
-              ? "text-white/80 hover:bg-white/10"
-              : "text-white/30 cursor-not-allowed"
-          }`}
+          className={`flex items-center justify-center h-9 w-9 rounded-full transition border border-white/10 ${canUndo
+            ? "text-white/80 hover:bg-white/10"
+            : "text-white/30 cursor-not-allowed"
+            }`}
         >
           <Undo2 className="h-4 w-4" />
         </button>
@@ -4593,17 +4958,19 @@ const CanvasArea = () => {
         <button
           onClick={handleRedo}
           disabled={!canRedo}
-          className={`flex items-center justify-center h-9 w-9 rounded-full transition border border-white/10 ${
-            canRedo
-              ? "text-white/80 hover:bg-white/10"
-              : "text-white/30 cursor-not-allowed"
-          }`}
+          className={`flex items-center justify-center h-9 w-9 rounded-full transition border border-white/10 ${canRedo
+            ? "text-white/80 hover:bg-white/10"
+            : "text-white/30 cursor-not-allowed"
+            }`}
         >
           <Redo2 className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="absolute right-4 bottom-4 flex items-center gap-2 rounded-full bg-[#1b1b1b] px-2 py-1 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
+      <div
+        onWheel={(e) => e.stopPropagation()}
+        className="absolute right-4 bottom-4 flex items-center gap-2 rounded-full bg-[#1b1b1b] px-2 py-1 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
+      >
         <button
           onClick={() => zoomOut()}
           className="flex items-center justify-center h-9 w-9 rounded-full transition border border-white/10 text-white/80 hover:bg-white/10"
@@ -4645,36 +5012,53 @@ const CanvasArea = () => {
         <div className="flex flex-col items-center rounded-md bg-[#1b1b1b] px-1.5 py-1.5 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
           <button
             onClick={() => setIsPlusMenuOpen(!isPlusMenuOpen)}
-            className={`flex items-center justify-center h-9 w-9 rounded-md transition ${
-              isPlusMenuOpen
-                ? "bg-[#2a2a2a] text-white shadow"
-                : "text-white/80 hover:bg-white/10"
-            }`}
+            className={`flex items-center justify-center h-9 w-9 rounded-md transition ${isPlusMenuOpen
+              ? "bg-[#2a2a2a] text-white shadow"
+              : "text-white/80 hover:bg-white/10"
+              }`}
             aria-label="Add"
           >
             <Plus
-              className={`h-4 w-4 transition-transform duration-200 ${
-                isPlusMenuOpen ? "rotate-45" : "rotate-0"
-              }`}
+              className={`h-4 w-4 transition-transform duration-200 ${isPlusMenuOpen ? "rotate-45" : "rotate-0"
+                }`}
             />
           </button>
         </div>
 
         {/* Popover Menu - Sidebar style */}
         {isPlusMenuOpen && (
-          <div className="flex flex-col rounded-xl bg-[#0f0f0f] shadow-2xl border border-white/10 w-85 overflow-hidden">
+          <div
+            onWheel={(e) => e.stopPropagation()}
+            className="flex flex-col rounded-xl bg-[#0f0f0f] shadow-2xl border border-white/10 w-85 overflow-hidden"
+          >
             {/* Search Section */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
               <Search className="h-4 w-4 text-white/40" />
               <input
                 type="text"
                 placeholder="Insert item"
+                value={iconSearchQuery}
+                onChange={(e) => {
+                  setIconSearchQuery(e.target.value);
+                  setVisibleIconsLimit(60); // Reset limit on search
+                }}
                 className="bg-transparent border-none outline-none text-sm text-white/90 w-full placeholder:text-white/30"
                 autoFocus
               />
             </div>
 
-            <div className="flex-1 overflow-y-auto max-h-150 p-2 space-y-4">
+            <div
+              onScroll={(e) => {
+                const target = e.currentTarget;
+                if (
+                  target.scrollTop + target.clientHeight >=
+                  target.scrollHeight - 20
+                ) {
+                  setVisibleIconsLimit((prev) => prev + 60);
+                }
+              }}
+              className="flex-1 overflow-y-auto max-h-150 p-2 space-y-4"
+            >
               {plusMenuView === "categories" ? (
                 <div className="space-y-4">
                   {/* All Categories Section */}
@@ -4733,6 +5117,7 @@ const CanvasArea = () => {
                         key={i}
                         onClick={() => {
                           if (item.id === "shape") setPlusMenuView("shape");
+                          if (item.id === "icon") setPlusMenuView("icon");
                         }}
                         className="flex items-center gap-4 w-full px-3 py-3 rounded-lg hover:bg-white/5 transition text-left group"
                       >
@@ -4771,7 +5156,7 @@ const CanvasArea = () => {
                     ))}
                   </div>
                 </div>
-              ) : (
+              ) : plusMenuView === "shape" ? (
                 <div className="space-y-4">
                   {/* Shape Grid View */}
                   <div className="space-y-2">
@@ -4811,17 +5196,262 @@ const CanvasArea = () => {
                         >
                           <div className="h-12 w-12 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 group-hover:bg-white/10 group-hover:border-white/20 transition">
                             <shape.icon
-                              className={`h-5 w-5 text-white/70 group-hover:text-white/90 transition ${
-                                shape.stretch ? "scale-x-125" : ""
-                              } ${shape.slant ? "-skew-x-12" : ""} ${
-                                shape.trapezoid
+                              className={`h-5 w-5 text-white/70 group-hover:text-white/90 transition ${shape.stretch ? "scale-x-125" : ""
+                                } ${shape.slant ? "-skew-x-12" : ""} ${shape.trapezoid
                                   ? "[clip-path:polygon(20%_0%,80%_0%,100%_100%,0%_100%)]"
                                   : ""
-                              }`}
+                                }`}
                             />
                           </div>
                           <span className="text-[10px] text-white/40 group-hover:text-white/60 text-center truncate w-full px-1">
                             {shape.label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : plusMenuView === "icon" ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider">
+                      <button
+                        onClick={() => {
+                          setPlusMenuView("categories");
+                          setPlusMenuSubView(null);
+                        }}
+                        className="text-white/40 hover:text-white/60 transition"
+                      >
+                        All Categories
+                      </button>
+                      <span className="text-white/20">/</span>
+                      <span className="text-white/90">Icon</span>
+                    </div>
+
+                    {!plusMenuSubView && (
+                      <div className="space-y-1.5 px-2">
+                        {[
+                          {
+                            id: "custom",
+                            icon: Monitor,
+                            title: "Custom Icons",
+                            desc: "Your team's custom icons",
+                          },
+                          {
+                            id: "general",
+                            icon: SmileIcon,
+                            title: "General Icon",
+                            desc: "250+ icons available",
+                          },
+                          {
+                            id: "tech",
+                            icon: Zap,
+                            title: "Tech Logo",
+                            desc: "Popular tools and libraries",
+                            onClick: () => {
+                              setPlusMenuSubView("Tech Logo");
+                              setPlusMenuView("provider-icons");
+                            },
+                          },
+                          {
+                            id: "cloud",
+                            icon: Cloud,
+                            title: "Cloud Provider Icon",
+                            desc: "AWS, Azure, and Google Cloud",
+                            onClick: () => setPlusMenuView("cloud-icon"),
+                          },
+                        ].map((cat, i) => (
+                          <button
+                            key={i}
+                            onClick={() => {
+                              if (cat.onClick) cat.onClick();
+                              else setPlusMenuSubView(cat.id);
+                            }}
+                            className="flex items-center gap-4 w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/12 transition text-left group"
+                          >
+                            <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-white/5 border border-white/10">
+                              <cat.icon className="h-5 w-5 text-white/70" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="text-sm font-semibold text-white/90">
+                                {cat.title}
+                              </div>
+                              <div className="text-[11px] text-white/40">
+                                {cat.desc}
+                              </div>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-white/20 group-hover:text-white/40 transition" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {(!plusMenuSubView || plusMenuSubView === "general") && (
+                      <div className="grid grid-cols-5 gap-y-3 px-2 pb-4">
+                        {GENERAL_ICONS.map((icon, i) => (
+                          <div key={i} className="flex flex-col items-center gap-1.5 group">
+                            <button
+                              onClick={() => {
+                                const svg = ReactDOMServer.renderToStaticMarkup(
+                                  <icon.icon color="white" size={48} />
+                                );
+                                const src = `data:image/svg+xml;base64,${btoa(
+                                  svg
+                                )}`;
+                                setPendingAddIcon({ name: icon.name, src });
+                                setActiveTool("IconAdd");
+                                setIsPlusMenuOpen(false);
+                              }}
+                              className="h-10 w-10 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition shadow-sm"
+                            >
+                              <icon.icon className="h-5 w-5 text-white/70 group-hover:text-white/90 transition" />
+                            </button>
+                            <span className="text-[10px] text-white/30 group-hover:text-white/50 text-center truncate w-full px-1">
+                              {icon.name}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : plusMenuView === "provider-icons" ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider">
+                      <button
+                        onClick={() => {
+                          setPlusMenuView("categories");
+                          setPlusMenuSubView(null);
+                        }}
+                        className="text-white/40 hover:text-white/60 transition"
+                      >
+                        All Categories
+                      </button>
+                      <span className="text-white/20">/</span>
+                      <button
+                        onClick={() => setPlusMenuView("icon")}
+                        className="text-white/40 hover:text-white/60 transition"
+                      >
+                        Icon
+                      </button>
+                      <span className="text-white/20">/</span>
+                      <button
+                        onClick={() => setPlusMenuView("cloud-icon")}
+                        className="text-white/40 hover:text-white/60 transition"
+                      >
+                        Cloud Provider
+                      </button>
+                      <span className="text-white/20">/</span>
+                      <span className="text-white/90">{plusMenuSubView}</span>
+                    </div>
+
+                    <div className="grid grid-cols-5 gap-y-3 px-2 pb-4">
+                      {isLibraryLoading ? (
+                        Array.from({ length: 20 }).map((_, i) => (
+                          <div key={i} className="flex flex-col items-center gap-1.5 animate-pulse">
+                            <div className="h-10 w-10 rounded-lg bg-white/5 border border-white/10" />
+                            <div className="h-2 w-8 bg-white/5 rounded" />
+                          </div>
+                        ))
+                      ) : (
+                        filteredLibraryIcons
+                          .slice(0, visibleIconsLimit)
+                          .map((path, i) => {
+                            const name = path.split("/").pop()?.replace(".svg", "").replace(/_/g, " ") || "icon";
+                            return (
+                              <div
+                                key={i}
+                                className="flex flex-col items-center gap-1.5 group"
+                              >
+                                <button
+                                  onClick={() => {
+                                    setPendingAddIcon({
+                                      name: name,
+                                      src: path,
+                                    });
+                                    setActiveTool("IconAdd");
+                                    setIsPlusMenuOpen(false);
+                                  }}
+                                  className="h-10 w-10 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition shadow-sm overflow-hidden"
+                                >
+                                  <img
+                                    src={path}
+                                    alt={name}
+                                    className="h-6 w-6 opacity-80 group-hover:opacity-100 transition"
+                                  />
+                                </button>
+                                <span className="text-[10px] text-white/30 group-hover:text-white/50 text-center truncate w-full px-1">
+                                  {name}
+                                </span>
+                              </div>
+                            );
+                          })
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider">
+                      <button
+                        onClick={() => setPlusMenuView("categories")}
+                        className="text-white/40 hover:text-white/60 transition"
+                      >
+                        All Categories
+                      </button>
+                      <span className="text-white/20">/</span>
+                      <button
+                        onClick={() => setPlusMenuView("icon")}
+                        className="text-white/40 hover:text-white/60 transition"
+                      >
+                        Icon
+                      </button>
+                      <span className="text-white/20">/</span>
+                      <span className="text-white/90">Cloud Provider</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 px-3">
+                      {[
+                        {
+                          name: "AWS",
+                          src: "/icons-library/aws-icons/aws-logo.svg",
+                        },
+                        {
+                          name: "Azure",
+                          src: "/icons-library/azure-icons/azure-logo.svg",
+                        },
+                        {
+                          name: "GCP",
+                          src: "/icons-library/gcp-icons/gcp-logo.svg",
+                        },
+                        {
+                          name: "Kubernetes",
+                          src: "/icons-library/kubernetes-icons/k8s-logo.svg",
+                        },
+                        {
+                          name: "OCI",
+                          src: "/icons-library/oci-icons/oci-logo.svg",
+                        },
+                      ].map((cloud, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            setPlusMenuSubView(cloud.name);
+                            setPlusMenuView("provider-icons");
+                          }}
+                          className="flex flex-col items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/12 transition group"
+                        >
+                          <div className="h-12 w-12 flex items-center justify-center">
+                            <img
+                              src={cloud.src}
+                              alt={cloud.name}
+                              className="max-h-full max-w-full opacity-60 group-hover:opacity-100 transition"
+                            />
+                          </div>
+                          <span className="text-xs font-semibold text-white/40 group-hover:text-white/80 transition">
+                            {cloud.name}
                           </span>
                         </button>
                       ))}
@@ -4834,7 +5464,17 @@ const CanvasArea = () => {
             {/* Footer */}
             <div className="flex items-center justify-between px-4 py-2 bg-white/2 border-t border-white/5">
               <div className="text-[11px] font-medium text-white/30">
-                Diagram Catalog
+                {plusMenuView === "categories"
+                  ? "Diagram Catalog"
+                  : plusMenuView === "shape"
+                    ? "Shapes"
+                    : plusMenuView === "icon"
+                      ? plusMenuSubView === "general"
+                        ? "General Icon"
+                        : "Custom Icons"
+                      : plusMenuView === "provider-icons"
+                        ? plusMenuSubView
+                        : "Cloud Provider Icon"}
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1 text-[10px] text-white/30">
@@ -4854,7 +5494,10 @@ const CanvasArea = () => {
         )}
       </div>
 
-      <div className="absolute left-4 top-20 flex flex-col items-center gap-2 rounded-md bg-[#1b1b1b] px-1.5 py-3 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
+      <div
+        onWheel={(e) => e.stopPropagation()}
+        className="absolute left-4 top-20 flex flex-col items-center gap-2 rounded-md bg-[#1b1b1b] px-1.5 py-3 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
+      >
         {[
           { icon: Hand, label: "Hand" },
           { icon: MousePointer2, label: "Select" },
@@ -4872,11 +5515,10 @@ const CanvasArea = () => {
             <button
               key={label}
               onClick={() => setActiveTool(label)}
-              className={`flex items-center justify-center rounded-md h-9 w-9 transition ${
-                isActive
-                  ? "bg-[#2a2a2a] text-white shadow"
-                  : "text-white/80 hover:bg-white/10"
-              }`}
+              className={`flex items-center justify-center rounded-md h-9 w-9 transition ${isActive
+                ? "bg-[#2a2a2a] text-white shadow"
+                : "text-white/80 hover:bg-white/10"
+                }`}
               aria-label={label}
             >
               <Icon className="h-4 w-4" />
