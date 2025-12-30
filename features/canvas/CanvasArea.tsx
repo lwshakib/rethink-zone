@@ -124,11 +124,18 @@ type PolyShape = {
   height: number;
 };
 
+type ShapeKind = "rect" | "circle" | "image" | "text" | "frame" | "poly";
 type AnchorSide = "top" | "bottom" | "left" | "right";
+type ConnectorAnchor = {
+  kind: ShapeKind;
+  shapeId: string;
+  anchor: AnchorSide;
+  percent?: number; // 0 to 1 along that side
+};
 type Connector = {
   id: string;
-  from: { kind: "rect" | "circle"; shapeId: string; anchor: AnchorSide };
-  to: { kind: "rect" | "circle"; shapeId: string; anchor: AnchorSide };
+  from: ConnectorAnchor;
+  to: ConnectorAnchor;
 };
 
 type HistoryEntry = {
@@ -411,13 +418,14 @@ const CanvasArea = () => {
   } | null>(null);
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
   const [hoverAnchor, setHoverAnchor] = useState<{
-    kind: "rect" | "circle";
+    kind: ShapeKind;
     shapeId: string;
     anchor: AnchorSide;
     point: { x: number; y: number };
+    percent?: number;
   } | null>(null);
   const [pendingConnector, setPendingConnector] = useState<{
-    from: { kind: "rect" | "circle"; shapeId: string; anchor: AnchorSide };
+    from: ConnectorAnchor;
     previewPoint: { x: number; y: number };
   } | null>(null);
   const pointerToolRef = useRef<string>("");
@@ -514,13 +522,11 @@ const CanvasArea = () => {
     []
   );
 
-  const getRectAnchor = useCallback((rect: RectShape, anchor: AnchorSide) => {
-    const xMid = rect.x + rect.width / 2;
-    const yMid = rect.y + rect.height / 2;
-    if (anchor === "top") return { x: xMid, y: rect.y };
-    if (anchor === "bottom") return { x: xMid, y: rect.y + rect.height };
-    if (anchor === "left") return { x: rect.x, y: yMid };
-    return { x: rect.x + rect.width, y: yMid };
+  const getRectAnchor = useCallback((rect: { x: number; y: number; width: number; height: number }, anchor: AnchorSide, percent = 0.5) => {
+    if (anchor === "top") return { x: rect.x + rect.width * percent, y: rect.y };
+    if (anchor === "bottom") return { x: rect.x + rect.width * percent, y: rect.y + rect.height };
+    if (anchor === "left") return { x: rect.x, y: rect.y + rect.height * percent };
+    return { x: rect.x + rect.width, y: rect.y + rect.height * percent };
   }, []);
 
   const getCircleAnchor = useCallback(
@@ -534,22 +540,55 @@ const CanvasArea = () => {
   );
 
   const getAnchorPoint = useCallback(
-    (target: {
-      kind: "rect" | "circle";
-      shapeId: string;
-      anchor: AnchorSide;
-    }) => {
+    (target: ConnectorAnchor) => {
       if (target.kind === "rect") {
-        const r = rectangles.find((rec) => rec.id === target.shapeId);
-        if (!r) return null;
-        return getRectAnchor(r, target.anchor);
+        const shape = rectangles.find((r) => r.id === target.shapeId);
+        if (!shape) return null;
+        return getRectAnchor(shape, target.anchor, target.percent);
       }
-      const c = circles.find((ci) => ci.id === target.shapeId);
-      if (!c) return null;
-      return getCircleAnchor(c, target.anchor);
+      if (target.kind === "circle") {
+        const shape = circles.find((c) => c.id === target.shapeId);
+        if (!shape) return null;
+        return getCircleAnchor(shape, target.anchor);
+      }
+      if (target.kind === "image") {
+        const shape = images.find((im) => im.id === target.shapeId);
+        if (!shape) return null;
+        return getRectAnchor(shape, target.anchor, target.percent);
+      }
+      if (target.kind === "text") {
+        const shape = texts.find((t) => t.id === target.shapeId);
+        if (!shape) return null;
+        return getRectAnchor(shape, target.anchor, target.percent);
+      }
+      if (target.kind === "frame") {
+        const shape = frames.find((f) => f.id === target.shapeId);
+        if (!shape) return null;
+        return getRectAnchor(shape, target.anchor, target.percent);
+      }
+      if (target.kind === "poly") {
+        const shape = polygons.find((p) => p.id === target.shapeId);
+        if (!shape) return null;
+        return getRectAnchor(shape, target.anchor, target.percent);
+      }
+      return null;
     },
-    [circles, getCircleAnchor, getRectAnchor, rectangles]
+    [rectangles, circles, images, texts, frames, polygons, getRectAnchor, getCircleAnchor]
   );
+
+  const getShapeBounds = useCallback((target: { kind: ShapeKind; shapeId: string }) => {
+    if (target.kind === "rect") return rectangles.find(r => r.id === target.shapeId);
+    if (target.kind === "circle") {
+      const c = circles.find(ci => ci.id === target.shapeId);
+      if (!c) return null;
+      return { x: c.x - c.rx, y: c.y - c.ry, width: c.rx * 2, height: c.ry * 2 };
+    }
+    if (target.kind === "image") return images.find(im => im.id === target.shapeId);
+    if (target.kind === "text") return texts.find(t => t.id === target.shapeId);
+    if (target.kind === "frame") return frames.find(f => f.id === target.shapeId);
+    if (target.kind === "poly") return polygons.find(p => p.id === target.shapeId);
+    return null;
+  }, [rectangles, circles, images, texts, frames, polygons]);
 
   const getAnchorDir = (anchor: AnchorSide) => {
     if (anchor === "top") return { x: 0, y: -1 };
@@ -2578,6 +2617,7 @@ const CanvasArea = () => {
             kind: startAnchor.kind,
             shapeId: startAnchor.shapeId,
             anchor: startAnchor.anchor,
+            percent: startAnchor.percent ?? 0.5,
           },
           previewPoint: startAnchor.point,
         });
@@ -2629,14 +2669,18 @@ const CanvasArea = () => {
     }
 
     if (tool === "Arrow") {
-      const tolerance = 12 / zoom;
+      const tolerance = 14 / zoom;
+      const borderTolerance = 20 / zoom;
       let nearest: {
-        kind: "rect" | "circle";
+        kind: ShapeKind;
         shapeId: string;
         anchor: AnchorSide;
         point: { x: number; y: number };
+        percent?: number;
       } | null = null;
       let bestDist = tolerance;
+
+      // 1. Check fixed handles first
       for (const h of anchorHandles) {
         const d = Math.hypot(point.x - h.point.x, point.y - h.point.y);
         if (d <= bestDist) {
@@ -2644,6 +2688,88 @@ const CanvasArea = () => {
           nearest = h;
         }
       }
+
+      // 2. If no fixed handle, check border proximity
+      if (!nearest) {
+        const allShapes = [
+          ...rectangles.map(s => ({ ...s, kind: "rect" as const })),
+          ...images.map(s => ({ ...s, kind: "image" as const })),
+          ...texts.map(s => ({ ...s, kind: "text" as const })),
+          ...frames.map(s => ({ ...s, kind: "frame" as const })),
+          ...polygons.map(s => ({ ...s, kind: "poly" as const })),
+        ];
+
+        for (const s of allShapes) {
+          const dx = point.x - s.x;
+          const dy = point.y - s.y;
+
+          // Check if near any of the 4 edges
+          const distTop = Math.abs(point.y - s.y);
+          const distBottom = Math.abs(point.y - (s.y + s.height));
+          const distLeft = Math.abs(point.x - s.x);
+          const distRight = Math.abs(point.x - (s.x + s.width));
+
+          const inX = point.x >= s.x - borderTolerance && point.x <= s.x + s.width + borderTolerance;
+          const inY = point.y >= s.y - borderTolerance && point.y <= s.y + s.height + borderTolerance;
+
+          if (inX && distTop <= borderTolerance) {
+            const p = Math.max(0, Math.min(1, (point.x - s.x) / s.width));
+            nearest = { kind: s.kind, shapeId: s.id, anchor: "top", percent: p, point: { x: s.x + s.width * p, y: s.y } };
+            break;
+          }
+          if (inX && distBottom <= borderTolerance) {
+            const p = Math.max(0, Math.min(1, (point.x - s.x) / s.width));
+            nearest = { kind: s.kind, shapeId: s.id, anchor: "bottom", percent: p, point: { x: s.x + s.width * p, y: s.y + s.height } };
+            break;
+          }
+          if (inY && distLeft <= borderTolerance) {
+            const p = Math.max(0, Math.min(1, (point.y - s.y) / s.height));
+            nearest = { kind: s.kind, shapeId: s.id, anchor: "left", percent: p, point: { x: s.x, y: s.y + s.height * p } };
+            break;
+          }
+          if (inY && distRight <= borderTolerance) {
+            const p = Math.max(0, Math.min(1, (point.y - s.y) / s.height));
+            nearest = { kind: s.kind, shapeId: s.id, anchor: "right", percent: p, point: { x: s.x + s.width, y: s.y + s.height * p } };
+            break;
+          }
+        }
+      }
+
+      // 3. Circle virtual anchors
+      if (!nearest) {
+        for (const c of circles) {
+          const dx = point.x - c.x;
+          const dy = point.y - c.y;
+          const distFromCenter = Math.hypot(dx, dy);
+          const toleranceSq = 20 / zoom;
+
+          // Check if mouse is near the perimeter
+          const avgR = (c.rx + c.ry) / 2;
+          if (Math.abs(distFromCenter - avgR) <= toleranceSq) {
+            const angle = Math.atan2(dy, dx);
+            const deg = (angle * 180) / Math.PI;
+
+            // Map angle to nearest AnchorSide
+            let side: AnchorSide = "right";
+            if (deg > -45 && deg <= 45) side = "right";
+            else if (deg > 45 && deg <= 135) side = "bottom";
+            else if (deg > 135 || deg <= -135) side = "left";
+            else side = "top";
+
+            nearest = {
+              kind: "circle",
+              shapeId: c.id,
+              anchor: side,
+              point: {
+                x: c.x + c.rx * Math.cos(angle),
+                y: c.y + c.ry * Math.sin(angle),
+              }
+            };
+            break;
+          }
+        }
+      }
+
       setHoverAnchor(nearest);
       if (pendingConnector) {
         setPendingConnector((prev) =>
@@ -3702,6 +3828,7 @@ const CanvasArea = () => {
               kind: endAnchor.kind,
               shapeId: endAnchor.shapeId,
               anchor: endAnchor.anchor,
+              percent: endAnchor.percent ?? 0.5,
             },
           };
           setConnectors((prev) => {
@@ -4321,107 +4448,119 @@ const CanvasArea = () => {
         highlight?: boolean;
         fromAnchor?: AnchorSide;
         toAnchor?: AnchorSide;
+        fromBounds?: { x: number; y: number; width: number; height: number };
+        toBounds?: { x: number; y: number; width: number; height: number };
       }
     ) => {
       ctx.save();
-      const fromDir = options?.fromAnchor
-        ? getAnchorDir(options.fromAnchor)
-        : { x: 0, y: 0 };
-      const toDir = options?.toAnchor
-        ? getAnchorDir(options.toAnchor)
-        : { x: 0, y: 0 };
-      const dx = toPt.x - fromPt.x;
-      const dy = toPt.y - fromPt.y;
-      const dist = Math.hypot(dx, dy) || 1;
-      const tolerance = 10 / zoom;
+      const fromDir = options?.fromAnchor ? getAnchorDir(options.fromAnchor) : { x: 0, y: 0 };
+      const toDir = options?.toAnchor ? getAnchorDir(options.toAnchor) : { x: 0, y: 0 };
 
-      const horizontalAligned =
-        Math.abs(dy) <= tolerance &&
-        (Math.abs(fromDir.x) > 0 || Math.abs(toDir.x) > 0);
-      const verticalAligned =
-        Math.abs(dx) <= tolerance &&
-        (Math.abs(fromDir.y) > 0 || Math.abs(toDir.y) > 0);
-
-      const strokeColor = options?.highlight
-        ? "rgba(83,182,255,0.9)"
-        : `rgba(255,255,255,0.9)`;
+      const strokeColor = options?.highlight ? "rgba(83,182,255,1)" : "rgba(255,255,255,0.9)";
       ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = options?.highlight ? 2.4 / zoom : 2 / zoom;
-      ctx.setLineDash(options?.highlight ? [6 / zoom, 4 / zoom] : []);
+      ctx.lineWidth = options?.highlight ? 2.5 / zoom : 2 / zoom;
+      ctx.setLineDash(options?.highlight ? [5 / zoom, 5 / zoom] : []);
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
 
-      // Straight path if well aligned
-      if (horizontalAligned || verticalAligned) {
-        ctx.beginPath();
-        ctx.moveTo(fromPt.x, fromPt.y);
-        ctx.lineTo(toPt.x, toPt.y);
-        ctx.stroke();
+      const offset = 24 / zoom;
+      const points: { x: number; y: number }[] = [fromPt];
 
-        const angle = Math.atan2(toPt.y - fromPt.y, toPt.x - fromPt.x);
-        const size = 8 / zoom;
-        ctx.beginPath();
-        ctx.moveTo(toPt.x, toPt.y);
-        ctx.lineTo(
-          toPt.x - size * Math.cos(angle - Math.PI / 6),
-          toPt.y - size * Math.sin(angle - Math.PI / 6)
-        );
-        ctx.lineTo(
-          toPt.x - size * Math.cos(angle + Math.PI / 6),
-          toPt.y - size * Math.sin(angle + Math.PI / 6)
-        );
-        ctx.closePath();
-        ctx.fillStyle = strokeColor;
-        ctx.fill();
-        ctx.restore();
-        return;
-      }
+      const p1 = { x: fromPt.x + fromDir.x * offset, y: fromPt.y + fromDir.y * offset };
+      if (fromDir.x !== 0 || fromDir.y !== 0) points.push(p1);
 
-      // Curved: push out of shapes along anchor normals, then blend
-      const minOffset = 28 / zoom;
-      const baseOffset = Math.min(Math.max(dist / 3, minOffset), 80 / zoom);
-      const ctrl1 = {
-        x: fromPt.x + fromDir.x * baseOffset,
-        y: fromPt.y + fromDir.y * baseOffset,
-      };
-      const ctrl2 = {
-        x: toPt.x + toDir.x * baseOffset,
-        y: toPt.y + toDir.y * baseOffset,
+      const p4 = toPt;
+      const p3 = { x: toPt.x + toDir.x * offset, y: toPt.y + toDir.y * offset };
+
+      const isInternal = (p: { x: number; y: number }, b?: { x: number; y: number; width: number; height: number }) => {
+        if (!b) return false;
+        const pad = 2 / zoom;
+        return p.x > b.x - pad && p.x < b.x + b.width + pad && p.y > b.y - pad && p.y < b.y + b.height + pad;
       };
 
-      // If no anchor dirs, fall back to gentle bend
-      const fallback =
-        Math.abs(fromDir.x) + Math.abs(fromDir.y) === 0 &&
-        Math.abs(toDir.x) + Math.abs(toDir.y) === 0;
-      const ctrlFallback = {
-        x: (fromPt.x + toPt.x) / 2 - (dy / dist) * baseOffset,
-        y: (fromPt.y + toPt.y) / 2 + (dx / dist) * baseOffset,
-      };
-
-      ctx.beginPath();
-      ctx.moveTo(fromPt.x, fromPt.y);
-      if (fallback) {
-        ctx.quadraticCurveTo(ctrlFallback.x, ctrlFallback.y, toPt.x, toPt.y);
+      if (fromDir.x !== 0) {
+        if (toDir.y !== 0) {
+          const elbow = { x: p3.x, y: p1.y };
+          if (isInternal(elbow, options?.fromBounds) || isInternal(elbow, options?.toBounds)) {
+            points.push({ x: p1.x, y: p3.y });
+          } else {
+            points.push(elbow);
+          }
+        } else {
+          const midX = (p1.x + p3.x) / 2;
+          const elbow1 = { x: midX, y: p1.y };
+          const elbow2 = { x: midX, y: p3.y };
+          if (isInternal(elbow1, options?.fromBounds) || isInternal(elbow2, options?.fromBounds) ||
+            isInternal(elbow1, options?.toBounds) || isInternal(elbow2, options?.toBounds)) {
+            const side = fromPt.y < (options?.fromBounds ? options.fromBounds.y + options.fromBounds.height / 2 : p1.y) ? -1 : 1;
+            const safeY = (options?.fromBounds ? (side < 0 ? options.fromBounds.y - offset : options.fromBounds.y + options.fromBounds.height + offset) : p1.y);
+            points.push({ x: p1.x, y: safeY });
+            points.push({ x: p3.x, y: safeY });
+          } else {
+            points.push(elbow1);
+            points.push(elbow2);
+          }
+        }
+      } else if (fromDir.y !== 0) {
+        if (toDir.x !== 0) {
+          const elbow = { x: p1.x, y: p3.y };
+          if (isInternal(elbow, options?.fromBounds) || isInternal(elbow, options?.toBounds)) {
+            points.push({ x: p3.x, y: p1.y });
+          } else {
+            points.push(elbow);
+          }
+        } else {
+          const midY = (p1.y + p3.y) / 2;
+          const elbow1 = { x: p1.x, y: midY };
+          const elbow2 = { x: p3.x, y: midY };
+          if (isInternal(elbow1, options?.fromBounds) || isInternal(elbow2, options?.fromBounds) ||
+            isInternal(elbow1, options?.toBounds) || isInternal(elbow2, options?.toBounds)) {
+            const side = fromPt.x < (options?.fromBounds ? options.fromBounds.x + options.fromBounds.width / 2 : p1.x) ? -1 : 1;
+            const safeX = (options?.fromBounds ? (side < 0 ? options.fromBounds.x - offset : options.fromBounds.x + options.fromBounds.width + offset) : p1.x);
+            points.push({ x: safeX, y: p1.y });
+            points.push({ x: safeX, y: p3.y });
+          } else {
+            points.push(elbow1);
+            points.push(elbow2);
+          }
+        }
       } else {
-        ctx.bezierCurveTo(ctrl1.x, ctrl1.y, ctrl2.x, ctrl2.y, toPt.x, toPt.y);
+        points.push({ x: fromPt.x, y: toPt.y });
       }
+
+      if (toDir.x !== 0 || toDir.y !== 0) points.push(p3);
+      points.push(p4);
+
+      const cornerRadius = 10 / zoom;
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length - 1; i++) {
+        const pPrev = points[i - 1];
+        const pCurrent = points[i];
+        const pNext = points[i + 1];
+        const d1 = Math.hypot(pCurrent.x - pPrev.x, pCurrent.y - pPrev.y);
+        const d2 = Math.hypot(pNext.x - pCurrent.x, pNext.y - pCurrent.y);
+        const actualRadius = Math.min(cornerRadius, d1 / 2, d2 / 2);
+        ctx.arcTo(pCurrent.x, pCurrent.y, pNext.x, pNext.y, actualRadius);
+      }
+      ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
       ctx.stroke();
 
-      const tail = fallback ? ctrlFallback : ctrl2;
-      const angle = Math.atan2(toPt.y - tail.y, toPt.x - tail.x);
-      const size = 8 / zoom;
+      const lastP = points[points.length - 1];
+      const prevP = points[points.length - 2] || points[0];
+      const angle = Math.atan2(lastP.y - prevP.y, lastP.x - prevP.x);
+      const size = 10 / zoom;
+      ctx.save();
+      ctx.translate(lastP.x, lastP.y);
+      ctx.rotate(angle);
       ctx.beginPath();
-      ctx.moveTo(toPt.x, toPt.y);
-      ctx.lineTo(
-        toPt.x - size * Math.cos(angle - Math.PI / 6),
-        toPt.y - size * Math.sin(angle - Math.PI / 6)
-      );
-      ctx.lineTo(
-        toPt.x - size * Math.cos(angle + Math.PI / 6),
-        toPt.y - size * Math.sin(angle + Math.PI / 6)
-      );
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-size, -size * 0.5);
+      ctx.lineTo(-size, size * 0.5);
       ctx.closePath();
       ctx.fillStyle = strokeColor;
       ctx.fill();
-
+      ctx.restore();
       ctx.restore();
     };
 
@@ -4493,6 +4632,8 @@ const CanvasArea = () => {
       drawConnector(fromPt, toPt, {
         fromAnchor: c.from.anchor,
         toAnchor: c.to.anchor,
+        fromBounds: getShapeBounds(c.from) || undefined,
+        toBounds: getShapeBounds(c.to) || undefined,
         highlight:
           selectedShape?.kind === "connector" && selectedShape.index === idx,
       });
@@ -4536,6 +4677,7 @@ const CanvasArea = () => {
           highlight: true,
           fromAnchor: pendingConnector.from.anchor,
           toAnchor: hoverAnchor?.anchor,
+          fromBounds: getShapeBounds(pendingConnector.from) || undefined,
         });
       }
     }
@@ -4683,22 +4825,31 @@ const CanvasArea = () => {
   const anchorHandles = useMemo(() => {
     if (activeTool !== "Arrow") return [];
     const handles: {
-      kind: "rect" | "circle";
+      kind: ShapeKind;
       shapeId: string;
       anchor: AnchorSide;
       point: { x: number; y: number };
+      percent?: number;
     }[] = [];
 
-    rectangles.forEach((r) => {
+    const addRectHandles = (r: { id: string; x: number; y: number; width: number; height: number }, kind: ShapeKind) => {
       (["top", "right", "bottom", "left"] as AnchorSide[]).forEach((side) => {
         handles.push({
-          kind: "rect",
+          kind,
           shapeId: r.id,
           anchor: side,
           point: getRectAnchor(r, side),
+          percent: 0.5
         });
       });
-    });
+    };
+
+    rectangles.forEach((r) => addRectHandles(r, "rect"));
+    images.forEach((im) => addRectHandles(im, "image"));
+    texts.forEach((t) => addRectHandles(t, "text"));
+    frames.forEach((f) => addRectHandles(f, "frame"));
+    polygons.forEach((p) => addRectHandles(p, "poly"));
+
     circles.forEach((c) => {
       (["top", "right", "bottom", "left"] as AnchorSide[]).forEach((side) => {
         handles.push({
@@ -4710,7 +4861,7 @@ const CanvasArea = () => {
       });
     });
     return handles;
-  }, [activeTool, circles, getCircleAnchor, getRectAnchor, rectangles]);
+  }, [activeTool, circles, getCircleAnchor, getRectAnchor, rectangles, images, texts, frames, polygons]);
 
   return (
     <div
@@ -4839,40 +4990,49 @@ const CanvasArea = () => {
         onDoubleClick={handleDoubleClick}
       />
 
-      {activeTool === "Arrow" &&
-        anchorHandles.map((h) => {
+      {activeTool === "Arrow" && (() => {
+        const handlesToRender = [...anchorHandles];
+        if (hoverAnchor && !anchorHandles.some(h => h.shapeId === hoverAnchor.shapeId && h.anchor === hoverAnchor.anchor && Math.hypot(h.point.x - hoverAnchor.point.x, h.point.y - hoverAnchor.point.y) < 1)) {
+          handlesToRender.push(hoverAnchor);
+        }
+
+        return handlesToRender.map((h, i) => {
           const pos = canvasToClient(h.point.x, h.point.y);
           const isHover =
             hoverAnchor &&
             hoverAnchor.shapeId === h.shapeId &&
             hoverAnchor.kind === h.kind &&
-            hoverAnchor.anchor === h.anchor;
+            hoverAnchor.anchor === h.anchor &&
+            Math.hypot(hoverAnchor.point.x - h.point.x, hoverAnchor.point.y - h.point.y) < 2;
+
           return (
             <div
-              key={`${h.shapeId}-${h.anchor}`}
+              key={i}
               className="absolute pointer-events-none"
               style={{
                 left: `${pos.x}px`,
                 top: `${pos.y}px`,
                 transform: "translate(-50%, -50%)",
+                zIndex: isHover ? 20 : 10,
               }}
             >
               <div
-                className={`rounded-full border ${isHover
-                  ? "bg-white border-white shadow-md"
-                  : "border-white/60 bg-white/20"
+                className={`rounded-full shadow-sm transition-all duration-150 ${isHover
+                  ? "bg-white border-[2px] border-[#53b6ff] scale-125"
+                  : "bg-white/40 border border-white/80"
                   }`}
                 style={{
-                  width: `${10}px`,
-                  height: `${10}px`,
+                  width: `${8}px`,
+                  height: `${8}px`,
                   boxShadow: isHover
-                    ? "0 0 0 6px rgba(255,255,255,0.1)"
-                    : undefined,
+                    ? "0 0 0 6px rgba(83,182,255,0.2)"
+                    : "0 1px 3px rgba(0,0,0,0.2)",
                 }}
               />
             </div>
           );
-        })}
+        });
+      })()}
 
       {selectionRect && selectionOverlayStyle && (
         <div
