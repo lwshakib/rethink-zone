@@ -807,87 +807,48 @@ const CanvasArea = ({ initialData, onChange }: CanvasAreaProps) => {
     if (!selectedShape) return;
     const { kind, index } = selectedShape;
 
-    if (kind === "rect") {
-      setRectangles((prev) => {
-        const target = prev[index];
-        if (!target) return prev;
-        const next = prev.filter((_, i) => i !== index);
-        const nextConnectors = connectors.filter(
-          (c) =>
-            !(
-              (c.from.kind === "rect" && c.from.shapeId === target.id) ||
-              (c.to.kind === "rect" && c.to.shapeId === target.id)
-            )
-        );
-        setConnectors(nextConnectors);
-        pushHistory({ rectangles: next, connectors: nextConnectors });
-        return next;
+    const deleteId =
+      kind === "rect" ? rectangles[index]?.id :
+        kind === "circle" ? circles[index]?.id :
+          kind === "image" ? images[index]?.id :
+            kind === "text" ? texts[index]?.id :
+              kind === "frame" ? frames[index]?.id :
+                kind === "line" ? lines[index]?.id :
+                  kind === "arrow" ? arrows[index]?.id :
+                    kind === "poly" ? polygons[index]?.id :
+                      kind === "connector" ? connectors[index]?.id : null;
+
+    if (!deleteId) return;
+
+    // Remove associated connectors if we're deleting a shape
+    const nextConnectors = kind === "connector"
+      ? connectors.filter((_, i) => i !== index)
+      : connectors.filter(c => c.from.shapeId !== deleteId && c.to.shapeId !== deleteId);
+
+    if (kind === "rect") setRectangles(prev => prev.filter(i => i.id !== deleteId));
+    else if (kind === "circle") setCircles(prev => prev.filter(i => i.id !== deleteId));
+    else if (kind === "image") setImages(prev => prev.filter(i => i.id !== deleteId));
+    else if (kind === "text") setTexts(prev => prev.filter(i => i.id !== deleteId));
+    else if (kind === "frame") setFrames(prev => prev.filter(i => i.id !== deleteId));
+    else if (kind === "line") setLines(prev => prev.filter(i => i.id !== deleteId));
+    else if (kind === "arrow") setArrows(prev => prev.filter(i => i.id !== deleteId));
+    else if (kind === "poly") setPolygons(prev => prev.filter(i => i.id !== deleteId));
+
+    if (kind !== "connector") {
+      setConnectors(nextConnectors);
+      pushHistory({
+        rectangles: kind === "rect" ? rectangles.filter(i => i.id !== deleteId) : rectangles,
+        circles: kind === "circle" ? circles.filter(i => i.id !== deleteId) : circles,
+        images: kind === "image" ? images.filter(i => i.id !== deleteId) : images,
+        texts: kind === "text" ? texts.filter(i => i.id !== deleteId) : texts,
+        frames: kind === "frame" ? frames.filter(i => i.id !== deleteId) : frames,
+        lines: kind === "line" ? lines.filter(i => i.id !== deleteId) : lines,
+        arrows: kind === "arrow" ? arrows.filter(i => i.id !== deleteId) : arrows,
+        polygons: kind === "poly" ? polygons.filter(i => i.id !== deleteId) : polygons,
+        connectors: nextConnectors
       });
-    } else if (kind === "circle") {
-      setCircles((prev) => {
-        const target = prev[index];
-        if (!target) return prev;
-        const next = prev.filter((_, i) => i !== index);
-        const nextConnectors = connectors.filter(
-          (c) =>
-            !(
-              (c.from.kind === "circle" && c.from.shapeId === target.id) ||
-              (c.to.kind === "circle" && c.to.shapeId === target.id)
-            )
-        );
-        setConnectors(nextConnectors);
-        pushHistory({ circles: next, connectors: nextConnectors });
-        return next;
-      });
-    } else if (kind === "image") {
-      setImages((prev) => {
-        if (!prev[index]) return prev;
-        const next = prev.filter((_, i) => i !== index);
-        pushHistory({ images: next });
-        return next;
-      });
-    } else if (kind === "text") {
-      setTexts((prev) => {
-        if (!prev[index]) return prev;
-        const next = prev.filter((_, i) => i !== index);
-        pushHistory({ texts: next });
-        return next;
-      });
-    } else if (kind === "frame") {
-      setFrames((prev) => {
-        if (!prev[index]) return prev;
-        const next = prev.filter((_, i) => i !== index);
-        pushHistory({ frames: next });
-        return next;
-      });
-    } else if (kind === "line") {
-      setLines((prev) => {
-        if (!prev[index]) return prev;
-        const next = prev.filter((_, i) => i !== index);
-        pushHistory({ lines: next });
-        return next;
-      });
-    } else if (kind === "arrow") {
-      setArrows((prev) => {
-        if (!prev[index]) return prev;
-        const next = prev.filter((_, i) => i !== index);
-        pushHistory({ arrows: next });
-        return next;
-      });
-    } else if (kind === "connector") {
-      setConnectors((prev) => {
-        if (!prev[index]) return prev;
-        const next = prev.filter((_, i) => i !== index);
-        pushHistory({ connectors: next });
-        return next;
-      });
-    } else if (kind === "poly") {
-      setPolygons((prev) => {
-        if (!prev[index]) return prev;
-        const next = prev.filter((_, i) => i !== index);
-        pushHistory({ polygons: next });
-        return next;
-      });
+    } else {
+      pushHistory({ connectors: nextConnectors });
     }
 
     setSelectedShape(null);
@@ -1385,6 +1346,9 @@ const CanvasArea = ({ initialData, onChange }: CanvasAreaProps) => {
       const y2 = p.y + p.height;
       if (point.x >= p.x && point.x <= x2 && point.y >= p.y && point.y <= y2) {
         setPolygons((prev) => prev.filter((_, idx) => idx !== i));
+        setConnectors((prev) =>
+          prev.filter((con) => con.from.shapeId !== p.id && con.to.shapeId !== p.id)
+        );
         setSelectedShape(null);
         return true;
       }
@@ -1401,6 +1365,9 @@ const CanvasArea = ({ initialData, onChange }: CanvasAreaProps) => {
         point.y <= y2
       ) {
         setImages((prev) => prev.filter((_, idx) => idx !== i));
+        setConnectors((prev) =>
+          prev.filter((con) => con.from.shapeId !== im.id && con.to.shapeId !== im.id)
+        );
         setSelectedShape(null);
         return true;
       }
@@ -1412,6 +1379,9 @@ const CanvasArea = ({ initialData, onChange }: CanvasAreaProps) => {
       const y2 = t.y + t.height;
       if (point.x >= t.x && point.x <= x2 && point.y >= t.y && point.y <= y2) {
         setTexts((prev) => prev.filter((_, idx) => idx !== i));
+        setConnectors((prev) =>
+          prev.filter((con) => con.from.shapeId !== t.id && con.to.shapeId !== t.id)
+        );
         setSelectedShape(null);
         return true;
       }
@@ -5617,7 +5587,7 @@ const CanvasArea = ({ initialData, onChange }: CanvasAreaProps) => {
 
       <div
         onWheel={(e) => e.stopPropagation()}
-        className="absolute left-4 top-20 flex flex-col items-center gap-2 rounded-xl bg-card/90 backdrop-blur-md px-1.5 py-3 shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_10px_30px_rgba(0,0,0,0.5)] border border-white/5"
+        className="absolute left-4 top-20 flex flex-col items-center gap-2 rounded-xl bg-card/90 backdrop-blur-md px-1.5 py-3 shadow-lg border border-border/50"
       >
         {[
           { icon: Hand, label: "Hand" },
@@ -5638,7 +5608,7 @@ const CanvasArea = ({ initialData, onChange }: CanvasAreaProps) => {
               onClick={() => setActiveTool(label)}
               className={`flex items-center justify-center rounded-lg h-10 w-10 transition-all ${isActive
                 ? "bg-primary text-primary-foreground shadow-lg scale-110"
-                : "text-muted-foreground hover:bg-white/10 hover:text-foreground hover:scale-105 active:scale-95"
+                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground hover:scale-105 active:scale-95"
                 }`}
               aria-label={label}
             >
