@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react";
 import ReactDOMServer from "react-dom/server";
+import { useTheme } from "next-themes";
 import {
   Redo2,
   Undo2,
@@ -180,7 +181,18 @@ const GENERAL_ICONS = [
   { name: "arrow-up-right", icon: ArrowUpRight },
 ];
 
-const CanvasArea = () => {
+type CanvasData = {
+  pan: { x: number; y: number };
+  zoom: number;
+  snapshot: HistoryEntry;
+};
+
+type CanvasAreaProps = {
+  initialData?: CanvasData | null;
+  onChange?: (data: CanvasData) => void;
+};
+
+const CanvasArea = ({ initialData, onChange }: CanvasAreaProps) => {
   const [zoom, setZoom] = useState(1);
   const [activeTool, setActiveTool] = useState("Hand");
   const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
@@ -196,6 +208,11 @@ const CanvasArea = () => {
     name: string;
     src: string;
   } | null>(null);
+
+  const { resolvedTheme } = useTheme();
+  const themeStroke = resolvedTheme === "dark" ? "rgba(255, 255, 255, 0.85)" : "rgba(0, 0, 0, 0.75)";
+  const themeText = resolvedTheme === "dark" ? "white" : "black";
+  const themeFrameBg = resolvedTheme === "dark" ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)";
 
   useEffect(() => {
     setIsLibraryLoading(true);
@@ -241,8 +258,6 @@ const CanvasArea = () => {
     setVisibleIconsLimit(60);
   }, [plusMenuView, plusMenuSubView]);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const hydratedRef = useRef(false);
   const [isHandPanning, setIsHandPanning] = useState(false);
   const [isSpacePanning, setIsSpacePanning] = useState(false);
   const tempPanRef = useRef(false);
@@ -429,7 +444,7 @@ const CanvasArea = () => {
     previewPoint: { x: number; y: number };
   } | null>(null);
   const pointerToolRef = useRef<string>("");
-  const STORAGE_KEY = "sketch-canvas-state";
+
   const measureText = useCallback((text: string, fontSize: number) => {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -774,20 +789,7 @@ const CanvasArea = () => {
     frames,
     polygons,
   ]);
-  const persistState = useCallback(
-    (state: {
-      pan: { x: number; y: number };
-      zoom: number;
-      snapshot: HistoryEntry;
-    }) => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      } catch (err) {
-        console.error("Failed to persist canvas state", err);
-      }
-    },
-    []
-  );
+
   const pushHistory = useCallback(
     (overrides?: Partial<HistoryEntry>) => {
       if (isUndoRedoRef.current) return;
@@ -1244,59 +1246,34 @@ const CanvasArea = () => {
     ]
   );
 
-  // hydrate from localStorage once
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as {
-        pan?: { x: number; y: number };
-        zoom?: number;
-        snapshot?: HistoryEntry;
-      } | null;
-      if (!parsed?.snapshot) return;
+  // log + call onChange on any canvas change (including pan/zoom)
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
-      applySnapshot(parsed.snapshot);
-      setHistory([parsed.snapshot]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const currentSnapshot = snapshot();
+      onChangeRef.current?.({
+        pan,
+        zoom,
+        snapshot: currentSnapshot,
+      });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [snapshot, pan, zoom]);
+
+  // Initial load from initialData
+  useEffect(() => {
+    if (initialData?.snapshot) {
+      applySnapshot(initialData.snapshot);
+      setHistory([initialData.snapshot]);
       setHistoryIndex(0);
-      if (parsed.pan) setPan(parsed.pan);
-      if (parsed.zoom) setZoom(clampZoom(parsed.zoom));
-      hydratedRef.current = true;
+      if (initialData.pan) setPan(initialData.pan);
+      if (initialData.zoom) setZoom(clampZoom(initialData.zoom));
       requestAnimationFrame(() => setRerenderTick((t) => t + 1));
-    } catch (err) {
-      console.error("Failed to load canvas state", err);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // log + debounce persist on any canvas change (including pan/zoom)
-  useEffect(() => {
-    const currentSnapshot = snapshot();
-    console.log("[Canvas] change", {
-      pan,
-      zoom,
-      counts: {
-        rectangles: currentSnapshot.rectangles.length,
-        circles: currentSnapshot.circles.length,
-        lines: currentSnapshot.lines.length,
-        arrows: currentSnapshot.arrows.length,
-        connectors: currentSnapshot.connectors.length,
-        paths: currentSnapshot.paths.length,
-        images: currentSnapshot.images.length,
-        texts: currentSnapshot.texts.length,
-        frames: currentSnapshot.frames.length,
-      },
-    });
-
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
-      persistState({ pan, zoom, snapshot: currentSnapshot });
-    }, 800);
-
-    return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    };
-  }, [snapshot, pan, zoom, persistState]);
 
   const eraseAtPoint = (point: { x: number; y: number }) => {
     // check topmost: paths -> arrows -> lines -> circles -> rects (all reversed for topmost)
@@ -3930,6 +3907,8 @@ const CanvasArea = () => {
     ctx.translate(pan.x, pan.y);
     ctx.scale(zoom, zoom);
 
+    // Draw shapes (translated world space)
+
     const drawImageItem = (
       im: { src: string; x: number; y: number; width: number; height: number },
       alpha = 1,
@@ -3998,7 +3977,7 @@ const CanvasArea = () => {
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.font = `${t.fontSize}px sans-serif`;
-      ctx.fillStyle = "white";
+      ctx.fillStyle = themeText;
       ctx.textBaseline = "top";
       const lines = t.text.split("\n");
       const lineHeight = t.fontSize * 1.2;
@@ -4049,7 +4028,7 @@ const CanvasArea = () => {
 
       ctx.strokeStyle = isSelected
         ? `rgba(83,182,255,0.9)`
-        : `rgba(255,255,255,${alpha})`;
+        : themeStroke;
       ctx.lineWidth = isSelected ? 1.5 / zoom : 2 / zoom;
       ctx.setLineDash([]);
       ctx.strokeRect(x, y, width, height);
@@ -4126,21 +4105,21 @@ const CanvasArea = () => {
       };
 
       // Draw background with semi-transparent white
-      ctx.fillStyle = `rgba(255, 255, 255, ${0.08 * alpha})`;
+      ctx.fillStyle = themeFrameBg;
       drawRoundedRect(x, y, width, height, radius);
       ctx.fill();
 
       // Draw border
       ctx.strokeStyle = isSelected
         ? `rgba(180,220,255,${0.9 * alpha})`
-        : `rgba(255, 255, 255, ${0.12 * alpha})`;
+        : themeStroke;
       ctx.lineWidth = 1 / zoom;
       ctx.setLineDash(isSelected ? [4 / zoom, 4 / zoom] : []);
       drawRoundedRect(x, y, width, height, radius);
       ctx.stroke();
 
       // Draw frame label above the frame
-      ctx.fillStyle = `rgba(255, 255, 255, ${0.8 * alpha})`;
+      ctx.fillStyle = themeText;
       ctx.font = `${11 / zoom}px sans-serif`;
       ctx.textBaseline = "bottom";
       ctx.textAlign = "left";
@@ -4182,7 +4161,9 @@ const CanvasArea = () => {
       isSelected = false
     ) => {
       ctx.save();
-      ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+      ctx.strokeStyle = isSelected
+        ? "rgba(83,182,255,0.9)"
+        : themeStroke;
       ctx.lineWidth = 2 / zoom;
       ctx.setLineDash([]);
       ctx.beginPath();
@@ -4238,7 +4219,7 @@ const CanvasArea = () => {
       const { x, y, width, height, type } = p;
       ctx.strokeStyle = isSelected
         ? `rgba(83,182,255,0.9)`
-        : `rgba(255,255,255,${alpha})`;
+        : themeStroke;
       ctx.lineWidth = isSelected ? 2.4 / zoom : 2 / zoom;
       ctx.setLineDash([]);
       ctx.beginPath();
@@ -4364,7 +4345,9 @@ const CanvasArea = () => {
       isSelected = false
     ) => {
       ctx.save();
-      ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+      ctx.strokeStyle = isSelected
+        ? "rgba(83,182,255,0.9)"
+        : themeStroke;
       ctx.lineWidth = 2 / zoom;
       ctx.setLineDash([]);
       ctx.beginPath();
@@ -4397,7 +4380,9 @@ const CanvasArea = () => {
       isSelected = false
     ) => {
       ctx.save();
-      ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+      ctx.strokeStyle = isSelected
+        ? "rgba(83,182,255,0.9)"
+        : themeStroke;
       ctx.lineWidth = 2 / zoom;
       ctx.setLineDash([]);
       ctx.beginPath();
@@ -4419,7 +4404,9 @@ const CanvasArea = () => {
         l.y2 - size * Math.sin(angle + Math.PI / 6)
       );
       ctx.closePath();
-      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      ctx.fillStyle = isSelected
+        ? "rgba(83,182,255,0.9)"
+        : themeStroke;
       ctx.fill();
       if (isSelected) {
         const handleSize = 7 / zoom;
@@ -4456,7 +4443,7 @@ const CanvasArea = () => {
       const fromDir = options?.fromAnchor ? getAnchorDir(options.fromAnchor) : { x: 0, y: 0 };
       const toDir = options?.toAnchor ? getAnchorDir(options.toAnchor) : { x: 0, y: 0 };
 
-      const strokeColor = options?.highlight ? "rgba(83,182,255,1)" : "rgba(255,255,255,0.9)";
+      const strokeColor = options?.highlight ? "rgba(83,182,255,1)" : themeStroke;
       ctx.strokeStyle = strokeColor;
       ctx.lineWidth = options?.highlight ? 2.5 / zoom : 2 / zoom;
       ctx.setLineDash(options?.highlight ? [5 / zoom, 5 / zoom] : []);
@@ -4570,7 +4557,7 @@ const CanvasArea = () => {
     ) => {
       if (p.points.length < 2) return;
       ctx.save();
-      ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+      ctx.strokeStyle = themeStroke;
       ctx.lineWidth = 2 / zoom;
       ctx.setLineDash([]);
       ctx.beginPath();
@@ -4765,6 +4752,10 @@ const CanvasArea = () => {
     pan,
     selectedShape,
     rerenderTick,
+    resolvedTheme,
+    themeStroke,
+    themeText,
+    themeFrameBg,
   ]);
 
   const getCursor = () => {
@@ -5043,26 +5034,28 @@ const CanvasArea = () => {
 
       <div
         onWheel={(e) => e.stopPropagation()}
-        className="absolute left-4 bottom-4 flex items-center gap-2 rounded-full bg-[#1b1b1b] px-2 py-1 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
+        className="absolute left-4 bottom-4 flex items-center gap-2 rounded-full bg-card/85 backdrop-blur-md px-2 py-1 shadow-lg border border-border"
       >
         <button
           onClick={handleUndo}
           disabled={!canUndo}
-          className={`flex items-center justify-center h-9 w-9 rounded-full transition border border-white/10 ${canUndo
-            ? "text-white/80 hover:bg-white/10"
-            : "text-white/30 cursor-not-allowed"
+          className={`flex items-center justify-center h-9 w-9 rounded-full transition-all ${canUndo
+            ? "text-foreground hover:bg-accent hover:scale-105 active:scale-95"
+            : "text-muted-foreground/30 cursor-not-allowed"
             }`}
+          aria-label="Undo"
         >
           <Undo2 className="h-4 w-4" />
         </button>
-        <div className="h-6 w-px bg-white/10" />
+        <div className="h-6 w-px bg-border/50" />
         <button
           onClick={handleRedo}
           disabled={!canRedo}
-          className={`flex items-center justify-center h-9 w-9 rounded-full transition border border-white/10 ${canRedo
-            ? "text-white/80 hover:bg-white/10"
-            : "text-white/30 cursor-not-allowed"
+          className={`flex items-center justify-center h-9 w-9 rounded-full transition-all ${canRedo
+            ? "text-foreground hover:bg-accent hover:scale-105 active:scale-95"
+            : "text-muted-foreground/30 cursor-not-allowed"
             }`}
+          aria-label="Redo"
         >
           <Redo2 className="h-4 w-4" />
         </button>
@@ -5070,29 +5063,29 @@ const CanvasArea = () => {
 
       <div
         onWheel={(e) => e.stopPropagation()}
-        className="absolute right-4 bottom-4 flex items-center gap-2 rounded-full bg-[#1b1b1b] px-2 py-1 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
+        className="absolute right-4 bottom-4 flex items-center gap-2 rounded-full bg-card/85 backdrop-blur-md px-2 py-1 shadow-lg border border-border"
       >
         <button
           onClick={() => zoomOut()}
-          className="flex items-center justify-center h-9 w-9 rounded-full transition border border-white/10 text-white/80 hover:bg-white/10"
+          className="flex items-center justify-center h-9 w-9 rounded-full transition-all text-foreground hover:bg-accent hover:scale-105 active:scale-95"
           aria-label="Zoom out"
         >
           <ZoomOut className="h-4 w-4" />
         </button>
-        <div className="px-3 text-xs font-semibold text-white/80 min-w-[68px] text-center">
+        <div className="px-3 text-xs font-bold text-foreground min-w-[68px] text-center">
           {zoomPercent}%
         </div>
         <button
           onClick={() => zoomIn()}
-          className="flex items-center justify-center h-9 w-9 rounded-full transition border border-white/10 text-white/80 hover:bg-white/10"
+          className="flex items-center justify-center h-9 w-9 rounded-full transition-all text-foreground hover:bg-accent hover:scale-105 active:scale-95"
           aria-label="Zoom in"
         >
           <ZoomIn className="h-4 w-4" />
         </button>
-        <div className="h-6 w-px bg-white/10" />
+        <div className="h-6 w-px bg-border/50" />
         <button
           onClick={fitToScreen}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium text-white/80 border border-white/10 hover:bg-white/10 transition"
+          className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold text-foreground hover:bg-accent transition-all active:scale-95 border border-transparent hover:border-border"
           aria-label="Fit to screen"
         >
           <Scan className="h-4 w-4" />
@@ -5100,7 +5093,7 @@ const CanvasArea = () => {
         </button>
         <button
           onClick={resetView}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium text-white/80 border border-white/10 hover:bg-white/10 transition"
+          className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold text-foreground hover:bg-accent transition-all active:scale-95 border border-transparent hover:border-border"
           aria-label="Reset zoom"
         >
           <RefreshCw className="h-4 w-4" />
@@ -5108,19 +5101,18 @@ const CanvasArea = () => {
         </button>
       </div>
 
-      {/* Plus Menu Panel */}
       <div className="absolute left-4 top-4 flex items-start gap-4 z-100">
-        <div className="flex flex-col items-center rounded-md bg-[#1b1b1b] px-1.5 py-1.5 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
+        <div className="flex flex-col items-center rounded-xl bg-card shadow-lg border border-border p-1.5">
           <button
             onClick={() => setIsPlusMenuOpen(!isPlusMenuOpen)}
-            className={`flex items-center justify-center h-9 w-9 rounded-md transition ${isPlusMenuOpen
-              ? "bg-[#2a2a2a] text-white shadow"
-              : "text-white/80 hover:bg-white/10"
+            className={`flex items-center justify-center h-10 w-10 rounded-lg transition-all ${isPlusMenuOpen
+              ? "bg-primary text-primary-foreground shadow-md scale-110"
+              : "text-foreground hover:bg-accent hover:scale-105 active:scale-95"
               }`}
             aria-label="Add"
           >
             <Plus
-              className={`h-4 w-4 transition-transform duration-200 ${isPlusMenuOpen ? "rotate-45" : "rotate-0"
+              className={`h-5 w-5 transition-transform duration-300 ${isPlusMenuOpen ? "rotate-45" : "rotate-0"
                 }`}
             />
           </button>
@@ -5130,20 +5122,20 @@ const CanvasArea = () => {
         {isPlusMenuOpen && (
           <div
             onWheel={(e) => e.stopPropagation()}
-            className="flex flex-col rounded-xl bg-[#0f0f0f] shadow-2xl border border-white/10 w-85 overflow-hidden"
+            className="flex flex-col rounded-2xl bg-card shadow-2xl border border-border w-96 overflow-hidden backdrop-blur-xl"
           >
             {/* Search Section */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
-              <Search className="h-4 w-4 text-white/40" />
+            <div className="flex items-center gap-3 px-4 py-4 border-b border-border/50 bg-muted/30">
+              <Search className="h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Insert item"
+                placeholder="Find icons, shapes, and more..."
                 value={iconSearchQuery}
                 onChange={(e) => {
                   setIconSearchQuery(e.target.value);
                   setVisibleIconsLimit(60); // Reset limit on search
                 }}
-                className="bg-transparent border-none outline-none text-sm text-white/90 w-full placeholder:text-white/30"
+                className="bg-transparent border-none outline-none text-sm text-foreground w-full placeholder:text-muted-foreground/50"
                 autoFocus
               />
             </div>
@@ -5164,19 +5156,19 @@ const CanvasArea = () => {
                 <div className="space-y-4">
                   {/* All Categories Section */}
                   <div className="space-y-1">
-                    <div className="px-3 py-2 text-[11px] font-semibold text-white/40 uppercase tracking-wider">
+                    <div className="px-4 py-3 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
                       All Categories
                     </div>
 
-                    <button className="flex items-center gap-4 w-full px-3 py-3 rounded-lg hover:bg-white/5 transition text-left group">
-                      <div className="h-9 w-9 flex items-center justify-center rounded-lg bg-white/5 border border-white/10">
-                        <Sparkles className="h-5 w-5 text-white/70" />
+                    <button className="flex items-center gap-4 w-full px-4 py-3.5 rounded-xl hover:bg-accent/50 transition-all text-left group">
+                      <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-primary/10 border border-primary/20 shadow-sm transition-transform group-hover:scale-105">
+                        <Sparkles className="h-5 w-5 text-primary" />
                       </div>
                       <div className="flex-1">
-                        <div className="text-sm font-medium text-white/90">
+                        <div className="text-sm font-bold text-foreground">
                           AI diagram
                         </div>
-                        <div className="text-[11px] text-white/40 line-clamp-1">
+                        <div className="text-[11px] text-muted-foreground line-clamp-1">
                           Generate diagram with natural language
                         </div>
                       </div>
@@ -5220,37 +5212,37 @@ const CanvasArea = () => {
                           if (item.id === "shape") setPlusMenuView("shape");
                           if (item.id === "icon") setPlusMenuView("icon");
                         }}
-                        className="flex items-center gap-4 w-full px-3 py-3 rounded-lg hover:bg-white/5 transition text-left group"
+                        className="flex items-center gap-4 w-full px-4 py-3.5 rounded-xl hover:bg-accent transition-all text-left group"
                       >
-                        <div className="h-9 w-9 flex items-center justify-center rounded-lg bg-white/5 border border-white/10">
-                          <item.icon className="h-5 w-5 text-white/70" />
+                        <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-accent border border-border shadow-sm transition-transform group-hover:scale-110">
+                          <item.icon className="h-5 w-5 text-foreground/80 group-hover:text-foreground" />
                         </div>
                         <div className="flex-1">
-                          <div className="text-sm font-medium text-white/90">
+                          <div className="text-sm font-bold text-foreground">
                             {item.title}
                           </div>
-                          <div className="text-[11px] text-white/40 line-clamp-1">
+                          <div className="text-[11px] text-muted-foreground line-clamp-1">
                             {item.desc}
                           </div>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-white/20 group-hover:text-white/40 transition" />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-foreground/50 transition-all" />
                       </button>
                     ))}
                   </div>
 
                   {/* Bottom Quick Actions */}
-                  <div className="grid grid-cols-3 gap-2 px-2 pb-2">
+                  <div className="grid grid-cols-3 gap-3 px-3 pb-3">
                     {[
                       { icon: Maximize, label: "Figure" },
-                      { icon: Code, label: "Code Block" },
+                      { icon: Code, label: "Code" },
                       { icon: ImageIcon, label: "Image" },
                     ].map((action, i) => (
                       <button
                         key={i}
-                        className="flex flex-col items-center gap-2 p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition group"
+                        className="flex flex-col items-center gap-2 p-4 rounded-xl bg-accent/20 border border-border/50 hover:bg-accent hover:border-border transition-all group shadow-sm active:scale-95"
                       >
-                        <action.icon className="h-6 w-6 text-white/60 group-hover:text-white/80" />
-                        <span className="text-[10px] font-medium text-white/40 group-hover:text-white/60">
+                        <action.icon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                        <span className="text-[10px] font-bold text-muted-foreground group-hover:text-foreground">
                           {action.label}
                         </span>
                       </button>
@@ -5261,15 +5253,15 @@ const CanvasArea = () => {
                 <div className="space-y-4">
                   {/* Shape Grid View */}
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider">
+                    <div className="flex items-center gap-2 px-4 py-3 text-[11px] font-bold uppercase tracking-widest bg-muted/20">
                       <button
                         onClick={() => setPlusMenuView("categories")}
-                        className="text-white/40 hover:text-white/60 transition"
+                        className="text-muted-foreground hover:text-foreground transition-colors"
                       >
                         All Categories
                       </button>
-                      <span className="text-white/20">/</span>
-                      <span className="text-white/90">Shape</span>
+                      <span className="text-muted-foreground/30">/</span>
+                      <span className="text-foreground">Shape</span>
                     </div>
 
                     <div className="grid grid-cols-5 gap-y-4 px-2">
@@ -5293,18 +5285,18 @@ const CanvasArea = () => {
                             setActiveTool("PlusAdd");
                             setIsPlusMenuOpen(false);
                           }}
-                          className="flex flex-col items-center gap-2 group"
+                          className="flex flex-col items-center gap-2 group p-1"
                         >
-                          <div className="h-12 w-12 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 group-hover:bg-white/10 group-hover:border-white/20 transition">
+                          <div className="h-12 w-12 flex items-center justify-center rounded-xl bg-accent/50 border border-border group-hover:bg-accent group-hover:border-primary/50 group-hover:shadow-md transition-all group-active:scale-90">
                             <shape.icon
-                              className={`h-5 w-5 text-white/70 group-hover:text-white/90 transition ${shape.stretch ? "scale-x-125" : ""
+                              className={`h-5 w-5 text-foreground/70 group-hover:text-primary transition-all ${shape.stretch ? "scale-x-125" : ""
                                 } ${shape.slant ? "-skew-x-12" : ""} ${shape.trapezoid
                                   ? "[clip-path:polygon(20%_0%,80%_0%,100%_100%,0%_100%)]"
                                   : ""
                                 }`}
                             />
                           </div>
-                          <span className="text-[10px] text-white/40 group-hover:text-white/60 text-center truncate w-full px-1">
+                          <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground text-center truncate w-full px-1 transition-colors">
                             {shape.label}
                           </span>
                         </button>
@@ -5315,18 +5307,18 @@ const CanvasArea = () => {
               ) : plusMenuView === "icon" ? (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider">
+                    <div className="flex items-center gap-2 px-4 py-3 text-[11px] font-bold uppercase tracking-widest bg-muted/20">
                       <button
                         onClick={() => {
                           setPlusMenuView("categories");
                           setPlusMenuSubView(null);
                         }}
-                        className="text-white/40 hover:text-white/60 transition"
+                        className="text-muted-foreground hover:text-foreground transition-colors"
                       >
                         All Categories
                       </button>
-                      <span className="text-white/20">/</span>
-                      <span className="text-white/90">Icon</span>
+                      <span className="text-muted-foreground/30">/</span>
+                      <span className="text-foreground">Icon</span>
                     </div>
 
                     {!plusMenuSubView && (
@@ -5368,20 +5360,20 @@ const CanvasArea = () => {
                               if (cat.onClick) cat.onClick();
                               else setPlusMenuSubView(cat.id);
                             }}
-                            className="flex items-center gap-4 w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/12 transition text-left group"
+                            className="flex items-center gap-4 w-full px-4 py-4 rounded-2xl bg-muted/40 border border-border/50 hover:bg-accent hover:border-border transition-all text-left group shadow-sm"
                           >
-                            <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-white/5 border border-white/10">
-                              <cat.icon className="h-5 w-5 text-white/70" />
+                            <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-background border border-border shadow-sm group-hover:scale-105 transition-transform">
+                              <cat.icon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                             </div>
                             <div className="flex-1">
-                              <div className="text-sm font-semibold text-white/90">
+                              <div className="text-sm font-bold text-foreground">
                                 {cat.title}
                               </div>
-                              <div className="text-[11px] text-white/40">
+                              <div className="text-[11px] text-muted-foreground">
                                 {cat.desc}
                               </div>
                             </div>
-                            <ChevronRight className="h-4 w-4 text-white/20 group-hover:text-white/40 transition" />
+                            <ChevronRight className="h-4 w-4 text-muted-foreground/20 group-hover:text-foreground/50 transition-all" />
                           </button>
                         ))}
                       </div>
@@ -5390,11 +5382,11 @@ const CanvasArea = () => {
                     {(!plusMenuSubView || plusMenuSubView === "general") && (
                       <div className="grid grid-cols-5 gap-y-3 px-2 pb-4">
                         {GENERAL_ICONS.map((icon, i) => (
-                          <div key={i} className="flex flex-col items-center gap-1.5 group">
+                          <div key={i} className="flex flex-col items-center gap-1.5 group p-1">
                             <button
                               onClick={() => {
                                 const svg = ReactDOMServer.renderToStaticMarkup(
-                                  <icon.icon color="white" size={48} />
+                                  <icon.icon color="currentColor" size={48} />
                                 );
                                 const src = `data:image/svg+xml;base64,${btoa(
                                   svg
@@ -5402,11 +5394,11 @@ const CanvasArea = () => {
                                 setPendingAddIcon({ name: icon.name, src });
                                 setActiveTool("IconAdd");
                               }}
-                              className="h-10 w-10 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition shadow-sm"
+                              className="h-10 w-10 flex items-center justify-center rounded-xl border border-border bg-accent/50 hover:bg-accent hover:border-primary/50 transition-all shadow-sm active:scale-90 group"
                             >
-                              <icon.icon className="h-5 w-5 text-white/70 group-hover:text-white/90 transition" />
+                              <icon.icon className="h-5 w-5 text-foreground/70 group-hover:text-primary transition-colors" />
                             </button>
-                            <span className="text-[10px] text-white/30 group-hover:text-white/50 text-center truncate w-full px-1">
+                            <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground text-center truncate w-full px-1 transition-colors">
                               {icon.name}
                             </span>
                           </div>
@@ -5418,40 +5410,40 @@ const CanvasArea = () => {
               ) : plusMenuView === "provider-icons" ? (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider">
+                    <div className="flex items-center gap-2 px-4 py-3 text-[11px] font-bold uppercase tracking-widest bg-muted/20 flex-wrap">
                       <button
                         onClick={() => {
                           setPlusMenuView("categories");
                           setPlusMenuSubView(null);
                         }}
-                        className="text-white/40 hover:text-white/60 transition"
+                        className="text-muted-foreground hover:text-foreground transition-colors"
                       >
                         All Categories
                       </button>
-                      <span className="text-white/20">/</span>
+                      <span className="text-muted-foreground/30">/</span>
                       <button
                         onClick={() => setPlusMenuView("icon")}
-                        className="text-white/40 hover:text-white/60 transition"
+                        className="text-muted-foreground hover:text-foreground transition-colors"
                       >
                         Icon
                       </button>
-                      <span className="text-white/20">/</span>
+                      <span className="text-muted-foreground/30">/</span>
                       <button
                         onClick={() => setPlusMenuView("cloud-icon")}
-                        className="text-white/40 hover:text-white/60 transition"
+                        className="text-muted-foreground hover:text-foreground transition-colors"
                       >
-                        Cloud Provider Icon
+                        Cloud
                       </button>
-                      <span className="text-white/20">/</span>
-                      <span className="text-white/90">{plusMenuSubView}</span>
+                      <span className="text-muted-foreground/30">/</span>
+                      <span className="text-foreground">{plusMenuSubView}</span>
                     </div>
 
                     <div className="grid grid-cols-5 gap-y-3 px-2 pb-4">
                       {isLibraryLoading ? (
                         Array.from({ length: 20 }).map((_, i) => (
-                          <div key={i} className="flex flex-col items-center gap-1.5 animate-pulse">
-                            <div className="h-10 w-10 rounded-lg bg-white/5 border border-white/10" />
-                            <div className="h-2 w-8 bg-white/5 rounded" />
+                          <div key={i} className="flex flex-col items-center gap-1.5 animate-pulse p-1">
+                            <div className="h-10 w-10 rounded-xl bg-accent/50 border border-border" />
+                            <div className="h-2 w-8 bg-accent/30 rounded" />
                           </div>
                         ))
                       ) : (
@@ -5472,15 +5464,15 @@ const CanvasArea = () => {
                                     });
                                     setActiveTool("IconAdd");
                                   }}
-                                  className="h-10 w-10 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition shadow-sm overflow-hidden"
+                                  className="h-10 w-10 flex items-center justify-center rounded-xl border border-border bg-accent/50 hover:bg-accent hover:border-primary/50 transition-all shadow-sm overflow-hidden group active:scale-90"
                                 >
                                   <img
                                     src={path}
                                     alt={name}
-                                    className="h-6 w-6 opacity-80 group-hover:opacity-100 transition"
+                                    className="h-6 w-6 opacity-70 group-hover:opacity-100 transition-opacity grayscale hover:grayscale-0"
                                   />
                                 </button>
-                                <span className="text-[10px] text-white/30 group-hover:text-white/50 text-center truncate w-full px-1">
+                                <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground text-center truncate w-full px-1 transition-colors">
                                   {name}
                                 </span>
                               </div>
@@ -5493,22 +5485,22 @@ const CanvasArea = () => {
               ) : (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider">
+                    <div className="flex items-center gap-2 px-4 py-3 text-[11px] font-bold uppercase tracking-widest bg-muted/20">
                       <button
                         onClick={() => setPlusMenuView("categories")}
-                        className="text-white/40 hover:text-white/60 transition"
+                        className="text-muted-foreground hover:text-foreground transition-colors"
                       >
                         All Categories
                       </button>
-                      <span className="text-white/20">/</span>
+                      <span className="text-muted-foreground/30">/</span>
                       <button
                         onClick={() => setPlusMenuView("icon")}
-                        className="text-white/40 hover:text-white/60 transition"
+                        className="text-muted-foreground hover:text-foreground transition-colors"
                       >
                         Icon
                       </button>
-                      <span className="text-white/20">/</span>
-                      <span className="text-white/90">Cloud Provider Icon</span>
+                      <span className="text-muted-foreground/30">/</span>
+                      <span className="text-foreground">Cloud</span>
                     </div>
 
                     <div className="flex flex-col gap-2 px-3 pb-6">
@@ -5536,7 +5528,7 @@ const CanvasArea = () => {
                         {
                           name: "Network",
                           desc: "Generic and Cisco icons available",
-                          src: null, // We'll use a lucide icon
+                          src: null, 
                         },
                         {
                           name: "OCI",
@@ -5550,28 +5542,28 @@ const CanvasArea = () => {
                             setPlusMenuSubView(cloud.name);
                             setPlusMenuView("provider-icons");
                           }}
-                          className="flex items-center gap-4 p-3 rounded-lg bg-[#1a1a1a] border border-white/5 hover:bg-white/5 hover:border-white/10 transition group text-left w-full"
+                          className="flex items-center gap-4 p-4 rounded-2xl bg-muted/40 border border-border/50 hover:bg-accent hover:border-border transition-all group group-active:scale-[0.98] w-full text-left"
                         >
-                          <div className="h-10 w-12 flex items-center justify-center">
+                          <div className="h-10 w-12 flex items-center justify-center group-hover:scale-110 transition-transform">
                             {cloud.src ? (
                               <img
                                 src={cloud.src}
                                 alt={cloud.name}
-                                className="max-h-full max-w-full opacity-80 group-hover:opacity-100 transition"
+                                className="max-h-full max-w-full opacity-70 group-hover:opacity-100 transition-opacity grayscale group-hover:grayscale-0"
                               />
                             ) : (
-                              <Network className="h-6 w-6 text-white/40 group-hover:text-white/80 transition" />
+                              <Network className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
                             )}
                           </div>
                           <div className="flex-1 flex flex-col min-w-0">
-                            <span className="text-sm font-bold text-white/90 group-hover:text-white transition">
+                            <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
                               {cloud.name}
                             </span>
-                            <span className="text-[10px] text-white/40 group-hover:text-white/60 transition truncate">
+                            <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors truncate">
                               {cloud.desc}
                             </span>
                           </div>
-                          <ChevronRight className="h-4 w-4 text-white/20 group-hover:text-white/40 transition" />
+                          <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-foreground transition-all" />
                         </button>
                       ))}
                     </div>
@@ -5581,33 +5573,35 @@ const CanvasArea = () => {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between px-4 py-2 bg-white/2 border-t border-white/5">
-              <div className="text-[11px] font-medium text-white/30">
+            <div className="flex items-center justify-between px-4 py-3 bg-muted/30 border-t border-border/50">
+              <div className="text-[11px] font-bold text-muted-foreground/60">
                 {pendingAddIcon
                   ? pendingAddIcon.name
                   : plusMenuView === "categories"
-                    ? "Diagram Catalog"
+                    ? "DIAGRAM CATALOG"
                     : plusMenuView === "shape"
-                      ? "Shapes"
+                      ? "SHAPES"
                       : plusMenuView === "icon"
                         ? plusMenuSubView === "general"
-                          ? "General Icon"
-                          : "Custom Icons"
+                          ? "GENERAL ICONS"
+                          : "CUSTOM ICONS"
                         : plusMenuView === "provider-icons"
-                          ? plusMenuSubView
-                          : "Cloud Provider Icon"}
+                          ? plusMenuSubView.toUpperCase()
+                          : "CLOUD PROVIDERS"}
               </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1 text-[10px] text-white/30">
-                  <div className="flex items-center">
-                    <ArrowUp className="h-3 w-3" />
-                    <ArrowDown className="h-3 w-3" />
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground/40">
+                  <div className="flex items-center bg-muted px-1 rounded border border-border/50">
+                    <ArrowUp className="h-2.5 w-2.5" />
+                    <ArrowDown className="h-2.5 w-2.5" />
                   </div>
-                  <span>to navigate</span>
+                  <span>NAVIGATE</span>
                 </div>
-                <div className="flex items-center gap-1 text-[10px] text-white/30">
-                  <CornerDownLeft className="h-3 w-3" />
-                  <span>enter to insert</span>
+                <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground/40">
+                  <div className="bg-muted px-1 rounded border border-border/50">
+                    <CornerDownLeft className="h-2.5 w-2.5" />
+                  </div>
+                  <span>INSERT</span>
                 </div>
               </div>
             </div>
@@ -5617,7 +5611,7 @@ const CanvasArea = () => {
 
       <div
         onWheel={(e) => e.stopPropagation()}
-        className="absolute left-4 top-20 flex flex-col items-center gap-2 rounded-md bg-[#1b1b1b] px-1.5 py-3 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
+        className="absolute left-4 top-20 flex flex-col items-center gap-2 rounded-xl bg-card/90 backdrop-blur-md px-1.5 py-3 shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_10px_30px_rgba(0,0,0,0.5)] border border-white/5"
       >
         {[
           { icon: Hand, label: "Hand" },
@@ -5636,9 +5630,9 @@ const CanvasArea = () => {
             <button
               key={label}
               onClick={() => setActiveTool(label)}
-              className={`flex items-center justify-center rounded-md h-9 w-9 transition ${isActive
-                ? "bg-[#2a2a2a] text-white shadow"
-                : "text-white/80 hover:bg-white/10"
+              className={`flex items-center justify-center rounded-lg h-10 w-10 transition-all ${isActive
+                ? "bg-primary text-primary-foreground shadow-lg scale-110"
+                : "text-muted-foreground hover:bg-white/10 hover:text-foreground hover:scale-105 active:scale-95"
                 }`}
               aria-label={label}
             >

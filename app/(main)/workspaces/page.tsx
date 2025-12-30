@@ -47,12 +47,10 @@ const generateGradientThumbnail = () => {
     <svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style="stop-color:${
-            randomGradient.match(/#[a-fA-F0-9]{6}/g)?.[0] || "#667eea"
-          }" />
-          <stop offset="100%" style="stop-color:${
-            randomGradient.match(/#[a-fA-F0-9]{6}/g)?.[1] || "#764ba2"
-          }" />
+          <stop offset="0%" style="stop-color:${randomGradient.match(/#[a-fA-F0-9]{6}/g)?.[0] || "#667eea"
+    }" />
+          <stop offset="100%" style="stop-color:${randomGradient.match(/#[a-fA-F0-9]{6}/g)?.[1] || "#764ba2"
+    }" />
         </linearGradient>
       </defs>
       <rect width="100%" height="100%" fill="url(#grad)" />
@@ -69,14 +67,14 @@ const WorkspacesSkeleton = () => (
     {[...Array(10)].map((_, idx) => (
       <div key={idx} className="flex flex-col gap-2">
         <div className="group block w-full aspect-square rounded-3xl bg-[#101018] p-px text-left">
-          <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[1.3rem] bg-[#101018]">
-            <Skeleton className="absolute inset-0 h-full w-full bg-white/10" />
-            <Skeleton className="relative size-12 rounded-full bg-white/20" />
+          <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[1.3rem] bg-accent/20">
+            <Skeleton className="absolute inset-0 h-full w-full bg-accent/10" />
+            <Skeleton className="relative size-12 rounded-full bg-accent/30" />
           </div>
         </div>
-        <div className="px-1 text-[11px] text-white/90 space-y-1">
-          <Skeleton className="h-4 w-24 bg-white/20" />
-          <Skeleton className="h-3 w-28 bg-white/10" />
+        <div className="px-1 text-[11px] text-foreground/90 space-y-1">
+          <Skeleton className="h-4 w-24 bg-accent/30" />
+          <Skeleton className="h-3 w-28 bg-accent/20" />
         </div>
       </div>
     ))}
@@ -159,25 +157,25 @@ export default function WorkspacesPage() {
       {/* Top chrome */}
       <header className="flex items-center justify-between px-6 pt-4 sm:px-10 lg:px-16">
         <div className="flex items-center gap-3">
-          <Logo className="text-white" />
+          <Logo className="text-foreground" />
         </div>
-        <div className="flex items-center gap-4 text-xs text-white/60">
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span className="hidden text-[11px] sm:inline">Limited credits</span>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <Avatar className="h-8 w-8">
+                <Avatar className="h-8 w-8 border border-border">
                   <AvatarImage
                     src={session?.user?.image || ""}
                     alt={session?.user?.name || "User"}
                   />
-                  <AvatarFallback>
+                  <AvatarFallback className="bg-muted text-muted-foreground">
                     {session?.user?.name?.[0] || "U"}
                   </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuContent className="w-56 bg-card border-border text-foreground" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">
@@ -188,9 +186,9 @@ export default function WorkspacesPage() {
                   </p>
                 </div>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator />
+              <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem
-                className="cursor-pointer text-red-600 focus:text-red-600"
+                className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive"
                 onClick={async () => {
                   await authClient.signOut({
                     fetchOptions: {
@@ -210,17 +208,17 @@ export default function WorkspacesPage() {
               <Button
                 size="sm"
                 disabled={creating}
-                className="h-8 rounded-full bg-white px-4 text-[11px] font-semibold text-black shadow-[0_0_40px_rgba(255,255,255,0.4)] hover:bg-white/90 disabled:opacity-60"
+                className="h-8 rounded-full bg-primary px-4 text-[11px] font-semibold text-primary-foreground shadow-lg hover:bg-primary/90 disabled:opacity-60"
               >
                 New Workspace
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-[#0c0c12] border-white/10">
+            <DialogContent className="bg-card border-border text-foreground">
               <DialogHeader>
-                <DialogTitle className="text-white">
+                <DialogTitle className="text-foreground">
                   Create workspace
                 </DialogTitle>
-                <DialogDescription className="text-white/70">
+                <DialogDescription className="text-muted-foreground">
                   Give your workspace a name. You can change it later.
                 </DialogDescription>
               </DialogHeader>
@@ -236,7 +234,7 @@ export default function WorkspacesPage() {
                 }}
               >
                 <div className="space-y-2">
-                  <label className="text-sm text-white/80">
+                  <label className="text-sm text-foreground/80">
                     Workspace name
                   </label>
                   <Input
@@ -247,10 +245,10 @@ export default function WorkspacesPage() {
                       if (createError) setCreateError(null);
                     }}
                     placeholder="e.g. Product Discovery"
-                    className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                    className="bg-accent/5 border-border text-foreground placeholder:text-muted-foreground/60"
                   />
                   {createError ? (
-                    <p className="text-xs text-red-300">{createError}</p>
+                    <p className="text-xs text-destructive">{createError}</p>
                   ) : null}
                 </div>
                 <DialogFooter className="sm:justify-end">
@@ -258,14 +256,14 @@ export default function WorkspacesPage() {
                     type="button"
                     variant="ghost"
                     onClick={() => setCreateDialogOpen(false)}
-                    className="text-white/80 hover:text-white"
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted"
                   >
                     Cancel
                   </Button>
                   <Button
                     type="submit"
                     disabled={creating || !newWorkspaceName.trim()}
-                    className="bg-white text-black hover:bg-white/90 disabled:opacity-60"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
                   >
                     {creating ? "Creating..." : "Create"}
                   </Button>
@@ -280,14 +278,14 @@ export default function WorkspacesPage() {
       <main className="flex flex-1 items-start justify-center px-4 pb-10 pt-10 sm:px-8 lg:px-20">
         <div className="w-full max-w-5xl">
           <div className="mb-6">
-            <h1 className="text-lg font-semibold text-white">
+            <h1 className="text-lg font-semibold text-foreground">
               Your Workspaces
             </h1>
-            <p className="mt-1 text-xs text-white/45">
+            <p className="mt-1 text-xs text-muted-foreground">
               Manage your workspaces and continue where you left off.
             </p>
             {error ? (
-              <p className="mt-2 text-xs text-red-300">{error}</p>
+              <p className="mt-2 text-xs text-destructive">{error}</p>
             ) : null}
           </div>
 
@@ -296,7 +294,7 @@ export default function WorkspacesPage() {
           ) : (
             <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
               {workspaces.length === 0 ? (
-                <div className="col-span-full text-white/70 text-sm">
+                <div className="col-span-full text-muted-foreground text-sm">
                   No workspaces yet. Create one to get started.
                 </div>
               ) : (
@@ -306,9 +304,9 @@ export default function WorkspacesPage() {
                     <div key={workspace.id} className="flex flex-col gap-2">
                       <Link
                         href={`/workspaces/${workspace.id}`}
-                        className="group block w-full aspect-square rounded-3xl bg-[#101018] p-px text-left transition-transform duration-200 hover:-translate-y-1"
+                        className="group block w-full aspect-square rounded-3xl bg-accent/40 p-px text-left transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.2)] dark:hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
                       >
-                        <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[1.3rem] bg-[#101018]">
+                        <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[1.3rem] bg-card/80 backdrop-blur-sm">
                           {thumbnail ? (
                             <img
                               src={thumbnail}
@@ -316,16 +314,16 @@ export default function WorkspacesPage() {
                               className="absolute inset-0 h-full w-full object-cover"
                             />
                           ) : null}
-                          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(255,255,255,0.7),transparent_55%)] opacity-80" />
+                          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(255,255,255,0.15),transparent_65%)] dark:bg-[radial-gradient(circle_at_50%_30%,rgba(255,255,255,0.7),transparent_55%)] opacity-80" />
                           <div className="relative flex items-center justify-center">
-                            <div className="size-10 rounded-full bg-white/90 shadow-[0_0_30px_rgba(255,255,255,0.6)]" />
+                            <div className="size-10 rounded-full bg-white shadow-[0_0_30px_rgba(255,255,255,0.4)] dark:shadow-[0_0_30px_rgba(255,255,255,0.6)]" />
                           </div>
                         </div>
                       </Link>
 
-                      <div className="px-1 text-[11px] text-white/90">
+                      <div className="px-1 text-[11px] text-foreground/90">
                         <div className="font-medium">{workspace.name}</div>
-                        <div className="mt-0.5 text-[10px] text-white/65">
+                        <div className="mt-0.5 text-[10px] text-muted-foreground">
                           Updated{" "}
                           {new Date(workspace.updatedAt).toLocaleString()}
                         </div>

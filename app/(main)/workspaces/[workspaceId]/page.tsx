@@ -43,15 +43,16 @@ import { Workspace } from "@/context";
 import DocumentTab from "@/features/document/document-tab";
 import CanvasTab from "@/features/canvas/canvas-tab";
 import KanbanTab from "@/features/kanban/kanban-tab";
+import { ModeToggle } from "@/components/mode-toggle";
 
 const LoadingState = () => (
   <div className="flex h-screen w-full items-center justify-center bg-background">
     <div className="flex flex-col items-center gap-4">
       <div className="relative flex h-12 w-12 items-center justify-center">
         <div className="absolute inset-0 animate-pink-glow rounded-full bg-blue-500/20 blur-xl"></div>
-        <Loader2 className="h-8 w-8 animate-spin text-white" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
-      <p className="text-sm font-medium tracking-wide text-white/40">
+      <p className="text-sm font-medium tracking-wide text-muted-foreground">
         Loading workspace...
       </p>
     </div>
@@ -82,6 +83,10 @@ export default function WorkspaceDetailPage() {
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const [documentData, setDocumentData] = useState<any>(null);
+  const [canvasData, setCanvasData] = useState<any>(null);
+  const [kanbanBoard, setKanbanBoard] = useState<any>(null);
 
   useEffect(() => {
     const fromUrl = searchParams?.get("tab") || "";
@@ -118,6 +123,9 @@ export default function WorkspaceDetailPage() {
 
       setWorkspace(ws);
       setNameDraft(ws.name);
+      setDocumentData(ws.documentData);
+      setCanvasData(ws.canvasData);
+      setKanbanBoard(ws.kanbanBoard);
     } catch (err) {
       console.error(err);
       setError(
@@ -136,6 +144,9 @@ export default function WorkspaceDetailPage() {
       setError(null);
       const payload = {
         name: workspace.name,
+        documentData,
+        canvasData,
+        kanbanBoard,
       };
       const res = await fetch(`/api/workspaces/${workspace.id}`, {
         method: "PUT",
@@ -155,7 +166,7 @@ export default function WorkspaceDetailPage() {
     } finally {
       setSaving(false);
     }
-  }, [workspace]);
+  }, [workspace, documentData, canvasData, kanbanBoard]);
 
   const deleteWorkspace = async () => {
     if (!workspaceId) return;
@@ -203,18 +214,18 @@ export default function WorkspaceDetailPage() {
         className="flex h-full w-full flex-col"
       >
         {/* Header Section */}
-        <header className="z-10 bg-background/80 backdrop-blur-xl">
+        <header className="z-10 bg-background/80 backdrop-blur-xl border-b border-border">
           <div className="flex flex-col gap-4 px-4 py-4 ">
             <div className="flex items-center justify-between">
               {/* Left: Breadcrumbs & App Name */}
               <div className="flex items-center gap-4">
                 <Link
                   href="/workspaces"
-                  className="flex size-8 items-center justify-center rounded-full bg-white/5 transition-colors hover:bg-white/10"
+                  className="flex size-8 items-center justify-center rounded-full bg-accent transition-colors hover:bg-accent/80"
                 >
-                  <ChevronLeft className="h-4 w-4 text-white/60" />
+                  <ChevronLeft className="h-4 w-4 text-muted-foreground" />
                 </Link>
-                <div className="h-4 w-px bg-white/10" />
+                <div className="h-4 w-px bg-border" />
                 <div className="flex items-center gap-2">
                   <Layers className="h-4 w-4 text-blue-400" />
                   {editingName ? (
@@ -224,17 +235,17 @@ export default function WorkspaceDetailPage() {
                       onChange={(e) => setNameDraft(e.target.value)}
                       onBlur={commitName}
                       onKeyDown={(e) => e.key === "Enter" && commitName()}
-                      className="bg-transparent text-sm font-semibold text-white outline-none ring-0"
+                      className="bg-transparent text-sm font-semibold text-foreground outline-none ring-0"
                     />
                   ) : (
                     <div
                       className="flex items-center gap-2 group cursor-pointer"
                       onClick={() => setEditingName(true)}
                     >
-                      <span className="text-sm font-semibold text-white/90">
+                      <span className="text-sm font-semibold text-foreground">
                         {workspace?.name}
                       </span>
-                      <Edit2 className="h-3 w-3 text-white/20 opacity-0 transition-opacity group-hover:opacity-100" />
+                      <Edit2 className="h-3 w-3 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100" />
                     </div>
                   )}
                   {dirty && (
@@ -246,22 +257,22 @@ export default function WorkspaceDetailPage() {
               </div>
 
               {/* Middle: Improved TabsList */}
-              <TabsList className="hidden h-10 items-center justify-center rounded-full bg-white/5 p-1 md:flex">
+              <TabsList className="hidden h-10 items-center justify-center rounded-full bg-muted p-1 md:flex">
                 <TabsTrigger
                   value="document"
-                  className="rounded-full px-6 py-1.5 text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+                  className="rounded-full px-6 py-1.5 text-xs font-medium transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-[0_0_20px_rgba(255,255,255,0.1)] dark:data-[state=active]:shadow-[0_0_20px_rgba(255,255,255,0.2)]"
                 >
                   Document
                 </TabsTrigger>
                 <TabsTrigger
                   value="canvas"
-                  className="rounded-full px-6 py-1.5 text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+                  className="rounded-full px-6 py-1.5 text-xs font-medium transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-[0_0_20px_rgba(255,255,255,0.1)] dark:data-[state=active]:shadow-[0_0_20px_rgba(255,255,255,0.2)]"
                 >
                   Canvas
                 </TabsTrigger>
                 <TabsTrigger
                   value="kanban"
-                  className="rounded-full px-6 py-1.5 text-xs font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+                  className="rounded-full px-6 py-1.5 text-xs font-medium transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-[0_0_20px_rgba(255,255,255,0.1)] dark:data-[state=active]:shadow-[0_0_20px_rgba(255,255,255,0.2)]"
                 >
                   Kanban Board
                 </TabsTrigger>
@@ -269,7 +280,7 @@ export default function WorkspaceDetailPage() {
 
               {/* Right: Actions & User */}
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 pr-2 border-r border-white/10">
+                <div className="flex items-center gap-2 pr-2 border-r border-border">
                   <AlertDialog
                     open={deleteDialogOpen}
                     onOpenChange={setDeleteDialogOpen}
@@ -278,26 +289,26 @@ export default function WorkspaceDetailPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="size-8 rounded-full text-white/40 hover:bg-red-500/10 hover:text-red-400"
+                        className="size-8 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-[#0c0c12] border-white/10 text-white">
+                    <AlertDialogContent className="bg-card border-border text-foreground">
                       <AlertDialogHeader>
                         <AlertDialogTitle>Delete workspace?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-white/60">
+                        <AlertDialogDescription className="text-muted-foreground">
                           This action cannot be undone. All data in this
                           workspace will be permanently removed.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-white/5 border-none hover:bg-white/10 text-white">
+                        <AlertDialogCancel className="bg-muted border-none hover:bg-accent text-foreground">
                           Cancel
                         </AlertDialogCancel>
                         <AlertDialogAction
                           onClick={deleteWorkspace}
-                          className="bg-red-500 text-white hover:bg-red-600 border-none"
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90 border-none"
                         >
                           {deleting ? "Deleting..." : "Delete Workspace"}
                         </AlertDialogAction>
@@ -309,7 +320,7 @@ export default function WorkspaceDetailPage() {
                     onClick={saveWorkspace}
                     disabled={saving || !dirty}
                     size="sm"
-                    className="h-8 gap-2 rounded-full bg-white px-4 text-[11px] font-bold text-black transition-all hover:bg-white/90 disabled:opacity-40"
+                    className="h-8 gap-2 rounded-full bg-primary px-4 text-[11px] font-bold text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-40 shadow-lg"
                   >
                     {saving ? (
                       <Loader2 className="h-3 w-3 animate-spin" />
@@ -318,6 +329,7 @@ export default function WorkspaceDetailPage() {
                     )}
                     Save
                   </Button>
+                  <ModeToggle />
                 </div>
 
                 <DropdownMenu>
@@ -326,19 +338,19 @@ export default function WorkspaceDetailPage() {
                       variant="ghost"
                       className="relative h-8 w-8 rounded-full"
                     >
-                      <Avatar className="h-8 w-8 border border-white/10">
+                      <Avatar className="h-8 w-8 border border-border">
                         <AvatarImage
                           src={session?.user?.image || ""}
                           alt={session?.user?.name || "User"}
                         />
-                        <AvatarFallback className="bg-white/5 text-[10px] text-white/60">
+                        <AvatarFallback className="bg-muted text-[10px] text-muted-foreground">
                           {session?.user?.name?.[0] || "U"}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
-                    className="w-56 bg-[#0c0c12] border-white/10 text-white"
+                    className="w-56 bg-card border-border text-foreground"
                     align="end"
                     forceMount
                   >
@@ -352,9 +364,9 @@ export default function WorkspaceDetailPage() {
                         </p>
                       </div>
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator className="bg-white/5" />
+                    <DropdownMenuSeparator className="bg-border" />
                     <DropdownMenuItem
-                      className="cursor-pointer text-red-400 focus:bg-red-500/10 focus:text-red-400"
+                      className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive"
                       onClick={async () => {
                         await authClient.signOut({
                           fetchOptions: {
@@ -371,7 +383,7 @@ export default function WorkspaceDetailPage() {
             </div>
 
             {/* Mobile TabsList */}
-            <TabsList className="flex h-9 w-full bg-white/5 p-1 md:hidden">
+            <TabsList className="flex h-9 w-full bg-muted p-1 md:hidden">
               <TabsTrigger value="document" className="flex-1 text-[10px]">
                 Doc
               </TabsTrigger>
@@ -391,21 +403,39 @@ export default function WorkspaceDetailPage() {
             value="document"
             className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
           >
-            <DocumentTab />
+            <DocumentTab
+              initialContent={documentData}
+              onChange={(data) => {
+                setDocumentData(data);
+                setDirty(true);
+              }}
+            />
           </TabsContent>
 
           <TabsContent
             value="canvas"
             className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
           >
-            <CanvasTab />
+            <CanvasTab
+              initialData={canvasData}
+              onChange={(data) => {
+                setCanvasData(data);
+                setDirty(true);
+              }}
+            />
           </TabsContent>
 
           <TabsContent
             value="kanban"
             className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
           >
-            <KanbanTab />
+            <KanbanTab
+              board={kanbanBoard}
+              onChange={(data) => {
+                setKanbanBoard(data);
+                setDirty(true);
+              }}
+            />
           </TabsContent>
         </main>
       </Tabs>

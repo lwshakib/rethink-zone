@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -88,8 +88,8 @@ export default function KanbanArea({
             typeof item === "string"
               ? item
               : typeof item?.text === "string"
-              ? item.text
-              : "Item";
+                ? item.text
+                : "Item";
           return {
             id:
               typeof item?.id === "string"
@@ -117,6 +117,10 @@ export default function KanbanArea({
   );
 
   const [columns, setColumns] = useState<KanbanState[]>(initialState);
+
+  useEffect(() => {
+    setColumns(initialState);
+  }, [initialState]);
   const updateColumns = (updater: (prev: KanbanState[]) => KanbanState[]) => {
     setColumns((prev) => {
       const next = updater(prev);
@@ -306,17 +310,17 @@ export default function KanbanArea({
     <div className="w-full h-full flex flex-col p-4 md:p-6 overflow-hidden bg-background">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">
+          <h2 className="text-2xl font-bold text-foreground tracking-tight">
             Project Board
           </h2>
-          <p className="text-sm text-white/50">
+          <p className="text-sm text-muted-foreground">
             Manage your tasks and workflow
           </p>
         </div>
         <button
           type="button"
           onClick={() => setCreateBoardOpen(true)}
-          className="rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-black transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+          className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-all hover:scale-105 active:scale-95 shadow-lg"
         >
           New Column
         </button>
@@ -329,26 +333,25 @@ export default function KanbanArea({
               key={`${column.title}-${colIdx}`}
               onDragOver={onDragOver(colIdx)}
               onDrop={onDropColumn(colIdx)}
-              className={`flex flex-col w-80 rounded-2xl border transition-all duration-300 ${
-                activeDropCol === colIdx
-                  ? "border-white/40 bg-white/10"
-                  : "border-white/10 bg-white/5"
-              }`}
+              className={`flex flex-col w-80 rounded-2xl border transition-all duration-300 ${activeDropCol === colIdx
+                ? "border-primary/40 bg-accent/10"
+                : "border-border bg-card/50"
+                }`}
             >
               <div className="p-4 flex items-center justify-between border-b border-white/5">
                 <div className="flex items-center gap-3">
                   <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" />
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                  <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
                     {column.title}
                   </h3>
-                  <span className="px-2 py-0.5 rounded-full bg-white/5 text-[10px] font-medium text-white/40">
+                  <span className="px-2 py-0.5 rounded-full bg-muted text-[10px] font-medium text-muted-foreground">
                     {column.items.length}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => deleteBoard(colIdx)}
-                  className="p-1.5 rounded-lg text-white/30 hover:text-white/90 hover:bg-white/5 transition-all"
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -372,9 +375,8 @@ export default function KanbanArea({
                 {column.items.map((item) => (
                   <div
                     key={item.id}
-                    className={`group relative rounded-xl border border-white/10 bg-[#0f0f16]/80 p-4 transition-all hover:border-white/20 hover:bg-[#15151e] cursor-grab active:cursor-grabbing ${
-                      isDraggingItem(item.id) ? "opacity-40 scale-95" : ""
-                    }`}
+                    className={`group relative rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/20 hover:bg-accent/10 cursor-grab active:cursor-grabbing ${isDraggingItem(item.id) ? "opacity-40 scale-95" : ""
+                      }`}
                     draggable
                     onDragStart={onDragStart(colIdx, item.id)}
                     onDragOver={(event) => event.preventDefault()}
@@ -387,13 +389,12 @@ export default function KanbanArea({
                           {item.text}
                         </span>
                         <div
-                          className={`h-1.5 w-1.5 rounded-full shrink-0 mt-1 ${
-                            item.priority === "High"
-                              ? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]"
-                              : item.priority === "Medium"
+                          className={`h-1.5 w-1.5 rounded-full shrink-0 mt-1 ${item.priority === "High"
+                            ? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]"
+                            : item.priority === "Medium"
                               ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]"
                               : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
-                          }`}
+                            }`}
                         />
                       </div>
 

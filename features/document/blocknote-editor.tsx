@@ -16,12 +16,17 @@ import * as Tabs from "@/components/ui/tabs";
 import * as Toggle from "@/components/ui/toggle";
 import * as Tooltip from "@/components/ui/tooltip";
 
-const BlockNoteEditor = () => {
-  const editor = useCreateBlockNote();
+const BlockNoteEditor = ({ initialContent, onChange }: { initialContent?: any, onChange?: (content: any) => void }) => {
+  const editor = useCreateBlockNote({
+    initialContent: initialContent ? (initialContent as any) : undefined,
+  });
 
   return (
     <BlockNoteView
       editor={editor}
+      onChange={() => {
+        onChange?.(editor.document);
+      }}
       shadCNComponents={{
         Badge,
         Button,
