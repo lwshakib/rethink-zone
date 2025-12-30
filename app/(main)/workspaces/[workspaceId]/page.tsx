@@ -204,7 +204,7 @@ export default function WorkspaceDetailPage() {
       >
         {/* Header Section */}
         <header className="z-10 bg-background/80 backdrop-blur-xl">
-          <div className="flex flex-col gap-4 px-6 py-4 sm:px-10 lg:px-16">
+          <div className="flex flex-col gap-4 px-4 py-4 ">
             <div className="flex items-center justify-between">
               {/* Left: Breadcrumbs & App Name */}
               <div className="flex items-center gap-4">

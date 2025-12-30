@@ -48,6 +48,7 @@ import {
   Hexagon,
   Star,
   ChevronLeft,
+  Network,
   Activity,
   Airplay,
   AlertCircle,
@@ -207,13 +208,15 @@ const CanvasArea = () => {
     if (!plusMenuSubView && plusMenuView !== "provider-icons") return [];
 
     return allIconsLibrary.filter((path) => {
+      const matchLower = path.toLowerCase();
       const matchCategory =
-        (plusMenuSubView === "AWS" && path.includes("aws-icons")) ||
-        (plusMenuSubView === "Azure" && path.includes("azure-icons")) ||
-        (plusMenuSubView === "GCP" && path.includes("gcp-icons")) ||
-        (plusMenuSubView === "Kubernetes" && path.includes("kubernetes-icons")) ||
-        (plusMenuSubView === "OCI" && path.includes("oci-icons")) ||
-        (plusMenuSubView === "Tech Logo" && path.includes("seti-icons"));
+        (plusMenuSubView === "AWS" && matchLower.includes("aws-icons")) ||
+        (plusMenuSubView === "Azure" && matchLower.includes("azure-icons")) ||
+        (plusMenuSubView === "Google Cloud" && matchLower.includes("gcp-icons")) ||
+        (plusMenuSubView === "Kubernetes" && matchLower.includes("kubernetes-icons")) ||
+        (plusMenuSubView === "OCI" && matchLower.includes("oci-icons")) ||
+        (plusMenuSubView === "Network" && matchLower.includes("networking")) ||
+        (plusMenuSubView === "Tech Logo" && matchLower.includes("seti-icons"));
 
       if (!matchCategory) return false;
 
@@ -1793,6 +1796,10 @@ const CanvasArea = () => {
       return;
     }
 
+    if (isPlusMenuOpen) {
+      setIsPlusMenuOpen(false);
+    }
+
     const point = toCanvasPoint(event);
 
     if (tool === "PlusAdd" && pendingAddShapeLabel) {
@@ -2164,52 +2171,34 @@ const CanvasArea = () => {
 
         if (workingPicked.kind === "rect") {
           const r = rectangles[workingPicked.index];
-          const handleSize = 12 / zoom;
+          const handleSize = 14 / zoom;
+          const pad = 4 / zoom;
+          const x = r.x - pad;
+          const y = r.y - pad;
+          const w = r.width + pad * 2;
+          const h = r.height + pad * 2;
+
           const corners = [
-            { x: r.x, y: r.y, sx: -1, sy: -1 },
-            { x: r.x + r.width, y: r.y, sx: 1, sy: -1 },
-            { x: r.x, y: r.y + r.height, sx: -1, sy: 1 },
-            { x: r.x + r.width, y: r.y + r.height, sx: 1, sy: 1 },
+            { x: x, y: y, sx: -1, sy: -1 },
+            { x: x + w, y: y, sx: 1, sy: -1 },
+            { x: x, y: y + h, sx: -1, sy: 1 },
+            { x: x + w, y: y + h, sx: 1, sy: 1 },
           ];
           const edges = [
-            {
-              x: r.x + r.width / 2,
-              y: r.y,
-              sx: 0,
-              sy: -1,
-              mode: "resize-rect-v" as const,
-            },
-            {
-              x: r.x + r.width / 2,
-              y: r.y + r.height,
-              sx: 0,
-              sy: 1,
-              mode: "resize-rect-v" as const,
-            },
-            {
-              x: r.x,
-              y: r.y + r.height / 2,
-              sx: -1,
-              sy: 0,
-              mode: "resize-rect-h" as const,
-            },
-            {
-              x: r.x + r.width,
-              y: r.y + r.height / 2,
-              sx: 1,
-              sy: 0,
-              mode: "resize-rect-h" as const,
-            },
+            { x: x + w / 2, y: y, sx: 0, sy: -1, mode: "resize-rect-v" as const },
+            { x: x + w / 2, y: y + h, sx: 0, sy: 1, mode: "resize-rect-v" as const },
+            { x: x, y: y + h / 2, sx: -1, sy: 0, mode: "resize-rect-h" as const },
+            { x: x + w, y: y + h / 2, sx: 1, sy: 0, mode: "resize-rect-h" as const },
           ];
           const hitCorner = corners.find(
             (c) =>
-              Math.abs(point.x - c.x) <= handleSize &&
-              Math.abs(point.y - c.y) <= handleSize
+              Math.abs(point.x - c.x) <= handleSize / 2 &&
+              Math.abs(point.y - c.y) <= handleSize / 2
           );
           const hitEdge = edges.find(
             (e) =>
-              Math.abs(point.x - e.x) <= handleSize &&
-              Math.abs(point.y - e.y) <= handleSize
+              Math.abs(point.x - e.x) <= handleSize / 2 &&
+              Math.abs(point.y - e.y) <= handleSize / 2
           );
 
           dragRectStartRef.current = { ...r };
@@ -2287,55 +2276,34 @@ const CanvasArea = () => {
               : "move";
         } else if (workingPicked.kind === "image") {
           const im = images[workingPicked.index];
-          const handleSize = 10 / zoom;
+          const handleSize = 14 / zoom;
+          const pad = 4 / zoom;
+          const x = im.x - pad;
+          const y = im.y - pad;
+          const w = im.width + pad * 2;
+          const h = im.height + pad * 2;
+
           const corners = [
-            {
-              x: im.x + im.width,
-              y: im.y + im.height,
-              mode: "resize-image" as const,
-              sx: 1,
-              sy: 1,
-            },
+            { x: x, y: y, sx: -1, sy: -1 },
+            { x: x + w, y: y, sx: 1, sy: -1 },
+            { x: x, y: y + h, sx: -1, sy: 1 },
+            { x: x + w, y: y + h, sx: 1, sy: 1 },
           ];
           const edges = [
-            {
-              x: im.x + im.width / 2,
-              y: im.y,
-              mode: "resize-image-v" as const,
-              sx: 0,
-              sy: -1,
-            },
-            {
-              x: im.x + im.width / 2,
-              y: im.y + im.height,
-              mode: "resize-image-v" as const,
-              sx: 0,
-              sy: 1,
-            },
-            {
-              x: im.x,
-              y: im.y + im.height / 2,
-              mode: "resize-image-h" as const,
-              sx: -1,
-              sy: 0,
-            },
-            {
-              x: im.x + im.width,
-              y: im.y + im.height / 2,
-              mode: "resize-image-h" as const,
-              sx: 1,
-              sy: 0,
-            },
+            { x: x + w / 2, y: y, sx: 0, sy: -1, mode: "resize-image-v" as const },
+            { x: x + w / 2, y: y + h, sx: 0, sy: 1, mode: "resize-image-v" as const },
+            { x: x, y: y + h / 2, sx: -1, sy: 0, mode: "resize-image-h" as const },
+            { x: x + w, y: y + h / 2, sx: 1, sy: 0, mode: "resize-image-h" as const },
           ];
           const hitCorner = corners.find(
             (c) =>
-              Math.abs(point.x - c.x) <= handleSize &&
-              Math.abs(point.y - c.y) <= handleSize
+              Math.abs(point.x - c.x) <= handleSize / 2 &&
+              Math.abs(point.y - c.y) <= handleSize / 2
           );
           const hitEdge = edges.find(
             (e) =>
-              Math.abs(point.x - e.x) <= handleSize &&
-              Math.abs(point.y - e.y) <= handleSize
+              Math.abs(point.x - e.x) <= handleSize / 2 &&
+              Math.abs(point.y - e.y) <= handleSize / 2
           );
 
           dragImageStartRef.current = {
@@ -2354,55 +2322,34 @@ const CanvasArea = () => {
               : "move";
         } else if (workingPicked.kind === "text") {
           const t = texts[workingPicked.index];
-          const handleSize = 10 / zoom;
+          const handleSize = 14 / zoom;
+          const pad = 4 / zoom;
+          const x = t.x - pad;
+          const y = t.y - pad;
+          const w = t.width + pad * 2;
+          const h = t.height + pad * 2;
+
           const corners = [
-            {
-              x: t.x + t.width,
-              y: t.y + t.height,
-              mode: "resize-text" as const,
-              sx: 1,
-              sy: 1,
-            },
+            { x: x, y: y, sx: -1, sy: -1 },
+            { x: x + w, y: y, sx: 1, sy: -1 },
+            { x: x, y: y + h, sx: -1, sy: 1 },
+            { x: x + w, y: y + h, sx: 1, sy: 1 },
           ];
           const edges = [
-            {
-              x: t.x + t.width / 2,
-              y: t.y,
-              mode: "resize-text-v" as const,
-              sx: 0,
-              sy: -1,
-            },
-            {
-              x: t.x + t.width / 2,
-              y: t.y + t.height,
-              mode: "resize-text-v" as const,
-              sx: 0,
-              sy: 1,
-            },
-            {
-              x: t.x,
-              y: t.y + t.height / 2,
-              mode: "resize-text-h" as const,
-              sx: -1,
-              sy: 0,
-            },
-            {
-              x: t.x + t.width,
-              y: t.y + t.height / 2,
-              mode: "resize-text-h" as const,
-              sx: 1,
-              sy: 0,
-            },
+            { x: x + w / 2, y: y, sx: 0, sy: -1, mode: "resize-text-v" as const },
+            { x: x + w / 2, y: y + h, sx: 0, sy: 1, mode: "resize-text-v" as const },
+            { x: x, y: y + h / 2, sx: -1, sy: 0, mode: "resize-text-h" as const },
+            { x: x + w, y: y + h / 2, sx: 1, sy: 0, mode: "resize-text-h" as const },
           ];
           const hitCorner = corners.find(
             (c) =>
-              Math.abs(point.x - c.x) <= handleSize &&
-              Math.abs(point.y - c.y) <= handleSize
+              Math.abs(point.x - c.x) <= handleSize / 2 &&
+              Math.abs(point.y - c.y) <= handleSize / 2
           );
           const hitEdge = edges.find(
             (e) =>
-              Math.abs(point.x - e.x) <= handleSize &&
-              Math.abs(point.y - e.y) <= handleSize
+              Math.abs(point.x - e.x) <= handleSize / 2 &&
+              Math.abs(point.y - e.y) <= handleSize / 2
           );
 
           dragTextStartRef.current = { ...t };
@@ -2418,55 +2365,34 @@ const CanvasArea = () => {
               : "move";
         } else if (workingPicked.kind === "frame") {
           const f = frames[workingPicked.index];
-          const handleSize = 10 / zoom;
+          const handleSize = 14 / zoom;
+          const pad = 4 / zoom;
+          const x = f.x - pad;
+          const y = f.y - pad;
+          const w = f.width + pad * 2;
+          const h = f.height + pad * 2;
+
           const corners = [
-            {
-              x: f.x + f.width,
-              y: f.y + f.height,
-              mode: "resize-frame" as const,
-              sx: 1,
-              sy: 1,
-            },
+            { x: x, y: y, sx: -1, sy: -1 },
+            { x: x + w, y: y, sx: 1, sy: -1 },
+            { x: x, y: y + h, sx: -1, sy: 1 },
+            { x: x + w, y: y + h, sx: 1, sy: 1 },
           ];
           const edges = [
-            {
-              x: f.x + f.width / 2,
-              y: f.y,
-              mode: "resize-frame-v" as const,
-              sx: 0,
-              sy: -1,
-            },
-            {
-              x: f.x + f.width / 2,
-              y: f.y + f.height,
-              mode: "resize-frame-v" as const,
-              sx: 0,
-              sy: 1,
-            },
-            {
-              x: f.x,
-              y: f.y + f.height / 2,
-              mode: "resize-frame-h" as const,
-              sx: -1,
-              sy: 0,
-            },
-            {
-              x: f.x + f.width,
-              y: f.y + f.height / 2,
-              mode: "resize-frame-h" as const,
-              sx: 1,
-              sy: 0,
-            },
+            { x: x + w / 2, y: y, sx: 0, sy: -1, mode: "resize-frame-v" as const },
+            { x: x + w / 2, y: y + h, sx: 0, sy: 1, mode: "resize-frame-v" as const },
+            { x: x, y: y + h / 2, sx: -1, sy: 0, mode: "resize-frame-h" as const },
+            { x: x + w, y: y + h / 2, sx: 1, sy: 0, mode: "resize-frame-h" as const },
           ];
           const hitCorner = corners.find(
             (c) =>
-              Math.abs(point.x - c.x) <= handleSize &&
-              Math.abs(point.y - c.y) <= handleSize
+              Math.abs(point.x - c.x) <= handleSize / 2 &&
+              Math.abs(point.y - c.y) <= handleSize / 2
           );
           const hitEdge = edges.find(
             (e) =>
-              Math.abs(point.x - e.x) <= handleSize &&
-              Math.abs(point.y - e.y) <= handleSize
+              Math.abs(point.x - e.x) <= handleSize / 2 &&
+              Math.abs(point.y - e.y) <= handleSize / 2
           );
 
           dragFrameStartRef.current = { ...f };
@@ -2745,28 +2671,34 @@ const CanvasArea = () => {
         if (selectedShape.kind === "rect") {
           const r = rectangles[selectedShape.index];
           if (r) {
-            const handleSize = 12 / zoom;
+            const handleSize = 14 / zoom;
+            const pad = 4 / zoom;
+            const x = r.x - pad;
+            const y = r.y - pad;
+            const w = r.width + pad * 2;
+            const h = r.height + pad * 2;
+
             const corners = [
-              { x: r.x, y: r.y, cursor: "nw-resize" },
-              { x: r.x + r.width, y: r.y, cursor: "ne-resize" },
-              { x: r.x, y: r.y + r.height, cursor: "sw-resize" },
-              { x: r.x + r.width, y: r.y + r.height, cursor: "se-resize" },
+              { x: x, y: y, cursor: "nw-resize" },
+              { x: x + w, y: y, cursor: "ne-resize" },
+              { x: x, y: y + h, cursor: "sw-resize" },
+              { x: x + w, y: y + h, cursor: "se-resize" },
             ];
             const edges = [
-              { x: r.x + r.width / 2, y: r.y, cursor: "n-resize" },
-              { x: r.x + r.width / 2, y: r.y + r.height, cursor: "s-resize" },
-              { x: r.x, y: r.y + r.height / 2, cursor: "w-resize" },
-              { x: r.x + r.width, y: r.y + r.height / 2, cursor: "e-resize" },
+              { x: x + w / 2, y: y, cursor: "n-resize" },
+              { x: x + w / 2, y: y + h, cursor: "s-resize" },
+              { x: x, y: y + h / 2, cursor: "w-resize" },
+              { x: x + w, y: y + h / 2, cursor: "e-resize" },
             ];
             const hitCorner = corners.find(
               (c) =>
-                Math.abs(point.x - c.x) <= handleSize &&
-                Math.abs(point.y - c.y) <= handleSize
+                Math.abs(point.x - c.x) <= handleSize / 2 &&
+                Math.abs(point.y - c.y) <= handleSize / 2
             );
             const hitEdge = edges.find(
               (e) =>
-                Math.abs(point.x - e.x) <= handleSize &&
-                Math.abs(point.y - e.y) <= handleSize
+                Math.abs(point.x - e.x) <= handleSize / 2 &&
+                Math.abs(point.y - e.y) <= handleSize / 2
             );
             if (hitCorner) {
               newCursor = hitCorner.cursor;
@@ -2825,26 +2757,27 @@ const CanvasArea = () => {
         } else if (selectedShape.kind === "image") {
           const im = images[selectedShape.index];
           if (im) {
-            const handleSize = 10 / zoom;
+            const handleSize = 14 / zoom;
+            const pad = 4 / zoom;
+            const x = im.x - pad;
+            const y = im.y - pad;
+            const w = im.width + pad * 2;
+            const h = im.height + pad * 2;
+
             const handles = [
-              { x: im.x + im.width, y: im.y + im.height, cursor: "se-resize" },
-              { x: im.x + im.width / 2, y: im.y, cursor: "n-resize" },
-              {
-                x: im.x + im.width / 2,
-                y: im.y + im.height,
-                cursor: "s-resize",
-              },
-              { x: im.x, y: im.y + im.height / 2, cursor: "w-resize" },
-              {
-                x: im.x + im.width,
-                y: im.y + im.height / 2,
-                cursor: "e-resize",
-              },
+              { x: x, y: y, cursor: "nw-resize" },
+              { x: x + w, y: y, cursor: "ne-resize" },
+              { x: x, y: y + h, cursor: "sw-resize" },
+              { x: x + w, y: y + h, cursor: "se-resize" },
+              { x: x + w / 2, y: y, cursor: "n-resize" },
+              { x: x + w / 2, y: y + h, cursor: "s-resize" },
+              { x: x, y: y + h / 2, cursor: "w-resize" },
+              { x: x + w, y: y + h / 2, cursor: "e-resize" },
             ];
             const hitHandle = handles.find(
               (h) =>
-                Math.abs(point.x - h.x) <= handleSize &&
-                Math.abs(point.y - h.y) <= handleSize
+                Math.abs(point.x - h.x) <= handleSize / 2 &&
+                Math.abs(point.y - h.y) <= handleSize / 2
             );
             if (hitHandle) {
               newCursor = hitHandle.cursor;
@@ -2860,18 +2793,27 @@ const CanvasArea = () => {
         } else if (selectedShape.kind === "text") {
           const t = texts[selectedShape.index];
           if (t) {
-            const handleSize = 10 / zoom;
+            const handleSize = 14 / zoom;
+            const pad = 4 / zoom;
+            const x = t.x - pad;
+            const y = t.y - pad;
+            const w = t.width + pad * 2;
+            const h = t.height + pad * 2;
+
             const handles = [
-              { x: t.x + t.width, y: t.y + t.height, cursor: "se-resize" },
-              { x: t.x + t.width / 2, y: t.y, cursor: "n-resize" },
-              { x: t.x + t.width / 2, y: t.y + t.height, cursor: "s-resize" },
-              { x: t.x, y: t.y + t.height / 2, cursor: "w-resize" },
-              { x: t.x + t.width, y: t.y + t.height / 2, cursor: "e-resize" },
+              { x: x, y: y, cursor: "nw-resize" },
+              { x: x + w, y: y, cursor: "ne-resize" },
+              { x: x, y: y + h, cursor: "sw-resize" },
+              { x: x + w, y: y + h, cursor: "se-resize" },
+              { x: x + w / 2, y: y, cursor: "n-resize" },
+              { x: x + w / 2, y: y + h, cursor: "s-resize" },
+              { x: x, y: y + h / 2, cursor: "w-resize" },
+              { x: x + w, y: y + h / 2, cursor: "e-resize" },
             ];
             const hitHandle = handles.find(
               (h) =>
-                Math.abs(point.x - h.x) <= handleSize &&
-                Math.abs(point.y - h.y) <= handleSize
+                Math.abs(point.x - h.x) <= handleSize / 2 &&
+                Math.abs(point.y - h.y) <= handleSize / 2
             );
             if (hitHandle) {
               newCursor = hitHandle.cursor;
@@ -2887,18 +2829,27 @@ const CanvasArea = () => {
         } else if (selectedShape.kind === "frame") {
           const f = frames[selectedShape.index];
           if (f) {
-            const handleSize = 10 / zoom;
+            const handleSize = 14 / zoom;
+            const pad = 4 / zoom;
+            const x = f.x - pad;
+            const y = f.y - pad;
+            const w = f.width + pad * 2;
+            const h = f.height + pad * 2;
+
             const handles = [
-              { x: f.x + f.width, y: f.y + f.height, cursor: "se-resize" },
-              { x: f.x + f.width / 2, y: f.y, cursor: "n-resize" },
-              { x: f.x + f.width / 2, y: f.y + f.height, cursor: "s-resize" },
-              { x: f.x, y: f.y + f.height / 2, cursor: "w-resize" },
-              { x: f.x + f.width, y: f.y + f.height / 2, cursor: "e-resize" },
+              { x: x, y: y, cursor: "nw-resize" },
+              { x: x + w, y: y, cursor: "ne-resize" },
+              { x: x, y: y + h, cursor: "sw-resize" },
+              { x: x + w, y: y + h, cursor: "se-resize" },
+              { x: x + w / 2, y: y, cursor: "n-resize" },
+              { x: x + w / 2, y: y + h, cursor: "s-resize" },
+              { x: x, y: y + h / 2, cursor: "w-resize" },
+              { x: x + w, y: y + h / 2, cursor: "e-resize" },
             ];
             const hitHandle = handles.find(
               (h) =>
-                Math.abs(point.x - h.x) <= handleSize &&
-                Math.abs(point.y - h.y) <= handleSize
+                Math.abs(point.x - h.x) <= handleSize / 2 &&
+                Math.abs(point.y - h.y) <= handleSize / 2
             );
             if (hitHandle) {
               newCursor = hitHandle.cursor;
@@ -3876,28 +3827,28 @@ const CanvasArea = () => {
         ctx.globalAlpha = alpha;
         ctx.drawImage(tag, im.x, im.y, im.width, im.height);
         if (isSelected) {
-          ctx.strokeStyle = "rgba(180,220,255,0.9)";
-          ctx.lineWidth = 2 / zoom;
-          ctx.setLineDash([4 / zoom, 4 / zoom]);
-          ctx.strokeRect(im.x, im.y, im.width, im.height);
+          const pad = 4 / zoom;
           const handleSize = 8 / zoom;
-          ctx.fillStyle = "rgba(180,220,255,1)";
+          const stroke = "rgba(83,182,255,0.9)";
+          const x = im.x - pad;
+          const y = im.y - pad;
+          const w = im.width + pad * 2;
+          const h = im.height + pad * 2;
+
+          ctx.strokeStyle = stroke;
+          ctx.lineWidth = 1.6 / zoom;
           ctx.setLineDash([]);
+          ctx.strokeRect(x, y, w, h);
+
           const handles = [
-            { x: im.x + im.width, y: im.y + im.height },
-            { x: im.x + im.width / 2, y: im.y },
-            { x: im.x + im.width / 2, y: im.y + im.height },
-            { x: im.x, y: im.y + im.height / 2 },
-            { x: im.x + im.width, y: im.y + im.height / 2 },
+            { x: x, y: y }, { x: x + w, y: y }, { x: x, y: y + h }, { x: x + w, y: y + h },
+            { x: x + w / 2, y: y }, { x: x + w / 2, y: y + h },
+            { x: x, y: y + h / 2 }, { x: x + w, y: y + h / 2 }
           ];
+          ctx.fillStyle = stroke;
           handles.forEach(({ x, y }) => {
             ctx.beginPath();
-            ctx.rect(
-              x - handleSize / 2,
-              y - handleSize / 2,
-              handleSize,
-              handleSize
-            );
+            ctx.rect(x - handleSize / 2, y - handleSize / 2, handleSize, handleSize);
             ctx.fill();
           });
         }
@@ -3930,8 +3881,8 @@ const CanvasArea = () => {
 
       if (isSelected) {
         const pad = 4 / zoom;
-        const handleSize = 7 / zoom;
-        const stroke = "rgba(63,193,255,0.95)";
+        const handleSize = 8 / zoom;
+        const stroke = "rgba(83,182,255,0.9)";
         const x = t.x - pad;
         const y = t.y - pad;
         const w = t.width + pad * 2;
@@ -3942,27 +3893,15 @@ const CanvasArea = () => {
         ctx.setLineDash([]);
         ctx.strokeRect(x, y, w, h);
 
-        const corners = [
-          { cx: x, cy: y },
-          { cx: x + w, cy: y },
-          { cx: x, cy: y + h },
-          { cx: x + w, cy: y + h },
-        ];
-        const edges = [
-          { cx: x + w / 2, cy: y },
-          { cx: x + w / 2, cy: y + h },
-          { cx: x, cy: y + h / 2 },
-          { cx: x + w, cy: y + h / 2 },
+        const handles = [
+          { x: x, y: y }, { x: x + w, y: y }, { x: x, y: y + h }, { x: x + w, y: y + h },
+          { x: x + w / 2, y: y }, { x: x + w / 2, y: y + h },
+          { x: x, y: y + h / 2 }, { x: x + w, y: y + h / 2 }
         ];
         ctx.fillStyle = stroke;
-        [...corners, ...edges].forEach(({ cx, cy }) => {
+        handles.forEach(({ x, y }) => {
           ctx.beginPath();
-          ctx.rect(
-            cx - handleSize / 2,
-            cy - handleSize / 2,
-            handleSize,
-            handleSize
-          );
+          ctx.rect(x - handleSize / 2, y - handleSize / 2, handleSize, handleSize);
           ctx.fill();
         });
       }
@@ -3989,29 +3928,28 @@ const CanvasArea = () => {
       ctx.strokeRect(x, y, width, height);
 
       if (isSelected) {
+        const pad = 4 / zoom;
         const handleSize = 8 / zoom;
-        const handleFill = "rgba(83,182,255,1)";
-        const corners = [
-          { cx: x, cy: y },
-          { cx: x + width, cy: y },
-          { cx: x, cy: y + height },
-          { cx: x + width, cy: y + height },
+        const stroke = "rgba(83,182,255,0.9)";
+        const sx = x - pad;
+        const sy = y - pad;
+        const sw = width + pad * 2;
+        const sh = height + pad * 2;
+
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 1.6 / zoom;
+        ctx.setLineDash([]);
+        ctx.strokeRect(sx, sy, sw, sh);
+
+        const handles = [
+          { x: sx, y: sy }, { x: sx + sw, y: sy }, { x: sx, y: sy + sh }, { x: sx + sw, y: sy + sh },
+          { x: sx + sw / 2, y: sy }, { x: sx + sw / 2, y: sy + sh },
+          { x: sx, y: sy + sh / 2 }, { x: sx + sw, y: sy + sh / 2 }
         ];
-        const edges = [
-          { cx: x + width / 2, cy: y },
-          { cx: x + width / 2, cy: y + height },
-          { cx: x, cy: y + height / 2 },
-          { cx: x + width, cy: y + height / 2 },
-        ];
-        ctx.fillStyle = handleFill;
-        [...corners, ...edges].forEach(({ cx, cy }) => {
+        ctx.fillStyle = stroke;
+        handles.forEach((h) => {
           ctx.beginPath();
-          ctx.rect(
-            cx - handleSize / 2,
-            cy - handleSize / 2,
-            handleSize,
-            handleSize
-          );
+          ctx.rect(h.x - handleSize / 2, h.y - handleSize / 2, handleSize, handleSize);
           ctx.fill();
         });
       }
@@ -4082,25 +4020,28 @@ const CanvasArea = () => {
       ctx.fillText(`Frame ${f.frameNumber}`, x, y - 4 / zoom);
 
       if (isSelected) {
-        // Draw resize handles (corners + edges)
+        const pad = 4 / zoom;
         const handleSize = 8 / zoom;
-        const handles = [
-          { x: x + width, y: y + height },
-          { x: x + width / 2, y: y },
-          { x: x + width / 2, y: y + height },
-          { x: x, y: y + height / 2 },
-          { x: x + width, y: y + height / 2 },
-        ];
-        ctx.fillStyle = "rgba(180,220,255,1)";
+        const stroke = "rgba(83,182,255,0.9)";
+        const sx = x - pad;
+        const sy = y - pad;
+        const sw = width + pad * 2;
+        const sh = height + pad * 2;
+
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 1.6 / zoom;
         ctx.setLineDash([]);
+        ctx.strokeRect(sx, sy, sw, sh);
+
+        const handles = [
+          { x: sx, y: sy }, { x: sx + sw, y: sy }, { x: sx, y: sy + sh }, { x: sx + sw, y: sy + sh },
+          { x: sx + sw / 2, y: sy }, { x: sx + sw / 2, y: sy + sh },
+          { x: sx, y: sy + sh / 2 }, { x: sx + sw, y: sy + sh / 2 }
+        ];
+        ctx.fillStyle = stroke;
         handles.forEach((h) => {
           ctx.beginPath();
-          ctx.rect(
-            h.x - handleSize / 2,
-            h.y - handleSize / 2,
-            handleSize,
-            handleSize
-          );
+          ctx.rect(h.x - handleSize / 2, h.y - handleSize / 2, handleSize, handleSize);
           ctx.fill();
         });
       }
@@ -5257,7 +5198,7 @@ const CanvasArea = () => {
                             id: "cloud",
                             icon: Cloud,
                             title: "Cloud Provider Icon",
-                            desc: "AWS, Azure, and Google Cloud",
+                            desc: "AWS, Azure, Google Cloud, and more",
                             onClick: () => setPlusMenuView("cloud-icon"),
                           },
                         ].map((cat, i) => (
@@ -5300,7 +5241,6 @@ const CanvasArea = () => {
                                 )}`;
                                 setPendingAddIcon({ name: icon.name, src });
                                 setActiveTool("IconAdd");
-                                setIsPlusMenuOpen(false);
                               }}
                               className="h-10 w-10 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition shadow-sm"
                             >
@@ -5340,7 +5280,7 @@ const CanvasArea = () => {
                         onClick={() => setPlusMenuView("cloud-icon")}
                         className="text-white/40 hover:text-white/60 transition"
                       >
-                        Cloud Provider
+                        Cloud Provider Icon
                       </button>
                       <span className="text-white/20">/</span>
                       <span className="text-white/90">{plusMenuSubView}</span>
@@ -5371,7 +5311,6 @@ const CanvasArea = () => {
                                       src: path,
                                     });
                                     setActiveTool("IconAdd");
-                                    setIsPlusMenuOpen(false);
                                   }}
                                   className="h-10 w-10 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition shadow-sm overflow-hidden"
                                 >
@@ -5409,29 +5348,39 @@ const CanvasArea = () => {
                         Icon
                       </button>
                       <span className="text-white/20">/</span>
-                      <span className="text-white/90">Cloud Provider</span>
+                      <span className="text-white/90">Cloud Provider Icon</span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 px-3">
+                    <div className="flex flex-col gap-2 px-3 pb-6">
                       {[
                         {
                           name: "AWS",
+                          desc: "100+ official icons available",
                           src: "/icons-library/aws-icons/aws-logo.svg",
                         },
                         {
                           name: "Azure",
+                          desc: "100+ official icons available",
                           src: "/icons-library/azure-icons/azure-logo.svg",
                         },
                         {
-                          name: "GCP",
+                          name: "Google Cloud",
+                          desc: "100+ official icons available",
                           src: "/icons-library/gcp-icons/gcp-logo.svg",
                         },
                         {
                           name: "Kubernetes",
+                          desc: "25+ official icons available",
                           src: "/icons-library/kubernetes-icons/k8s-logo.svg",
                         },
                         {
+                          name: "Network",
+                          desc: "Generic and Cisco icons available",
+                          src: null, // We'll use a lucide icon
+                        },
+                        {
                           name: "OCI",
+                          desc: "25+ official icons available",
                           src: "/icons-library/oci-icons/oci-logo.svg",
                         },
                       ].map((cloud, i) => (
@@ -5441,18 +5390,28 @@ const CanvasArea = () => {
                             setPlusMenuSubView(cloud.name);
                             setPlusMenuView("provider-icons");
                           }}
-                          className="flex flex-col items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/12 transition group"
+                          className="flex items-center gap-4 p-3 rounded-lg bg-[#1a1a1a] border border-white/5 hover:bg-white/5 hover:border-white/10 transition group text-left w-full"
                         >
-                          <div className="h-12 w-12 flex items-center justify-center">
-                            <img
-                              src={cloud.src}
-                              alt={cloud.name}
-                              className="max-h-full max-w-full opacity-60 group-hover:opacity-100 transition"
-                            />
+                          <div className="h-10 w-12 flex items-center justify-center">
+                            {cloud.src ? (
+                              <img
+                                src={cloud.src}
+                                alt={cloud.name}
+                                className="max-h-full max-w-full opacity-80 group-hover:opacity-100 transition"
+                              />
+                            ) : (
+                              <Network className="h-6 w-6 text-white/40 group-hover:text-white/80 transition" />
+                            )}
                           </div>
-                          <span className="text-xs font-semibold text-white/40 group-hover:text-white/80 transition">
-                            {cloud.name}
-                          </span>
+                          <div className="flex-1 flex flex-col min-w-0">
+                            <span className="text-sm font-bold text-white/90 group-hover:text-white transition">
+                              {cloud.name}
+                            </span>
+                            <span className="text-[10px] text-white/40 group-hover:text-white/60 transition truncate">
+                              {cloud.desc}
+                            </span>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-white/20 group-hover:text-white/40 transition" />
                         </button>
                       ))}
                     </div>
@@ -5464,17 +5423,19 @@ const CanvasArea = () => {
             {/* Footer */}
             <div className="flex items-center justify-between px-4 py-2 bg-white/2 border-t border-white/5">
               <div className="text-[11px] font-medium text-white/30">
-                {plusMenuView === "categories"
-                  ? "Diagram Catalog"
-                  : plusMenuView === "shape"
-                    ? "Shapes"
-                    : plusMenuView === "icon"
-                      ? plusMenuSubView === "general"
-                        ? "General Icon"
-                        : "Custom Icons"
-                      : plusMenuView === "provider-icons"
-                        ? plusMenuSubView
-                        : "Cloud Provider Icon"}
+                {pendingAddIcon
+                  ? pendingAddIcon.name
+                  : plusMenuView === "categories"
+                    ? "Diagram Catalog"
+                    : plusMenuView === "shape"
+                      ? "Shapes"
+                      : plusMenuView === "icon"
+                        ? plusMenuSubView === "general"
+                          ? "General Icon"
+                          : "Custom Icons"
+                        : plusMenuView === "provider-icons"
+                          ? plusMenuSubView
+                          : "Cloud Provider Icon"}
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1 text-[10px] text-white/30">
