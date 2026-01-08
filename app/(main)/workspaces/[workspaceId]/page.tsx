@@ -248,11 +248,7 @@ export default function WorkspaceDetailPage() {
                       <Edit2 className="h-3 w-3 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100" />
                     </div>
                   )}
-                  {dirty && (
-                    <span className="ml-2 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-500">
-                      Unsaved Changes
-                    </span>
-                  )}
+                  {/* Unsaved changes indicator removed as requested */}
                 </div>
               </div>
 
