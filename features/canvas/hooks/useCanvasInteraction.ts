@@ -184,37 +184,111 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     setTexts(prev => prev.filter(t => !(point.x >= t.x - tolerance && point.x <= t.x + t.width + tolerance && point.y >= t.y - tolerance && point.y <= t.y + t.height + tolerance)));
   }, [zoom, setRectangles, setCircles, setLines, setArrows, setPolygons, setImages, setTexts]);
 
-  const duplicateForDrag = useCallback((picked: SelectedShape) => {
-    if (picked.length === 0) return [];
-    // For now only support single item duplication during drag if we want to be simple, 
-    // but the user requested marquee selection so we might want to duplicate all.
-    // Let's implement it for all selected shapes.
-    
-    // This is tricky because we need to return the new indices.
-    // Actually, duplicateSelection in useCanvasCommands might be better, 
-    // but this is specifically for "Alt+Drag".
-    
-    // Let's just do the first one for now to keep it simple and fix the build.
-    const first = picked[0];
-    const offset = 0;
-    if (first.kind === "rect") {
-      const src = rectangles[first.index];
-      if (!src) return [];
-      const next = [...rectangles, { ...src, id: makeId(), x: src.x + offset, y: src.y + offset }];
-      setRectangles(next);
-      pushHistory({ rectangles: next });
-      return [{ kind: "rect", index: next.length - 1 }] as SelectedShape;
+  const duplicateForDrag = useCallback((items: SelectedShape) => {
+    if (items.length === 0) return null;
+
+    const newRects = [...rectangles];
+    const newCircles = [...circles];
+    const newLines = [...lines];
+    const newArrows = [...arrows];
+    const newPaths = [...paths];
+    const newImages = [...images];
+    const newTexts = [...texts];
+    const newFrames = [...frames];
+    const newPolys = [...polygons];
+    const newConnectors = [...connectors];
+
+    const newSelection: SelectedShape = [];
+
+    for (const item of items) {
+      if (item.kind === "rect") {
+        const src = rectangles[item.index];
+        if (src) {
+          const dup = { ...src, id: makeId() };
+          newRects.push(dup);
+          newSelection.push({ kind: "rect", index: newRects.length - 1, id: dup.id });
+        }
+      } else if (item.kind === "circle") {
+        const src = circles[item.index];
+        if (src) {
+          const dup = { ...src, id: makeId() };
+          newCircles.push(dup);
+          newSelection.push({ kind: "circle", index: newCircles.length - 1, id: dup.id });
+        }
+      } else if (item.kind === "image") {
+        const src = images[item.index];
+        if (src) {
+          const dup = { ...src, id: makeId() };
+          newImages.push(dup);
+          newSelection.push({ kind: "image", index: newImages.length - 1, id: dup.id });
+        }
+      } else if (item.kind === "text") {
+        const src = texts[item.index];
+        if (src) {
+          const dup = { ...src, id: makeId() };
+          newTexts.push(dup);
+          newSelection.push({ kind: "text", index: newTexts.length - 1, id: dup.id });
+        }
+      } else if (item.kind === "frame") {
+        const src = frames[item.index];
+        if (src) {
+          const dup = { ...src, id: makeId(), frameNumber: frames.length + newFrames.length - frames.length + 1 };
+          newFrames.push(dup);
+          newSelection.push({ kind: "frame", index: newFrames.length - 1, id: dup.id });
+        }
+      } else if (item.kind === "poly") {
+        const src = polygons[item.index];
+        if (src) {
+          const dup = { ...src, id: makeId() };
+          newPolys.push(dup);
+          newSelection.push({ kind: "poly", index: newPolys.length - 1, id: dup.id });
+        }
+      } else if (item.kind === "line") {
+        const src = lines[item.index];
+        if (src) {
+          const dup = { ...src, id: makeId() };
+          newLines.push(dup);
+          newSelection.push({ kind: "line", index: newLines.length - 1, id: dup.id });
+        }
+      } else if (item.kind === "arrow") {
+        const src = arrows[item.index];
+        if (src) {
+          const dup = { ...src, id: makeId() };
+          newArrows.push(dup);
+          newSelection.push({ kind: "arrow", index: newArrows.length - 1, id: dup.id });
+        }
+      }
     }
-    if (first.kind === "circle") {
-      const src = circles[first.index];
-      if (!src) return [];
-      const next = [...circles, { ...src, id: makeId(), x: src.x + offset, y: src.y + offset }];
-      setCircles(next);
-      pushHistory({ circles: next });
-      return [{ kind: "circle", index: next.length - 1 }] as SelectedShape;
-    }
-    return [];
-  }, [rectangles, circles, setRectangles, setCircles, pushHistory]);
+
+    if (newSelection.length === 0) return null;
+
+    setRectangles(newRects);
+    setCircles(newCircles);
+    setLines(newLines);
+    setArrows(newArrows);
+    setPaths(newPaths);
+    setImages(newImages);
+    setTexts(newTexts);
+    setFrames(newFrames);
+    setPolygons(newPolys);
+    setConnectors(newConnectors);
+
+    const nextState: HistoryEntry = {
+      rectangles: newRects,
+      circles: newCircles,
+      lines: newLines,
+      arrows: newArrows,
+      paths: newPaths,
+      images: newImages,
+      texts: newTexts,
+      frames: newFrames,
+      connectors: newConnectors,
+      polygons: newPolys
+    };
+
+    pushHistory(nextState);
+    return { selection: newSelection, state: nextState };
+  }, [rectangles, circles, lines, arrows, paths, images, texts, frames, polygons, connectors, setRectangles, setCircles, setLines, setArrows, setPaths, setImages, setTexts, setFrames, setPolygons, setConnectors, pushHistory]);
 
   const handlePointerDown = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
     event.preventDefault();
@@ -461,15 +535,28 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
       if (picked) {
         let workingPicked = picked;
-        if (event.altKey) { const dup = duplicateForDrag([picked]); if (dup && dup[0]) workingPicked = dup[0]; }
+        let workingState: HistoryEntry | null = null;
+        
+        if (event.altKey) {
+          const isAlreadySelected = selectedShape.some(s => s.kind === picked.kind && s.id === picked.id);
+          const toDuplicate = isAlreadySelected ? selectedShape : [picked];
+          const result = duplicateForDrag(toDuplicate);
+          if (result) {
+            workingPicked = result.selection.find(s => s.id === result.selection[result.selection.length - 1].id) || result.selection[0];
+            workingState = result.state;
+            setSelectedShape(result.selection);
+          }
+        }
 
-        const isAlreadySelected = selectedShape.some(s => s.kind === workingPicked.kind && s.id === workingPicked.id);
-        if (!isAlreadySelected) {
-          setSelectedShape([workingPicked]);
+        if (!workingState) {
+          const isAlreadySelected = selectedShape.some(s => s.kind === workingPicked.kind && s.id === workingPicked.id);
+          if (!isAlreadySelected) {
+            setSelectedShape([workingPicked]);
+          }
         }
 
         pointerStartRef.current = { x: point.x, y: point.y };
-        dragShapesStartRef.current = {
+        dragShapesStartRef.current = workingState || {
           rectangles: [...rectangles],
           circles: [...circles],
           lines: [...lines],
@@ -483,8 +570,18 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         };
 
         // Setup Drag Modes
+        const s_rects = workingState ? workingState.rectangles : rectangles;
+        const s_circles = workingState ? workingState.circles : circles;
+        const s_images = workingState ? workingState.images : images;
+        const s_texts = workingState ? workingState.texts : texts;
+        const s_frames = workingState ? workingState.frames : frames;
+        const s_polygons = workingState ? workingState.polygons : polygons;
+        const s_lines = workingState ? workingState.lines : lines;
+        const s_arrows = workingState ? workingState.arrows : arrows;
+
         if (workingPicked.kind === "rect") {
-          const r = rectangles[workingPicked.index];
+          const r = s_rects[workingPicked.index];
+          if (!r) return;
           const hs = 14 / zoom;
           const corners = [ 
             { x: r.x, y: r.y, sx: -1, sy: -1 }, 
@@ -503,7 +600,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             const onTop = Math.abs(point.y - r.y) <= tol && point.x >= r.x - tol && point.x <= r.x + r.width + tol;
             const onBottom = Math.abs(point.y - (r.y + r.height)) <= tol && point.x >= r.x - tol && point.x <= r.x + r.width + tol;
             const onLeft = Math.abs(point.x - r.x) <= tol && point.y >= r.y - tol && point.y <= r.y + r.height + tol;
-            const onRight = Math.abs(point.x - (r.x + r.width)) <= tol && point.y >= r.y - tol && point.y <= r.y + r.height + tol;
+            const onRight = Math.abs(point.x - (r.x + r.width)) <= tol && point.y >= r.y - tol && point.y <= r.y + r.width + tol;
             
             if (onTop || onBottom) {
               dragRectCornerRef.current = { sx: (onLeft ? -1 : (onRight ? 1 : 0)), sy: (onTop ? -1 : 1) };
@@ -516,7 +613,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             }
           }
         } else if (workingPicked.kind === "circle") {
-          const c = circles[workingPicked.index];
+          const c = s_circles[workingPicked.index];
+          if (!c) return;
           const hs = 12 / zoom;
           const corners = [ 
             { x: c.x - c.rx, y: c.y - c.ry, sx: -1, sy: -1 }, 
@@ -549,7 +647,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             }
           }
         } else if (workingPicked.kind === "image") {
-          const im = images[workingPicked.index];
+          const im = s_images[workingPicked.index];
+          if (!im) return;
           const hs = 14 / zoom;
           const corners = [ 
             { x: im.x, y: im.y, sx: -1, sy: -1 }, 
@@ -568,7 +667,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             const onTop = Math.abs(point.y - im.y) <= tol && point.x >= im.x - tol && point.x <= im.x + im.width + tol;
             const onBottom = Math.abs(point.y - (im.y + im.height)) <= tol && point.x >= im.x - tol && point.x <= im.x + im.width + tol;
             const onLeft = Math.abs(point.x - im.x) <= tol && point.y >= im.y - tol && point.y <= im.y + im.height + tol;
-            const onRight = Math.abs(point.x - (im.x + im.width)) <= tol && point.y >= im.y - tol && point.y <= im.y + im.height + tol;
+            const onRight = Math.abs(point.x - (im.x + im.width)) <= tol && point.y >= im.y - tol && point.y <= im.y + im.width + tol;
             
             if (onTop || onBottom) {
               dragImageCornerRef.current = { sx: (onLeft ? -1 : (onRight ? 1 : 0)), sy: (onTop ? -1 : 1) };
@@ -581,7 +680,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             }
           }
         } else if (workingPicked.kind === "text") {
-          const t = texts[workingPicked.index];
+          const t = s_texts[workingPicked.index];
+          if (!t) return;
           const hs = 14 / zoom;
           const corners = [ 
             { x: t.x, y: t.y, sx: -1, sy: -1 }, 
@@ -600,7 +700,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             const onTop = Math.abs(point.y - t.y) <= tol && point.x >= t.x - tol && point.x <= t.x + t.width + tol;
             const onBottom = Math.abs(point.y - (t.y + t.height)) <= tol && point.x >= t.x - tol && point.x <= t.x + t.width + tol;
             const onLeft = Math.abs(point.x - t.x) <= tol && point.y >= t.y - tol && point.y <= t.y + t.height + tol;
-            const onRight = Math.abs(point.x - (t.x + t.width)) <= tol && point.y >= t.y - tol && point.y <= t.y + t.height + tol;
+            const onRight = Math.abs(point.x - (t.x + t.width)) <= tol && point.y >= t.y - tol && point.y <= t.y + t.width + tol;
             
             if (onTop || onBottom) {
               dragTextCornerRef.current = { sx: (onLeft ? -1 : (onRight ? 1 : 0)), sy: (onTop ? -1 : 1) };
@@ -613,7 +713,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             }
           }
         } else if (workingPicked.kind === "frame") {
-          const f = frames[workingPicked.index];
+          const f = s_frames[workingPicked.index];
+          if (!f) return;
           const hs = 14 / zoom;
           const corners = [ 
             { x: f.x, y: f.y, sx: -1, sy: -1 }, 
@@ -632,7 +733,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             const onTop = Math.abs(point.y - f.y) <= tol && point.x >= f.x - tol && point.x <= f.x + f.width + tol;
             const onBottom = Math.abs(point.y - (f.y + f.height)) <= tol && point.x >= f.x - tol && point.x <= f.x + f.width + tol;
             const onLeft = Math.abs(point.x - f.x) <= tol && point.y >= f.y - tol && point.y <= f.y + f.height + tol;
-            const onRight = Math.abs(point.x - (f.x + f.width)) <= tol && point.y >= f.y - tol && point.y <= f.y + f.height + tol;
+            const onRight = Math.abs(point.x - (f.x + f.width)) <= tol && point.y >= f.y - tol && point.y <= f.y + f.width + tol;
             
             if (onTop || onBottom) {
               dragFrameCornerRef.current = { sx: (onLeft ? -1 : (onRight ? 1 : 0)), sy: (onTop ? -1 : 1) };
@@ -645,7 +746,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             }
           }
         } else if (workingPicked.kind === "poly") {
-          const p = polygons[workingPicked.index];
+          const p = s_polygons[workingPicked.index];
+          if (!p) return;
           const hs = 12 / zoom;
           const corners = [ 
             { x: p.x, y: p.y, sx: -1, sy: -1 }, 
@@ -677,7 +779,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             }
           }
         } else if (workingPicked.kind === "line") {
-          const l = lines[workingPicked.index];
+          const l = s_lines[workingPicked.index];
+          if (!l) return;
           const hs = 10 / zoom;
           const handles = [ { x: l.x1, y: l.y1, anchor: "start" as const }, { x: l.x2, y: l.y2, anchor: "end" as const } ];
           const hit = handles.find(h => Math.abs(point.x - h.x) <= hs && Math.abs(point.y - h.y) <= hs);
@@ -685,7 +788,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           dragRectCornerRef.current = hit ? { sx: hit.anchor === "start" ? -1 : 1, sy: 1 } : null;
           dragModeRef.current = hit ? "resize-line" : "move";
         } else if (workingPicked.kind === "arrow") {
-          const a = arrows[workingPicked.index];
+          const a = s_arrows[workingPicked.index];
+          if (!a) return;
           const hs = 10 / zoom;
           const handles = [ { x: a.x1, y: a.y1, anchor: "start" as const }, { x: a.x2, y: a.y2, anchor: "end" as const } ];
           const hit = handles.find(h => Math.abs(point.x - h.x) <= hs && Math.abs(point.y - h.y) <= hs);
@@ -902,6 +1006,9 @@ export const useCanvasInteraction = (props: InteractionProps) => {
       if (dragModeRef.current === "move" && dragShapesStartRef.current) {
         const dx = point.x - pointerStartRef.current.x;
         const dy = point.y - pointerStartRef.current.y;
+        
+        // Only update if there's actual movement
+        if (dx === 0 && dy === 0) return;
         
         const startState = dragShapesStartRef.current;
 
