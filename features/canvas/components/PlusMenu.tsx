@@ -115,7 +115,10 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
           {/* Search Section */}
           <div 
             className="flex items-center gap-2 px-3.5 py-3 border-b border-border/50 bg-muted/30"
-            onWheel={(e) => e.stopPropagation()}
+            onWheel={(e) => {
+              e.stopPropagation();
+              e.nativeEvent.stopPropagation();
+            }}
           >
             <Search className="h-3.5 w-3.5 text-muted-foreground/70" />
             <input
@@ -132,7 +135,10 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
           </div>
 
           <div
-            onWheel={(e) => e.stopPropagation()}
+            onWheel={(e) => {
+              e.stopPropagation();
+              e.nativeEvent.stopPropagation();
+            }}
             onScroll={(e) => {
               const target = e.currentTarget;
               if (
@@ -282,16 +288,21 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                         const input = document.createElement("input");
                         input.type = "file";
                         input.accept = "image/*";
-                        input.onchange = (e: any) => {
+                        input.onchange = async (e: any) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (re) => {
-                              onAddIcon(file.name, re.target?.result as string);
-                              setActiveTool("IconAdd");
-                              onClose();
-                            };
-                            reader.readAsDataURL(file);
+                             // Optional: could show a local spinner here if we had state for it
+                             try {
+                                const { uploadFileToCloudinary } = await import("../utils/upload");
+                                const result = await uploadFileToCloudinary(file);
+                                onAddIcon(file.name, result.secureUrl);
+                                setActiveTool("IconAdd");
+                                onClose();
+                             } catch (err) {
+                                console.error("Failed to upload image from menu", err);
+                                // Fallback or alert?
+                                alert("Failed to upload image");
+                             }
                           }
                         };
                         input.click();

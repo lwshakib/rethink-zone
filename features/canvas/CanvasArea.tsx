@@ -143,8 +143,8 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   const themeStroke = resolvedTheme === "dark" ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)";
   const themeFrameBg = resolvedTheme === "dark" ? "rgba(30,30,30,0.5)" : "rgba(240,240,240,0.5)";
 
-  const getAnchorPointLocal = useCallback((a: ConnectorAnchor) => getAnchorPoint(a, { rectangles, circles, images, texts, frames, polygons }), [rectangles, circles, images, texts, frames, polygons]);
-  const getShapeBoundsLocal = useCallback((a: ConnectorAnchor) => getShapeBounds(a, { rectangles, circles, images, texts, frames, polygons }), [rectangles, circles, images, texts, frames, polygons]);
+  const getAnchorPointLocal = useCallback((a: ConnectorAnchor) => getAnchorPoint(a, { rectangles, circles, images, texts, frames, polygons, figures, codes }), [rectangles, circles, images, texts, frames, polygons, figures, codes]);
+  const getShapeBoundsLocal = useCallback((a: ConnectorAnchor) => getShapeBounds(a, { rectangles, circles, images, texts, frames, polygons, figures, codes }), [rectangles, circles, images, texts, frames, polygons, figures, codes]);
   const getContentBoundsLocal = useCallback(() => getContentBounds({ rectangles, circles, lines, arrows, paths, images, texts, frames, polygons }), [rectangles, circles, lines, arrows, paths, images, texts, frames, polygons]);
 
   const anchorHandles = useMemo(() => {
@@ -643,6 +643,9 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
             anchorHandles={anchorHandles}
             hoverAnchor={hoverAnchor}
             canvasToClient={canvasToClient}
+            selectedShape={selectedShape}
+            connectors={connectors}
+            getAnchorPoint={getAnchorPointLocal}
           />
 
           <FrameButtons
@@ -662,6 +665,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
             lines={lines}
             arrows={arrows}
             codes={codes}
+            connectors={connectors}
             canvasToClient={canvasToClient}
             onUpdateShape={onUpdateShape}
             onChangeKind={onChangeKind}

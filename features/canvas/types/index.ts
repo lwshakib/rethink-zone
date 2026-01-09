@@ -138,10 +138,11 @@ export type CodeShape = {
 export type ShapeKind = "rect" | "circle" | "image" | "text" | "frame" | "poly" | "figure" | "code";
 export type AnchorSide = "top" | "bottom" | "left" | "right";
 export type ConnectorAnchor = {
-  kind: ShapeKind;
-  shapeId: string;
-  anchor: AnchorSide;
-  percent?: number; // 0 to 1 along that side
+  kind: ShapeKind | "point";
+  shapeId: string; // If kind is 'point', this can be dummy or ID
+  anchor: AnchorSide | "none";
+  percent?: number; 
+  point?: { x: number; y: number }; // Used for floating connections during drag
 };
 export type Connector = {
   id: string;
@@ -238,7 +239,8 @@ export type DragMode =
   | "resize-frame-h"
   | "resize-frame-v"
   | "resize-line"
-  | "resize-arrow";
+  | "resize-arrow"
+  | "resize-connector";
 
 export interface IconItem {
   name: string;

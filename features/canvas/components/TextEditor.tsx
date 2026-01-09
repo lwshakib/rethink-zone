@@ -69,6 +69,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
         }
       }}
       onBlur={commitTextEditor}
+      onWheel={(e) => e.nativeEvent.stopPropagation()}
       ref={textAreaRef}
       style={{
         position: "absolute",

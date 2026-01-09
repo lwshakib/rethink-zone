@@ -2,6 +2,7 @@ import {
   RectShape, CircleShape, ImageShape, TextShape, FrameShape, 
   PolyShape, LineShape, ArrowShape, Connector, FigureShape, CodeShape, AnchorSide, ShapeKind 
 } from "../types";
+import { getConnectorPoints } from "./geometry";
 
 export const drawSelectionOverlay = (
   ctx: CanvasRenderingContext2D,
@@ -327,8 +328,8 @@ export const drawConnector = (
   themeStroke: string,
   zoom: number,
   options: {
-    fromAnchor?: AnchorSide;
-    toAnchor?: AnchorSide;
+    fromAnchor?: AnchorSide | "none";
+    toAnchor?: AnchorSide | "none";
     fromBounds?: { x: number; y: number; width: number; height: number };
     toBounds?: { x: number; y: number; width: number; height: number };
     highlight?: boolean;
@@ -337,26 +338,58 @@ export const drawConnector = (
   }
 ) => {
   ctx.save();
-  ctx.strokeStyle = options.stroke || (options.highlight ? "#3bc1ff" : themeStroke);
-  ctx.lineWidth = (options.strokeWidth || (options.highlight ? 3 : 2)) / zoom;
-  
+  const strokeColor = options.stroke || (options.highlight ? "rgba(83,182,255,1)" : themeStroke);
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = (options.strokeWidth || (options.highlight ? 2.5 : 2)) / zoom;
+  if (options.highlight) ctx.setLineDash([5 / zoom, 5 / zoom]);
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+
+  const points = getConnectorPoints(
+    from,
+    to,
+    options.fromAnchor,
+    options.toAnchor,
+    options.fromBounds,
+    options.toBounds,
+    zoom
+  );
+
+  if (points.length < 2) {
+    ctx.restore();
+    return;
+  }
+
+  const cornerRadius = 10 / zoom;
   ctx.beginPath();
-  ctx.moveTo(from.x, from.y);
-  
-  // Straight line for now, can be improved to curved/elbow later
-  ctx.lineTo(to.x, to.y);
+  ctx.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length - 1; i++) {
+    const pPrev = points[i - 1];
+    const pCurrent = points[i];
+    const pNext = points[i + 1];
+    const d1 = Math.hypot(pCurrent.x - pPrev.x, pCurrent.y - pPrev.y);
+    const d2 = Math.hypot(pNext.x - pCurrent.x, pNext.y - pCurrent.y);
+    const actualRadius = Math.min(cornerRadius, d1 / 2, d2 / 2);
+    ctx.arcTo(pCurrent.x, pCurrent.y, pNext.x, pNext.y, actualRadius);
+  }
+  ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
   ctx.stroke();
 
-  // Draw arrow at 'to' end
-  const angle = Math.atan2(to.y - from.y, to.x - from.x);
-  const headlen = 10 / zoom;
+  const lastP = points[points.length - 1];
+  const prevP = points[points.length - 2] || points[0];
+  const angle = Math.atan2(lastP.y - prevP.y, lastP.x - prevP.x);
+  const size = 10 / zoom;
+  ctx.save();
+  ctx.translate(lastP.x, lastP.y);
+  ctx.rotate(angle);
   ctx.beginPath();
-  ctx.moveTo(to.x, to.y);
-  ctx.lineTo(to.x - headlen * Math.cos(angle - Math.PI/6), to.y - headlen * Math.sin(angle - Math.PI/6));
-  ctx.moveTo(to.x, to.y);
-  ctx.lineTo(to.x - headlen * Math.cos(angle + Math.PI/6), to.y - headlen * Math.sin(angle + Math.PI/6));
-  ctx.stroke();
-  
+  ctx.moveTo(0, 0);
+  ctx.lineTo(-size, -size * 0.5);
+  ctx.lineTo(-size, size * 0.5);
+  ctx.closePath();
+  ctx.fillStyle = strokeColor;
+  ctx.fill();
+  ctx.restore();
   ctx.restore();
 };
 

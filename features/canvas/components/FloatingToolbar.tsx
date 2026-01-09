@@ -7,7 +7,7 @@ import {
   AlignLeft, AlignCenter, AlignRight, MessageSquare, Plus,
   Code as CodeIcon, Type as TypeIcon
 } from "lucide-react";
-import { SelectedShape, RectShape, CircleShape, ImageShape, TextShape, FrameShape, PolyShape, LineShape, ArrowShape, CodeShape } from "../types";
+import { SelectedShape, RectShape, CircleShape, ImageShape, TextShape, FrameShape, PolyShape, LineShape, ArrowShape, CodeShape, Connector } from "../types";
 import ColorPicker from "./ColorPicker";
 
 interface FloatingToolbarProps {
@@ -21,6 +21,7 @@ interface FloatingToolbarProps {
   lines: LineShape[];
   arrows: ArrowShape[];
   codes: CodeShape[];
+  connectors: Connector[];
   canvasToClient: (x: number, y: number) => { x: number; y: number };
   onUpdateShape: (kind: string, index: number, updates: any) => void;
   onChangeKind: (kind: string, index: number, newKind: string) => void;
@@ -29,8 +30,8 @@ interface FloatingToolbarProps {
 }
 
 const COLOR_PALETTES = [
-  "#000000", "#ffffff", "#ff4d4f", "#1890ff", "#52c41a",
-  "#faad14", "#722ed1", "#eb2f96", "#fa541c", "rainbow"
+  "#1e1e1e", "#eab308", "#22c55e", "#3b82f6", "#a855f7",
+  "#ef4444", "#f97316", "#ffffff", "rainbow"
 ];
 
 const SHAPES = [
@@ -63,7 +64,10 @@ const PopoverContainer = React.memo(({ children, active, className = "", style =
       className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex flex-col gap-2 p-2 bg-[#1e1e1e] backdrop-blur-md rounded-sm border border-border shadow-xl animate-in fade-in slide-in-from-bottom-1 duration-200 z-[1001] ${className}`}
       style={style}
       onPointerDown={e => e.stopPropagation()}
-      onWheel={e => e.stopPropagation()}
+      onWheel={e => {
+        e.stopPropagation();
+        e.nativeEvent.stopPropagation();
+      }}
     >
       {children}
     </div>
@@ -83,6 +87,7 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
   lines,
   arrows,
   codes,
+  connectors,
   onUpdateShape,
   onChangeKind,
   onDelete,
@@ -114,12 +119,15 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
                    kind === "poly" ? findById(polygons) :
                    kind === "line" ? findById(lines) :
                    kind === "arrow" ? findById(arrows) : 
-                   kind === "code" ? findById(codes) : null;
+                   kind === "code" ? findById(codes) :
+                   kind === "connector" ? findById(connectors) : null;
     
     if (!source) return null;
-    const label = kind === "poly" ? (source as PolyShape).type : kind.charAt(0).toUpperCase() + kind.slice(1);
+    const label = kind === "poly" ? (source as PolyShape).type : 
+                  kind === "connector" ? "Connection" :
+                  kind.charAt(0).toUpperCase() + kind.slice(1);
     return { ...source, kind, label };
-  }, [selectedShape, rectangles, circles, images, texts, frames, polygons, lines, arrows, codes]);
+  }, [selectedShape, rectangles, circles, images, texts, frames, polygons, lines, arrows, codes, connectors]);
 
   if (selectedShape.length === 0 || !shapeData) return null;
 
@@ -135,32 +143,45 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
   const currentLanguage = (shapeData && "language" in shapeData) ? (shapeData.language as string || "Auto detect") : "Auto detect";
 
   const renderColorGrid = () => (
-    <div className="grid grid-cols-5 gap-1.5 p-1">
-      {COLOR_PALETTES.map((color) => {
-        if (color === "rainbow") {
-          return (
-            <button
-              key="rainbow"
-              onClick={() => setActivePopover("custom-color")}
-              className="h-6 w-6 rounded-sm border border-border relative overflow-hidden group hover:scale-110 transition-transform"
-              style={{ background: "conic-gradient(from 0deg, red, yellow, green, cyan, blue, magenta, red)" }}
-              title="Custom Color"
-            >
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-            </button>
-          );
-        }
-        return (
+    <div className="flex flex-col gap-2 p-1">
+      <div className="grid grid-cols-5 gap-2">
+        {COLOR_PALETTES.slice(0, 5).map((color) => (
           <button
             key={color}
             onClick={() => onUpdateShape(mainKind, mainIndex, { fill: color })}
-            className={`h-6 w-6 rounded-sm border transition-all hover:scale-110 ${currentFill === color ? 'ring-2 ring-primary ring-offset-2 ring-offset-[#1e1e1e] scale-110' : 'border-border'}`}
+            className={`h-9 w-9 rounded-sm border transition-all hover:scale-105 flex items-center justify-center ${currentFill === color ? 'ring-2 ring-primary ring-offset-2 ring-offset-[#1e1e1e]' : 'border-white/10'}`}
             style={{ backgroundColor: color }}
           >
-            {currentFill === color && <Check className="h-3 w-3 mx-auto text-white drop-shadow-md" />}
+             {currentFill === color && <div className="h-1.5 w-1.5 rounded-full bg-white shadow-sm" />}
           </button>
-        );
-      })}
+        ))}
+      </div>
+      <div className="grid grid-cols-5 gap-2">
+        {COLOR_PALETTES.slice(5).map((color) => {
+          if (color === "rainbow") {
+            return (
+              <button
+                key="rainbow"
+                onClick={() => setActivePopover("custom-color")}
+                className="h-9 w-9 rounded-sm border border-white/10 relative overflow-hidden group hover:scale-105 transition-transform"
+                style={{ background: "conic-gradient(from 0deg, red, yellow, green, cyan, blue, magenta, red)" }}
+              >
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+              </button>
+            );
+          }
+          return (
+            <button
+              key={color}
+              onClick={() => onUpdateShape(mainKind, mainIndex, { fill: color })}
+              className={`h-9 w-9 rounded-sm border transition-all hover:scale-105 flex items-center justify-center ${currentFill === color ? 'ring-2 ring-primary ring-offset-2 ring-offset-[#1e1e1e]' : 'border-white/10'}`}
+              style={{ backgroundColor: color }}
+            >
+               {currentFill === color && <div className="h-1.5 w-1.5 rounded-full bg-black/40 shadow-sm" />}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 
@@ -241,13 +262,17 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
   );
 
   const isTextOrCode = ["text", "code"].includes(mainKind);
+  const isConnector = mainKind === "connector";
 
   return (
     <div
       ref={toolbarRef}
       className={`fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-0.5 p-1 rounded-sm bg-[#121212]/95 backdrop-blur-3xl shadow-2xl border border-white/10 z-[1000] animate-in fade-in slide-in-from-bottom-2 duration-300 ${isMulti ? 'py-1.5' : ''}`}
       onPointerDown={(e) => e.stopPropagation()}
-      onWheel={(e) => e.stopPropagation()}
+      onWheel={(e) => {
+        e.stopPropagation();
+        e.nativeEvent.stopPropagation();
+      }}
     >
       {isMulti ? (
         <div className="flex items-center gap-1 px-1">
@@ -340,7 +365,8 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
           )}
 
           {/* Color Tool */}
-          <div className="relative border-r border-white/5 px-1">
+          {mainKind !== "code" && (
+            <div className="relative border-r border-white/5 px-1">
              <button
                 onClick={() => setActivePopover(activePopover === "color" ? "none" : "color")}
                 className={`h-8 w-8 flex items-center justify-center rounded-sm transition-all ${activePopover === "color" ? 'bg-white/10' : 'hover:bg-white/5'}`}
@@ -359,7 +385,21 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
               >
                 <ColorPicker color={currentFill} onChange={(c) => onUpdateShape(mainKind, mainIndex, { fill: c })} />
               </PopoverContainer>
-          </div>
+            </div>
+          )}
+
+          {isConnector && (
+            <div className="flex items-center gap-1 border-r border-border/50 pr-2 mr-1">
+              <button 
+                onClick={onDelete}
+                className="h-8 px-2 flex items-center justify-center gap-1.5 rounded-sm bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all text-[10px] font-bold uppercase tracking-wider"
+                title="Disconnect shapes"
+              >
+                <Trash2 className="h-3 w-3" />
+                <span>Disconnect</span>
+              </button>
+            </div>
+          )}
 
           <div className="flex items-center gap-0.5 px-0.5">
             <button className="h-8 w-8 flex items-center justify-center rounded-sm text-foreground/40 hover:bg-white/5 hover:text-foreground transition-all">
@@ -374,13 +414,15 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
               </button>
               <PopoverContainer active={activePopover === "more"} className="min-w-[140px]">
                   <div className="flex flex-col gap-0.5">
-                    <button 
-                      onClick={onDuplicate}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-xs font-medium rounded-sm hover:bg-white/5 transition-colors text-foreground/80"
-                    >
-                      <Copy className="h-3.5 w-3.5 opacity-60" />
-                      <span>Duplicate</span>
-                    </button>
+                    {!isConnector && (
+                      <button 
+                        onClick={onDuplicate}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-xs font-medium rounded-sm hover:bg-white/5 transition-colors text-foreground/80"
+                      >
+                        <Copy className="h-3.5 w-3.5 opacity-60" />
+                        <span>Duplicate</span>
+                      </button>
+                    )}
                     <div className="h-px bg-white/5 my-1" />
                     <button 
                       onClick={onDelete}

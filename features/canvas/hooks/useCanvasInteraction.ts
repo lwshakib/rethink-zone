@@ -6,8 +6,9 @@ import {
   RectShape, CircleShape, SelectedShape, SelectedShapeInfo, DragMode, PolyShape, Connector, LineShape, ArrowShape, PathShape, ImageShape, TextShape, FrameShape, FigureShape, CodeShape
 } from "../types";
 import { makeId } from "../utils";
-import { distToSegment } from "../utils/geometry";
+import { distToSegment, getConnectorPoints, distToPolyline } from "../utils/geometry";
 import { measureText } from "../utils/canvas-helpers";
+import { uploadFileToCloudinary } from "../utils/upload";
 
 type InteractionProps = {
   activeTool: Tool;
@@ -106,7 +107,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     pushHistory, isSpacePanning, setIsHandPanning, isHandPanning,
     anchorHandles, pendingAddIcon, setPendingAddIcon, pendingAddShapeLabel, setPendingAddShapeLabel,
     isPlusMenuOpen, setIsPlusMenuOpen, canvasRef,
-    getAnchorPoint, getContentBounds, clampZoom,    imageCacheRef, setHoverAnchor, hoverAnchor, setRerenderTick, containerRef,
+    getAnchorPoint, getShapeBounds, getContentBounds, clampZoom,    imageCacheRef, setHoverAnchor, hoverAnchor, setRerenderTick, containerRef,
     strokeColor, strokeWidth, theme
   } = props;
 
@@ -138,6 +139,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
   const dragLineStartRef = useRef<any>(null);
   const dragArrowStartRef = useRef<any>(null);
   const dragShapesStartRef = useRef<HistoryEntry | null>(null);
+  const dragConnectorStartRef = useRef<any>(null);
+  const dragConnectorOriginalAnchorRef = useRef<any>(null);
   const selectionStartRef = useRef<any>(null);
   const pointerToolRef = useRef<Tool | "">("");
   const pendingMoveUpdateRef = useRef<number | null>(null);
@@ -680,7 +683,10 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           const fromPt = getAnchorPoint(c.from);
           const toPt = getAnchorPoint(c.to);
           if (!fromPt || !toPt) continue;
-          if (distToSegment(point.x, point.y, fromPt.x, fromPt.y, toPt.x, toPt.y) <= 6 / zoom) return i;
+          const fromBounds = getShapeBounds(c.from);
+          const toBounds = getShapeBounds(c.to);
+          const points = getConnectorPoints(fromPt, toPt, c.from.anchor, c.to.anchor, fromBounds || undefined, toBounds || undefined, zoom);
+          if (distToPolyline(point.x, point.y, points) <= 10 / zoom) return i;
         }
         return null;
       })();
@@ -747,6 +753,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         const s_arrows = workingState ? workingState.arrows : arrows;
         const s_figures = workingState ? workingState.figures : figures;
         const s_codes = workingState ? workingState.codes : codes;
+        const s_connectors = workingState ? workingState.connectors : connectors;
 
         if (workingPicked.kind === "rect") {
           const r = s_rects[workingPicked.index];
@@ -1008,6 +1015,24 @@ export const useCanvasInteraction = (props: InteractionProps) => {
               dragModeRef.current = "move";
             }
           }
+        } else if (workingPicked.kind === "connector") {
+          const c = s_connectors[workingPicked.index];
+          if (!c) return;
+          const fromPt = getAnchorPoint(c.from);
+          const toPt = getAnchorPoint(c.to);
+          const hs = 14 / zoom;
+          
+          dragConnectorStartRef.current = { ...c };
+          const hitFrom = fromPt && Math.hypot(point.x - fromPt.x, point.y - fromPt.y) <= hs / 2;
+          const hitTo = toPt && Math.hypot(point.x - toPt.x, point.y - toPt.y) <= hs / 2;
+          
+          if (hitFrom || hitTo) {
+            dragRectCornerRef.current = { sx: hitFrom ? -1 : 1, sy: 0 }; // sx -1 means from, 1 means to
+            dragConnectorOriginalAnchorRef.current = hitFrom ? c.from : c.to;
+            dragModeRef.current = "resize-connector";
+          } else {
+            dragModeRef.current = "move";
+          }
         }
         (event.target as HTMLElement).setPointerCapture(event.pointerId);
         return;
@@ -1261,182 +1286,122 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         pendingMoveUpdateRef.current = requestAnimationFrame(() => {
           pendingMoveUpdateRef.current = null;
           
-          setRectangles(prev => {
-            const next = prev.map(r => {
+          const selKinds = new Set(selectedShapeRef.current.map(s => s.kind));
+
+          if (selKinds.has("rect")) {
+            setRectangles(prev => prev.map(r => {
               const sel = selectedShapeRef.current.find(s => s.kind === "rect" && s.id === r.id);
               if (sel) {
                 const startR = startState.rectangles.find(sr => sr.id === r.id);
-                if (startR) {
-                  const newX = startR.x + dx;
-                  const newY = startR.y + dy;
-                  if (r.x === newX && r.y === newY) return r;
-                  return { ...r, x: newX, y: newY };
-                }
+                if (startR) return { ...r, x: startR.x + dx, y: startR.y + dy };
               }
               return r;
-            });
-            return next;
-          });
+            }));
+          }
 
-          setCircles(prev => {
-            const next = prev.map(c => {
+          if (selKinds.has("circle")) {
+            setCircles(prev => prev.map(c => {
               const sel = selectedShapeRef.current.find(s => s.kind === "circle" && s.id === c.id);
               if (sel) {
                 const startC = startState.circles.find(sc => sc.id === c.id);
-                if (startC) {
-                  const newX = startC.x + dx;
-                  const newY = startC.y + dy;
-                  if (c.x === newX && c.y === newY) return c;
-                  return { ...c, x: newX, y: newY };
-                }
+                if (startC) return { ...c, x: startC.x + dx, y: startC.y + dy };
               }
               return c;
-            });
-            return next;
-          });
+            }));
+          }
 
-          setImages(prev => {
-            const next = prev.map(im => {
+          if (selKinds.has("image")) {
+            setImages(prev => prev.map(im => {
               const sel = selectedShapeRef.current.find(s => s.kind === "image" && s.id === im.id);
               if (sel) {
                 const startIm = startState.images.find(sim => sim.id === im.id);
-                if (startIm) {
-                  const newX = startIm.x + dx;
-                  const newY = startIm.y + dy;
-                  if (im.x === newX && im.y === newY) return im;
-                  return { ...im, x: newX, y: newY };
-                }
+                if (startIm) return { ...im, x: startIm.x + dx, y: startIm.y + dy };
               }
               return im;
-            });
-            return next;
-          });
+            }));
+          }
 
-          setTexts(prev => {
-            const next = prev.map(t => {
+          if (selKinds.has("text")) {
+            setTexts(prev => prev.map(t => {
               const sel = selectedShapeRef.current.find(s => s.kind === "text" && s.id === t.id);
               if (sel) {
                 const startT = startState.texts.find(st => st.id === t.id);
-                if (startT) {
-                  const newX = startT.x + dx;
-                  const newY = startT.y + dy;
-                  if (t.x === newX && t.y === newY) return t;
-                  return { ...t, x: newX, y: newY };
-                }
+                if (startT) return { ...t, x: startT.x + dx, y: startT.y + dy };
               }
               return t;
-            });
-            return next;
-          });
+            }));
+          }
 
-          setFrames(prev => {
-            const next = prev.map(f => {
+          if (selKinds.has("frame")) {
+            setFrames(prev => prev.map(f => {
               const sel = selectedShapeRef.current.find(s => s.kind === "frame" && s.id === f.id);
               if (sel) {
                 const startF = startState.frames.find(sf => sf.id === f.id);
-                if (startF) {
-                  const newX = startF.x + dx;
-                  const newY = startF.y + dy;
-                  if (f.x === newX && f.y === newY) return f;
-                  return { ...f, x: newX, y: newY };
-                }
+                if (startF) return { ...f, x: startF.x + dx, y: startF.y + dy };
               }
               return f;
-            });
-            return next;
-          });
+            }));
+          }
 
-          setPolygons(prev => {
-            const next = prev.map(p => {
+          if (selKinds.has("poly")) {
+            setPolygons(prev => prev.map(p => {
               const sel = selectedShapeRef.current.find(s => s.kind === "poly" && s.id === p.id);
               if (sel) {
                 const startP = startState.polygons.find(sp => sp.id === p.id);
-                if (startP) {
-                  const newX = startP.x + dx;
-                  const newY = startP.y + dy;
-                  if (p.x === newX && p.y === newY) return p;
-                  return { ...p, x: newX, y: newY };
-                }
+                if (startP) return { ...p, x: startP.x + dx, y: startP.y + dy };
               }
               return p;
-            });
-            return next;
-          });
+            }));
+          }
 
-          setLines(prev => {
-            const next = prev.map(l => {
+          if (selKinds.has("line")) {
+            setLines(prev => prev.map(l => {
               const sel = selectedShapeRef.current.find(s => s.kind === "line" && s.id === l.id);
               if (sel) {
                 const startL = startState.lines.find(sl => sl.id === l.id);
-                if (startL) {
-                  const newX1 = startL.x1 + dx;
-                  const newY1 = startL.y1 + dy;
-                  const newX2 = startL.x2 + dx;
-                  const newY2 = startL.y2 + dy;
-                  if (l.x1 === newX1 && l.y1 === newY1 && l.x2 === newX2 && l.y2 === newY2) return l;
-                  return { ...l, x1: newX1, y1: newY1, x2: newX2, y2: newY2 };
-                }
+                if (startL) return { ...l, x1: startL.x1 + dx, y1: startL.y1 + dy, x2: startL.x2 + dx, y2: startL.y2 + dy };
               }
               return l;
-            });
-            return next;
-          });
+            }));
+          }
 
-          setArrows(prev => {
-            const next = prev.map(a => {
+          if (selKinds.has("arrow")) {
+            setArrows(prev => prev.map(a => {
               const sel = selectedShapeRef.current.find(s => s.kind === "arrow" && s.id === a.id);
               if (sel) {
                 const startA = startState.arrows.find(sa => sa.id === a.id);
-                if (startA) {
-                  const newX1 = startA.x1 + dx;
-                  const newY1 = startA.y1 + dy;
-                  const newX2 = startA.x2 + dx;
-                  const newY2 = startA.y2 + dy;
-                  if (a.x1 === newX1 && a.y1 === newY1 && a.x2 === newX2 && a.y2 === newY2) return a;
-                  return { ...a, x1: newX1, y1: newY1, x2: newX2, y2: newY2 };
-                }
+                if (startA) return { ...a, x1: startA.x1 + dx, y1: startA.y1 + dy, x2: startA.x2 + dx, y2: startA.y2 + dy };
               }
               return a;
-            });
-            return next;
-          });
+            }));
+          }
 
-          setFigures(prev => {
-            const next = prev.map(f => {
+          if (selKinds.has("figure")) {
+            setFigures(prev => prev.map(f => {
               const sel = selectedShapeRef.current.find(s => s.kind === "figure" && s.id === f.id);
               if (sel) {
                 const startF = startState.figures.find(sf => sf.id === f.id);
-                if (startF) {
-                  const newX = startF.x + dx;
-                  const newY = startF.y + dy;
-                  if (f.x === newX && f.y === newY) return f;
-                  return { ...f, x: newX, y: newY };
-                }
+                if (startF) return { ...f, x: startF.x + dx, y: startF.y + dy };
               }
               return f;
-            });
-            return next;
-          });
+            }));
+          }
 
-          setCodes(prev => {
-            const next = prev.map(c => {
+          if (selKinds.has("code")) {
+            setCodes(prev => prev.map(c => {
               const sel = selectedShapeRef.current.find(s => s.kind === "code" && s.id === c.id);
               if (sel) {
                 const startC = startState.codes.find(sc => sc.id === c.id);
-                if (startC) {
-                  const newX = startC.x + dx;
-                  const newY = startC.y + dy;
-                  if (c.x === newX && c.y === newY) return c;
-                  return { ...c, x: newX, y: newY };
-                }
+                if (startC) return { ...c, x: startC.x + dx, y: startC.y + dy };
               }
               return c;
-            });
-            return next;
-          });
+            }));
+          }
         });
+
         return;
       }
+
 
       // Resizing Logic
       const dx = point.x - pointerStartRef.current.x;
@@ -1527,6 +1492,114 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           const newW = Math.max(40/zoom, base.width + dx * eSx);
           const newX = eSx < 0 ? base.x + (base.width - newW) : base.x;
           setCodes(prev => prev.map((c, i) => i === index ? { ...c, x: newX, width: newW } : c));
+        } else if (kind === "connector" && dragConnectorStartRef.current && cornerPattern === "resize-connector") {
+          const base = dragConnectorStartRef.current;
+          const isFrom = (dragRectCornerRef.current?.sx || 1) < 0;
+          
+          // Find nearest anchor
+          const { rectangles, images, texts, frames, polygons, circles, anchorHandles, figures, codes } = stateRef.current;
+          const tolerance = 20 / zoom;
+          let nearestAnchor: any = null;
+          let bestDist = tolerance;
+
+          // Check explicit handles
+          for (const h of anchorHandles) {
+            const d = Math.hypot(point.x - h.point.x, point.y - h.point.y);
+            if (d <= bestDist) { bestDist = d; nearestAnchor = h; }
+          }
+
+          // If no handle, check shape borders
+          if (!nearestAnchor) {
+            const allShapes = [
+              ...rectangles.map(r => ({ ...r, kind: "rect" as const })),
+              ...images.map(r => ({ ...r, kind: "image" as const })),
+              ...texts.map(r => ({ ...r, kind: "text" as const })),
+              ...frames.map(r => ({ ...r, kind: "frame" as const })),
+              ...polygons.map(r => ({ ...r, kind: "poly" as const })),
+              ...figures.map(r => ({ ...r, kind: "figure" as const })),
+              ...codes.map(r => ({ ...r, kind: "code" as const })),
+            ];
+
+            for (const s of allShapes) {
+              const b = { x: s.x, y: s.y, w: s.width, h: s.height };
+              const dists = [
+                { d: Math.abs(point.y - b.y), a: "top" as const, p: (point.x - b.x) / b.w },
+                { d: Math.abs(point.y - (b.y + b.h)), a: "bottom" as const, p: (point.x - b.x) / b.w },
+                { d: Math.abs(point.x - b.x), a: "left" as const, p: (point.y - b.y) / b.h },
+                { d: Math.abs(point.x - (b.x + b.w)), a: "right" as const, p: (point.y - b.y) / b.h },
+              ];
+
+              for (const hit of dists) {
+                if (hit.d <= bestDist && hit.p >= -0.1 && hit.p <= 1.1) {
+                  bestDist = hit.d;
+                  nearestAnchor = {
+                    kind: s.kind,
+                    shapeId: s.id,
+                    anchor: hit.a,
+                    percent: Math.max(0, Math.min(1, hit.p)),
+                    point: { x: point.x, y: point.y } // Temp point for hover
+                  };
+                }
+              }
+            }
+
+            // Circles as well
+            for (const c of circles) {
+              const b = { x: c.x - c.rx, y: c.y - c.ry, w: c.rx * 2, h: c.ry * 2 };
+              const dists = [
+                { d: Math.hypot(point.x - c.x, point.y - b.y), a: "top" as const },
+                { d: Math.hypot(point.x - c.x, point.y - (b.y + b.h)), a: "bottom" as const },
+                { d: Math.hypot(point.x - b.x, point.y - c.y), a: "left" as const },
+                { d: Math.hypot(point.x - (b.x + b.w), point.y - c.y), a: "right" as const },
+              ];
+              for (const hit of dists) {
+                if (hit.d <= bestDist) {
+                  bestDist = hit.d;
+                  nearestAnchor = { kind: "circle", shapeId: c.id, anchor: hit.a, point: { x: point.x, y: point.y } };
+                }
+              }
+            }
+          }
+
+          if (nearestAnchor) {
+            const newAnchor: ConnectorAnchor = {
+              kind: nearestAnchor.kind as ShapeKind,
+              shapeId: nearestAnchor.shapeId,
+              anchor: nearestAnchor.anchor,
+              percent: nearestAnchor.percent
+            };
+            
+            if (pendingMoveUpdateRef.current !== null) {
+              cancelAnimationFrame(pendingMoveUpdateRef.current);
+            }
+
+            pendingMoveUpdateRef.current = requestAnimationFrame(() => {
+              pendingMoveUpdateRef.current = null;
+              
+              let newAnchor: ConnectorAnchor;
+              if (nearestAnchor) {
+                newAnchor = {
+                  kind: nearestAnchor.kind as ShapeKind,
+                  shapeId: nearestAnchor.shapeId,
+                  anchor: nearestAnchor.anchor as AnchorSide,
+                  percent: nearestAnchor.percent
+                };
+              } else {
+                newAnchor = {
+                  kind: "point",
+                  shapeId: "floating",
+                  anchor: "none",
+                  point: { x: point.x, y: point.y }
+                };
+              }
+
+              setConnectors(prev => prev.map((c, i) => i === index ? {
+                ...c,
+                [isFrom ? 'from' : 'to']: newAnchor
+              } : c));
+              setHoverAnchor(nearestAnchor || null);
+            });
+          }
         }
       }
     }
@@ -1574,7 +1647,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     } else if (isErasingRef.current) {
       eraseAtPoint(point);
     }
-  }, [toCanvasPointFromClient, resolveTool, isHandPanning, zoom, pendingConnector, setHoverAnchor, setRectangles, setCircles, setImages, setTexts, setFrames, setPolygons, setArrows, setLines, isPanningRef, panStartRef, pointerStartRef, setPan, isErasingRef, eraseAtPoint, isDrawingRectRef, rectStartRef, setCurrentRect, isDrawingCircleRef, circleStartRef, setCurrentCircle, isDrawingLineRef, setCurrentLine, isDrawingArrowRef, setCurrentArrow, isDrawingPathRef, setCurrentPath, isDrawingFrameRef, setCurrentFrame, setSelectionRect, theme, strokeWidth, figures, codes, setFigures, setCodes, selectedShape]);
+  }, [toCanvasPointFromClient, resolveTool, isHandPanning, zoom, pendingConnector, setHoverAnchor, setRectangles, setCircles, setImages, setTexts, setFrames, setPolygons, setArrows, setLines, isPanningRef, panStartRef, pointerStartRef, setPan, isErasingRef, eraseAtPoint, isDrawingRectRef, rectStartRef, setCurrentRect, isDrawingCircleRef, circleStartRef, setCurrentCircle, isDrawingLineRef, setCurrentLine, isDrawingArrowRef, setCurrentArrow, isDrawingPathRef, setCurrentPath, isDrawingFrameRef, setCurrentFrame, setSelectionRect, theme, strokeWidth, figures, codes, setFigures, setCodes, selectedShape, setConnectors]);
 
   const handlePointerUp = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
     const tool = pointerToolRef.current || resolveTool(event);
@@ -1651,6 +1724,22 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         setSelectionRect(null); 
         selectionStartRef.current = null;
       } else if (selectedShape.length > 0) {
+        if (dragModeRef.current === "resize-connector" && dragConnectorOriginalAnchorRef.current) {
+          const { index } = selectedShape[0];
+          const conn = connectors[index];
+          if (conn) {
+             const isFrom = (dragRectCornerRef.current?.sx || 1) < 0;
+             const currentAnchor = isFrom ? conn.from : conn.to;
+             if (currentAnchor.kind === "point") {
+                // Revert to original
+                setConnectors(prev => prev.map((c, i) => i === index ? {
+                  ...c,
+                  [isFrom ? 'from' : 'to']: dragConnectorOriginalAnchorRef.current
+                } : c));
+             }
+          }
+        }
+
         if (dragModeRef.current !== "none") { 
           dragModeRef.current = "none"; 
           pushHistory(); 
@@ -1800,7 +1889,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
       );
       if (hitCodeIndex !== -1) {
         setEditingCodeId(codes[hitCodeIndex].id);
-        setSelectedShape([]);
+        setSelectedShape([{ kind: "code", index: hitCodeIndex, id: codes[hitCodeIndex].id }]);
+        setActiveTool("Select");
         return;
       }
     }
@@ -1842,26 +1932,71 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     };
   }, [containerRef, handleWheel]);
 
-  const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = useCallback(async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const files = Array.from(event.dataTransfer.files).filter(f => f.type.startsWith("image/"));
     if (!files.length) return;
     const point = toCanvasPointFromClient(event.clientX, event.clientY);
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const src = reader.result as string;
-        const img = new Image();
-        img.onload = () => {
-          if (imageCacheRef.current) imageCacheRef.current[src] = img;
-          const next = [...images, { id: makeId(), src, x: point.x, y: point.y, width: img.naturalWidth, height: img.naturalHeight }];
-          setImages(next); pushHistory({ images: next });
-        };
-        img.src = src;
-      };
-      reader.readAsDataURL(file);
-    });
-  }, [toCanvasPointFromClient, images, setImages, pushHistory, imageCacheRef]);
+    
+    // We'll process files sequentially or in parallel, but here allow parallel
+    // We need to fetch the helpers inside the loop or ensure we have recent state.
+    // However, setImages etc are state setters, so they are fine.
+    // CAUTION: Using 'images' from closure might be stale if we await.
+    // Let's use functional state updates.
+
+    for (const file of files) {
+       // 1. Create a placeholder text for "Uploading..."
+       const placeholderId = makeId();
+       const placeholderText: TextShape = {
+          id: placeholderId,
+          x: point.x,
+          y: point.y,
+          width: 200,
+          height: 50,
+          text: "Uploading... 0%",
+          fontSize: 18,
+          fontFamily: "Clean",
+          fill: "#ffffff",
+       };
+
+       setTexts(prev => [...prev, placeholderText]);
+
+       try {
+         const result = await uploadFileToCloudinary(file, (percent) => {
+            setTexts(prev => prev.map(t => t.id === placeholderId ? { ...t, text: `Uploading... ${percent}%` } : t));
+         });
+
+         // 2. On success, remove placeholder and add image
+         setTexts(prev => prev.filter(t => t.id !== placeholderId));
+
+         const img = new Image();
+         img.onload = () => {
+             if (imageCacheRef.current) imageCacheRef.current[result.secureUrl] = img;
+             setImages(prev => {
+                const next = [...prev, {
+                   id: makeId(),
+                   src: result.secureUrl,
+                   x: point.x,
+                   y: point.y,
+                   width: img.naturalWidth / 2, // Default to half size as generic images can be huge
+                   height: img.naturalHeight / 2 // Default to half size
+                }];
+                pushHistory({ images: next });
+                return next;
+             });
+         };
+         img.src = result.secureUrl;
+
+       } catch (err) {
+         console.error("Upload failed", err);
+         setTexts(prev => prev.map(t => t.id === placeholderId ? { ...t, text: "Upload Failed", fill: "#ff0000" } : t));
+         // Remove after 3 seconds
+         setTimeout(() => {
+            setTexts(prev => prev.filter(t => t.id !== placeholderId));
+         }, 3000);
+       }
+    }
+  }, [toCanvasPointFromClient, setTexts, setImages, pushHistory, imageCacheRef]);
 
 
   const fitToScreen = useCallback(() => {

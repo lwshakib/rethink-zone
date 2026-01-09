@@ -1,5 +1,5 @@
 import React from "react";
-import { AnchorSide, ShapeKind } from "../types";
+import { AnchorSide, ShapeKind, Connector, ConnectorAnchor, SelectedShape } from "../types";
 
 interface AnchorHandle {
   kind: ShapeKind;
@@ -13,6 +13,9 @@ interface ConnectorHandlesProps {
   anchorHandles: AnchorHandle[];
   hoverAnchor: AnchorHandle | null;
   canvasToClient: (x: number, y: number) => { x: number; y: number };
+  selectedShape: SelectedShape;
+  connectors: Connector[];
+  getAnchorPoint: (anchor: ConnectorAnchor) => { x: number; y: number } | null;
 }
 
 const ConnectorHandles: React.FC<ConnectorHandlesProps> = ({
@@ -20,25 +23,44 @@ const ConnectorHandles: React.FC<ConnectorHandlesProps> = ({
   anchorHandles,
   hoverAnchor,
   canvasToClient,
+  selectedShape,
+  connectors,
+  getAnchorPoint,
 }) => {
-  if (activeTool !== "Arrow") return null;
+  const selectedConnectors = connectors.filter(c => 
+    selectedShape.some(s => s.kind === "connector" && s.id === c.id)
+  );
 
   const handlesToRender = [...anchorHandles];
-  if (
-    hoverAnchor &&
-    !anchorHandles.some(
-      (h) =>
-        h.shapeId === hoverAnchor.shapeId &&
-        h.anchor === hoverAnchor.anchor &&
-        Math.hypot(h.point.x - hoverAnchor.point.x, h.point.y - hoverAnchor.point.y) <
-          1
-    )
-  ) {
-    handlesToRender.push(hoverAnchor);
+  
+  // Available anchors (when drawing)
+  if (activeTool === "Arrow") {
+    if (
+      hoverAnchor &&
+      !anchorHandles.some(
+        (h) =>
+          h.shapeId === hoverAnchor.shapeId &&
+          h.anchor === hoverAnchor.anchor &&
+          Math.hypot(h.point.x - hoverAnchor.point.x, h.point.y - hoverAnchor.point.y) <
+            1
+      )
+    ) {
+      handlesToRender.push(hoverAnchor);
+    }
   }
+
+  // Selection handles (for moving existing connections)
+  const selectionHandles: { point: { x: number; y: number }; isSelected: boolean }[] = [];
+  selectedConnectors.forEach(c => {
+    const fromPt = getAnchorPoint(c.from);
+    const toPt = getAnchorPoint(c.to);
+    if (fromPt) selectionHandles.push({ point: fromPt, isSelected: true });
+    if (toPt) selectionHandles.push({ point: toPt, isSelected: true });
+  });
 
   return (
     <>
+      {/* Available Anchors for Drawing */}
       {handlesToRender.map((h, i) => {
         const pos = canvasToClient(h.point.x, h.point.y);
         const isHover =
@@ -51,7 +73,7 @@ const ConnectorHandles: React.FC<ConnectorHandlesProps> = ({
 
         return (
           <div
-            key={i}
+            key={`anchor-${i}`}
             className="absolute pointer-events-none"
             style={{
               left: `${pos.x}px`,
@@ -72,6 +94,31 @@ const ConnectorHandles: React.FC<ConnectorHandlesProps> = ({
                 boxShadow: isHover
                   ? "0 0 0 6px rgba(83,182,255,0.2)"
                   : "0 1px 3px rgba(0,0,0,0.2)",
+              }}
+            />
+          </div>
+        );
+      })}
+
+      {/* Selection Handles for Editing */}
+      {selectionHandles.map((h, i) => {
+        const pos = canvasToClient(h.point.x, h.point.y);
+        return (
+          <div
+            key={`selection-${i}`}
+            className="absolute pointer-events-none"
+            style={{
+              left: `${pos.x}px`,
+              top: `${pos.y}px`,
+              transform: "translate(-50%, -50%)",
+              zIndex: 30,
+            }}
+          >
+            <div
+              className="rounded-full bg-[#3b82f6] border-2 border-white shadow-md"
+              style={{
+                width: "10px",
+                height: "10px",
               }}
             />
           </div>
