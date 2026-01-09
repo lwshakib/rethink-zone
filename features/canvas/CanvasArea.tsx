@@ -285,7 +285,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       setCodes(prev => {
         const lineCount = val.split('\n').length;
         const estimatedHeight = Math.max(100, lineCount * 20 + 40);
-        const next = [...prev, { ...common, x: source.x, y: source.y, width: 300, height: estimatedHeight, code: val, language: "Javascript" }];
+        const next = [...prev, { ...common, x: source.x, y: source.y, width: 300, height: estimatedHeight, code: val, language: "Javascript", fontSize: 13 }];
         setSelectedShape([{ kind: "code", index: next.length - 1, id: common.id }]);
         pushHistory({ codes: next });
         return next;
@@ -595,6 +595,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
             onUpdate={(updates) => onUpdateShape("code", i, updates)}
             canvasToClient={canvasToClient}
             zoom={zoom}
+            theme={resolvedTheme}
           />
         ))}
       </div>
@@ -628,6 +629,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
           measureText={measureText}
           commitTextEditor={commitTextEditor}
           cancelTextEditor={cancelTextEditor}
+          theme={resolvedTheme}
         />
 
         {selectionOverlayStyle && (
@@ -671,6 +673,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
             onChangeKind={onChangeKind}
             onDelete={deleteSelected}
             onDuplicate={() => duplicateSelection(20)}
+            theme={resolvedTheme}
           />
 
           <HistoryControls

@@ -33,20 +33,20 @@ export const getConnectorPoints = (
   };
 
   const isBlocked = (a: { x: number; y: number }, b: { x: number; y: number }) => {
-    const minX = Math.min(a.x, b.x);
-    const maxX = Math.max(a.x, b.x);
-    const minY = Math.min(a.y, b.y);
-    const maxY = Math.max(a.y, b.y);
-
     const check = (box?: { x: number; y: number; width: number; height: number }) => {
       if (!box) return false;
-      const pad = 4 / zoom; // Slightly larger padding for better clearance
-      const bx1 = box.x - pad;
-      const by1 = box.y - pad;
-      const bx2 = box.x + box.width + pad;
-      const by2 = box.y + box.height + pad;
+      const epsilon = 1 / zoom;
+      const bx1 = box.x + epsilon;
+      const by1 = box.y + epsilon;
+      const bx2 = box.x + box.width - epsilon;
+      const by2 = box.y + box.height - epsilon;
 
-      if (a.x === b.x) { // Vertical segment
+      const minX = Math.min(a.x, b.x);
+      const maxX = Math.max(a.x, b.x);
+      const minY = Math.min(a.y, b.y);
+      const maxY = Math.max(a.y, b.y);
+
+      if (Math.abs(a.x - b.x) < 0.1) { // Vertical segment
         if (a.x > bx1 && a.x < bx2) {
           return minY < by2 && maxY > by1;
         }
@@ -76,8 +76,37 @@ export const getConnectorPoints = (
   candidates.push([{ x: p1.x, y: p3.y }]);
 
   // 2. Z-Shapes (2 elbows, balanced)
-  candidates.push([{ x: pMid.x, y: p1.y }, { x: pMid.x, y: p3.y }]);
-  candidates.push([{ x: p1.x, y: pMid.y }, { x: p3.x, y: pMid.y }]);
+  const z1 = [{ x: pMid.x, y: p1.y }, { x: pMid.x, y: p3.y }];
+  const z2 = [{ x: p1.x, y: pMid.y }, { x: p3.x, y: pMid.y }];
+  candidates.push(z1, z2);
+
+  // 3. Gap-Midpoint Z-Shapes
+  if (fromBounds && toBounds) {
+    const b1 = fromBounds; const b2 = toBounds;
+    if (b1.x + b1.width < b2.x || b2.x + b2.width < b1.x) {
+       const gapMidX = b1.x + b1.width < b2.x ? (b1.x + b1.width + b2.x) / 2 : (b2.x + b2.width + b1.x) / 2;
+       candidates.push([{ x: gapMidX, y: p1.y }, { x: gapMidX, y: p3.y }]);
+    }
+    if (b1.y + b1.height < b2.y || b2.y + b2.height < b1.y) {
+       const gapMidY = b1.y + b1.height < b2.y ? (b1.y + b1.height + b2.y) / 2 : (b2.y + b2.height + b1.y) / 2;
+       candidates.push([{ x: p1.x, y: gapMidY }, { x: p3.x, y: gapMidY }]);
+    }
+  }
+
+  // 4. Around-Shapes (Go around both boxes)
+  if (fromBounds && toBounds) {
+    const margin = 40 / zoom;
+    const b1 = fromBounds; const b2 = toBounds;
+    const minX = Math.min(b1.x, b2.x) - margin;
+    const maxX = Math.max(b1.x + b1.width, b2.x + b2.width) + margin;
+    const minY = Math.min(b1.y, b2.y) - margin;
+    const maxY = Math.max(b1.y + b1.height, b2.y + b2.height) + margin;
+
+    candidates.push([{ x: maxX, y: p1.y }, { x: maxX, y: p3.y }]);
+    candidates.push([{ x: minX, y: p1.y }, { x: minX, y: p3.y }]);
+    candidates.push([{ x: p1.x, y: maxY }, { x: p3.x, y: maxY }]);
+    candidates.push([{ x: p1.x, y: minY }, { x: p3.x, y: minY }]);
+  }
 
   // Extra Z-Shapes (using gap midpoints if boxes are provided)
   if (fromBounds && toBounds) {
@@ -114,33 +143,65 @@ export const getConnectorPoints = (
   let bestScore = Infinity;
 
   const getScore = (cand: { x: number; y: number }[]) => {
-    const fullPath = [p1, ...cand, p3];
+    const fullPath: { x: number; y: number }[] = [p0];
+    if (fromDir.x !== 0 || fromDir.y !== 0) fullPath.push(p1);
+    fullPath.push(...cand);
+    if (toDir.x !== 0 || toDir.y !== 0) fullPath.push(p3);
+    fullPath.push(p4);
+
     let blocked = false;
     let length = 0;
     let turns = 0;
+    let prevDir = { x: 0, y: 0 };
     
     for (let i = 0; i < fullPath.length - 1; i++) {
-      const segLen = Math.hypot(fullPath[i+1].x - fullPath[i].x, fullPath[i+1].y - fullPath[i].y);
+      const dx = fullPath[i+1].x - fullPath[i].x;
+      const dy = fullPath[i+1].y - fullPath[i].y;
+      const segLen = Math.hypot(dx, dy);
+      
       if (segLen > 0.5) {
         if (isBlocked(fullPath[i], fullPath[i+1])) {
           blocked = true;
           break;
         }
         length += segLen;
-        if (i > 0) turns++;
+        
+        const dir = { 
+          x: Math.abs(dx) > 0.1 ? Math.sign(dx) : 0, 
+          y: Math.abs(dy) > 0.1 ? Math.sign(dy) : 0 
+        };
+        
+        if (prevDir.x !== 0 || prevDir.y !== 0) {
+          if (dir.x !== prevDir.x || dir.y !== prevDir.y) turns++;
+        }
+        prevDir = dir;
       }
     }
 
     if (blocked) return Infinity;
 
-    // High penalty for turns, even higher for L-shapes if Z is possible? 
-    // Actually just a solid turn penalty is enough.
-    let score = length + turns * 300; 
-    
-    // Penalize narrow gaps / short segments unless they are start/end
-    for (let i = 1; i < fullPath.length - 1; i++) {
+    // SCORING:
+    // 1. Length + Turn penalty
+    let score = length + turns * 200; 
+
+    // 2. Center Bonus: Reward centered Z-shapes (z1, z2)
+    const isCentered = cand === z1 || cand === z2;
+    if (isCentered) score -= 100;
+
+    // 3. Symmetric Z-shape bonus (even if not pMid centered, reward balance)
+    if (cand.length === 2) {
+      const d1 = Math.hypot(cand[0].x - p1.x, cand[0].y - p1.y);
+      const d2 = Math.hypot(cand[1].x - p3.x, cand[1].y - p3.y);
+      score += Math.abs(d1 - d2) * 0.2;
+    }
+
+    // 4. L-Shape Penalty: Prefer Z-shapes for better visual flow in orthogonal routing
+    if (cand.length === 1) score += 150;
+
+    // 5. Short segment penalty: avoid "weird" tiny bends
+    for (let i = 0; i < fullPath.length - 1; i++) {
         const d = Math.hypot(fullPath[i+1].x - fullPath[i].x, fullPath[i+1].y - fullPath[i].y);
-        if (d < 20 / zoom) score += 1000;
+        if (d < 15 / zoom) score += 500;
     }
 
     return score;
@@ -160,8 +221,9 @@ export const getConnectorPoints = (
   if (bestPath) {
     pts.push(...bestPath);
   } else {
-    // Ultimate fallback: simple Z-path
-    pts.push({ x: pMid.x, y: p1.y }, { x: pMid.x, y: p3.y });
+    // Ultimate fallback: Try centered Z-paths even if "blocked" in checking
+    // (Choosing the one that's "least" blocked isn't easy here, so just pick z1 as a stable default)
+    pts.push(...z1);
   }
 
   if (toDir.x !== 0 || toDir.y !== 0) pts.push(p3);

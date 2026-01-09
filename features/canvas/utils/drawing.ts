@@ -25,18 +25,11 @@ export const drawSelectionOverlay = (
   const hs = 6 / zoom;
   
   let handles: [number, number][] = [];
-  if (kind === "code") {
-    // Only horizontal handles (middle of left and right sides)
-    handles = [
-      [x, y + height / 2],
-      [x + width, y + height / 2]
-    ];
-  } else {
-    // Normal corners
-    handles = [
-      [x, y], [x + width, y], [x, y + height], [x + width, y + height]
-    ];
-  }
+  // Normal corners for all shapes
+  handles = [
+    [x, y], [x + width, y], [x, y + height], [x + width, y + height]
+  ];
+
 
   handles.forEach(([hx, hy]) => {
     ctx.beginPath();
@@ -85,9 +78,12 @@ export const drawRect = (
     ctx.fillRect(r.x, r.y, r.width, r.height);
   }
   ctx.strokeStyle = r.stroke || themeStroke;
-  ctx.lineWidth = (r.strokeWidth || 2) / zoom;
-  if (r.strokeDashArray) ctx.setLineDash(r.strokeDashArray.map(v => v / zoom));
-  ctx.strokeRect(r.x, r.y, r.width, r.height);
+  const sw = r.strokeWidth !== undefined ? r.strokeWidth : 2;
+  if (sw > 0) {
+    ctx.lineWidth = sw / zoom;
+    if (r.strokeDashArray) ctx.setLineDash(r.strokeDashArray.map(v => v / zoom));
+    ctx.strokeRect(r.x, r.y, r.width, r.height);
+  }
   ctx.restore();
 
   if (isSelected) {
@@ -111,9 +107,12 @@ export const drawCircle = (
     ctx.fill();
   }
   ctx.strokeStyle = c.stroke || themeStroke;
-  ctx.lineWidth = (c.strokeWidth || 2) / zoom;
-  if (c.strokeDashArray) ctx.setLineDash(c.strokeDashArray.map(v => v / zoom));
-  ctx.stroke();
+  const sw = c.strokeWidth !== undefined ? c.strokeWidth : 2;
+  if (sw > 0) {
+    ctx.lineWidth = sw / zoom;
+    if (c.strokeDashArray) ctx.setLineDash(c.strokeDashArray.map(v => v / zoom));
+    ctx.stroke();
+  }
   ctx.restore();
 
   if (isSelected) {
@@ -171,26 +170,161 @@ export const drawFrame = (
   ctx.save();
   ctx.globalAlpha = (f.opacity ?? 1) * alpha;
   
+  const x = f.x;
+  const y = f.y;
+  const w = f.width;
+  const h = f.height;
+  const strokeColor = f.stroke || themeStroke;
+  const sw = (f.strokeWidth !== undefined ? f.strokeWidth : 1) / zoom;
+
   // Frame Background
   ctx.fillStyle = f.fill || themeFrameBg;
-  ctx.fillRect(f.x, f.y, f.width, f.height);
   
-  // Device chrome if applicable
-  if (f.deviceType) {
-    ctx.strokeStyle = "rgba(0,0,0,0.1)";
-    ctx.lineWidth = 1 / zoom;
-    ctx.strokeRect(f.x, f.y, f.width, f.height);
+  if (f.deviceType === "phone" || f.deviceType === "tablet") {
+    const isPhone = f.deviceType === "phone";
+    const radius = (isPhone ? 32 : 16) / zoom;
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, radius);
+    ctx.fill();
+    
+    if (sw > 0) {
+      ctx.lineWidth = sw;
+      ctx.strokeStyle = strokeColor;
+      ctx.stroke();
+    }
+    
+    // Internal bezel/screen area
+    const bezel = 6 / zoom;
+    ctx.fillStyle = "rgba(0,0,0,0.02)";
+    ctx.beginPath();
+    ctx.roundRect(x + bezel, y + bezel, w - bezel * 2, h - bezel * 2, radius - bezel);
+    ctx.fill();
+
+    // Notch for phone
+    if (isPhone) {
+        const notchW = Math.min(w * 0.4, 100 / zoom);
+        const notchH = 20 / zoom;
+        const notchR = 10 / zoom;
+        ctx.fillStyle = "#1a1a1a";
+        ctx.beginPath();
+        ctx.roundRect(x + (w - notchW) / 2, y + 4/zoom, notchW, notchH, notchR);
+        ctx.fill();
+        
+        // Earpiece speaker
+        ctx.fillStyle = "#333";
+        ctx.beginPath();
+        ctx.roundRect(x + (w - 30/zoom) / 2, y + 10/zoom, 30/zoom, 3/zoom, 1.5/zoom);
+        ctx.fill();
+        
+        // Camera dot
+        ctx.fillStyle = "#222";
+        ctx.beginPath();
+        ctx.arc(x + (w + 50/zoom) / 2, y + 11.5/zoom, 2.5/zoom, 0, Math.PI * 2);
+        ctx.fill();
+    } else {
+        // Tablet camera dot
+        ctx.fillStyle = "#1a1a1a";
+        ctx.beginPath();
+        ctx.arc(x + w / 2, y + 10 / zoom, 3 / zoom, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Home bar
+    const barW = w * 0.3;
+    const barH = 4 / zoom;
+    ctx.fillStyle = "#1a1a1a";
+    ctx.beginPath();
+    ctx.roundRect(x + (w - barW) / 2, y + h - 12 / zoom, barW, barH, 2/zoom);
+    ctx.fill();
+
+  } else if (f.deviceType === "desktop" || f.deviceType === "browser") {
+    const isBrowser = f.deviceType === "browser";
+    const barH = (isBrowser ? 44 : 32) / zoom;
+    const radius = 8 / zoom;
+
+    // Main frame with rounded top corners
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, [radius, radius, 0, 0]);
+    ctx.fill();
+    
+    if (sw > 0) {
+      ctx.lineWidth = sw;
+      ctx.strokeStyle = strokeColor;
+      ctx.stroke();
+    }
+    
+    // Header Bar
+    ctx.fillStyle = "rgba(0,0,0,0.03)";
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, barH, [radius, radius, 0, 0]);
+    ctx.fill();
+    
+    ctx.strokeStyle = "rgba(0,0,0,0.08)";
+    ctx.beginPath();
+    ctx.moveTo(x, y + barH);
+    ctx.lineTo(x + w, y + barH);
+    ctx.stroke();
+    
+    // Traffic lights
+    const dotR = 5 / zoom;
+    const spacing = 12 / zoom;
+    const colors = ["#ff5f56", "#ffbd2e", "#27c93f"];
+    colors.forEach((c, i) => {
+        ctx.fillStyle = c;
+        ctx.beginPath();
+        ctx.arc(x + 16 / zoom + i * spacing, y + barH / 2, dotR, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    if (isBrowser) {
+        // Navigation icons
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 1.5 / zoom;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        const iconY = y + barH / 2;
+        
+        // Back
+        const bx = x + 60 / zoom;
+        ctx.beginPath();
+        ctx.moveTo(bx + 10/zoom, iconY); ctx.lineTo(bx, iconY);
+        ctx.lineTo(bx + 4/zoom, iconY - 4/zoom); ctx.moveTo(bx, iconY); ctx.lineTo(bx + 4/zoom, iconY + 4/zoom);
+        ctx.stroke();
+        
+        // Forward
+        const fx = x + 80 / zoom;
+        ctx.beginPath();
+        ctx.moveTo(fx, iconY); ctx.lineTo(fx + 10/zoom, iconY);
+        ctx.lineTo(fx + 6/zoom, iconY - 4/zoom); ctx.moveTo(fx + 10/zoom, iconY); ctx.lineTo(fx + 6/zoom, iconY + 4/zoom);
+        ctx.stroke();
+        
+        // Address bar
+        const addrX = x + 105 / zoom;
+        const addrW = w - 120 / zoom;
+        const addrH = 26 / zoom;
+        ctx.fillStyle = "rgba(0,0,0,0.04)";
+        ctx.beginPath();
+        ctx.roundRect(addrX, y + (barH - addrH) / 2, addrW, addrH, 13 / zoom);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(0,0,0,0.05)";
+        ctx.stroke();
+    }
+  } else {
+    // Normal frame
+    ctx.fillRect(x, y, w, h);
+    if (sw > 0) {
+      ctx.lineWidth = sw;
+      ctx.strokeStyle = strokeColor;
+      ctx.strokeRect(x, y, w, h);
+    }
   }
 
   // Label
   ctx.fillStyle = themeText;
   ctx.font = `${11 / zoom}px sans-serif`;
-  ctx.fillText(`Frame ${f.frameNumber}${f.deviceType ? ` (${f.deviceType})` : ''}`, f.x, f.y - 15 / zoom);
+  ctx.textBaseline = "bottom";
+  ctx.fillText(`Frame ${f.frameNumber}${f.deviceType ? ` (${f.deviceType})` : ''}`, f.x, f.y - 4 / zoom);
   
-  ctx.strokeStyle = f.stroke || themeStroke;
-  ctx.lineWidth = (f.strokeWidth || 1) / zoom;
-  if (f.strokeDashArray) ctx.setLineDash(f.strokeDashArray.map(v => v / zoom));
-  ctx.strokeRect(f.x, f.y, f.width, f.height);
   ctx.restore();
 
   if (isSelected) {
@@ -235,6 +369,66 @@ export const drawPoly = (
         const r = i % 2 === 0 ? outer : inner;
         ctx.lineTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
     }
+  } else if (p.type === "Oval") {
+    ctx.ellipse(p.x + p.width / 2, p.y + p.height / 2, p.width / 2, p.height / 2, 0, 0, Math.PI * 2);
+  } else if (p.type === "Parallelogram") {
+    ctx.moveTo(p.x + p.width * 0.2, p.y);
+    ctx.lineTo(p.x + p.width, p.y);
+    ctx.lineTo(p.x + p.width * 0.8, p.y + p.height);
+    ctx.lineTo(p.x, p.y + p.height);
+  } else if (p.type === "Trapezoid") {
+    ctx.moveTo(p.x + p.width * 0.2, p.y);
+    ctx.lineTo(p.x + p.width * 0.8, p.y);
+    ctx.lineTo(p.x + p.width, p.y + p.height);
+    ctx.lineTo(p.x, p.y + p.height);
+  } else if (p.type === "Cylinder" || p.type === "Database") {
+    const w = p.width; const h = p.height;
+    const rx = w / 2;
+    const ry = p.type === "Cylinder" ? Math.min(h * 0.15, 20) : Math.min(h * 0.1, 15);
+    const cx = p.x + rx;
+    
+    // 1. Fill the main body (sides + bottom half-ellipse)
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y + ry);
+    ctx.lineTo(p.x, p.y + h - ry);
+    ctx.ellipse(cx, p.y + h - ry, rx, ry, 0, 0, Math.PI, false);
+    ctx.lineTo(p.x + w, p.y + ry);
+    ctx.ellipse(cx, p.y + ry, rx, ry, 0, Math.PI, 0, true);
+    ctx.closePath();
+    if (p.fill) {
+      ctx.fillStyle = p.fill;
+      ctx.fill();
+    }
+
+    // 2. Stroke the bottom arc and sides
+    ctx.strokeStyle = p.stroke || themeStroke;
+    const sw = p.strokeWidth !== undefined ? p.strokeWidth : 2;
+    if (sw > 0) {
+      ctx.lineWidth = sw / zoom;
+      if (p.strokeDashArray) ctx.setLineDash(p.strokeDashArray.map(v => v / zoom));
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y + ry);
+      ctx.lineTo(p.x, p.y + h - ry);
+      ctx.ellipse(cx, p.y + h - ry, rx, ry, 0, 0, Math.PI, false);
+      ctx.lineTo(p.x + w, p.y + ry);
+      ctx.stroke();
+    }
+
+    // 3. Draw the top ellipse (Fill + Stroke) - Always on top
+    ctx.beginPath();
+    ctx.ellipse(cx, p.y + ry, rx, ry, 0, 0, Math.PI * 2);
+    if (p.fill) {
+      ctx.fillStyle = p.fill;
+      ctx.fill();
+    }
+    if (sw > 0) {
+      ctx.stroke();
+    }
+    
+    // Skip the generic closePath/fill/stroke at the end for these types
+    ctx.restore();
+    if (isSelected) drawSelectionOverlay(ctx, p.x, p.y, p.width, p.height, zoom, "poly");
+    return;
   }
   
   ctx.closePath();
@@ -243,9 +437,12 @@ export const drawPoly = (
     ctx.fill();
   }
   ctx.strokeStyle = p.stroke || themeStroke;
-  ctx.lineWidth = (p.strokeWidth || 2) / zoom;
-  if (p.strokeDashArray) ctx.setLineDash(p.strokeDashArray.map(v => v / zoom));
-  ctx.stroke();
+  const sw = p.strokeWidth !== undefined ? p.strokeWidth : 2;
+  if (sw > 0) {
+    ctx.lineWidth = sw / zoom;
+    if (p.strokeDashArray) ctx.setLineDash(p.strokeDashArray.map(v => v / zoom));
+    ctx.stroke();
+  }
   ctx.restore();
 
   if (isSelected) {
@@ -266,9 +463,12 @@ export const drawLine = (
   ctx.moveTo(l.x1, l.y1);
   ctx.lineTo(l.x2, l.y2);
   ctx.strokeStyle = l.stroke || themeStroke;
-  ctx.lineWidth = (l.strokeWidth || 2) / zoom;
-  if (l.strokeDashArray) ctx.setLineDash(l.strokeDashArray.map(v => v / zoom));
-  ctx.stroke();
+  const sw = l.strokeWidth !== undefined ? l.strokeWidth : 2;
+  if (sw > 0) {
+    ctx.lineWidth = sw / zoom;
+    if (l.strokeDashArray) ctx.setLineDash(l.strokeDashArray.map(v => v / zoom));
+    ctx.stroke();
+  }
   ctx.restore();
 
   if (isSelected) {
@@ -430,8 +630,11 @@ export const drawFigure = (
   ctx.fillStyle = fill;
   ctx.fillRect(f.x, f.y, f.width, f.height);
   ctx.strokeStyle = strokeColor;
-  ctx.lineWidth = (f.strokeWidth || 2) / zoom;
-  ctx.strokeRect(f.x, f.y, f.width, f.height);
+  const sw = f.strokeWidth !== undefined ? f.strokeWidth : 2;
+  if (sw > 0) {
+    ctx.lineWidth = sw / zoom;
+    ctx.strokeRect(f.x, f.y, f.width, f.height);
+  }
   
   // Header
   const headerHeight = 30 / zoom;

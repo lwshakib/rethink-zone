@@ -3,9 +3,10 @@ import React, { useState, useEffect, useRef } from "react";
 interface ColorPickerProps {
   color: string;
   onChange: (color: string) => void;
+  theme?: string;
 }
 
-const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange }) => {
+const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange, theme = "dark" }) => {
   const [hue, setHue] = useState(0);
   const [sat, setSat] = useState(0);
   const [val, setVal] = useState(100);
@@ -82,8 +83,12 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange }) => {
     else move(e.touches[0].clientX, e.touches[0].clientY);
   };
 
+  const isDark = theme === "dark";
+
   return (
-    <div className="flex flex-col gap-3 p-3 bg-[#1e1e1e] rounded-sm border border-border shadow-2xl w-[200px]">
+    <div className={`flex flex-col gap-3 p-3 rounded-lg border shadow-2xl w-[200px] ${
+      isDark ? "bg-[#1e1e1e] border-white/10" : "bg-white border-black/10"
+    }`}>
       {/* Hue Slider */}
       <div 
         ref={hueRef}
@@ -101,7 +106,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange }) => {
       {/* Saturation/Value Area */}
       <div 
         ref={satValRef}
-        className="h-[150px] w-full rounded-sm cursor-crosshair relative overflow-hidden"
+        className="h-[150px] w-full rounded-md cursor-crosshair relative overflow-hidden ring-1 ring-black/10"
         style={{ backgroundColor: hsvToHex(hue, 100, 100) }}
         onMouseDown={handleSatValMouseDown}
         onTouchStart={handleSatValMouseDown}
@@ -115,8 +120,10 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange }) => {
       </div>
 
       {/* Hex Input */}
-      <div className="flex items-center gap-2 px-2 py-1.5 bg-muted/30 rounded-sm border border-border">
-        <div className="h-4 w-4 rounded-sm border border-white/20" style={{ backgroundColor: color }} />
+      <div className={`flex items-center gap-2 px-2 py-1.5 rounded-md border ${
+        isDark ? "bg-muted/30 border-white/10" : "bg-black/[0.03] border-black/10"
+      }`}>
+        <div className={`h-4 w-4 rounded-sm border ${isDark ? "border-white/20" : "border-black/10"}`} style={{ backgroundColor: color }} />
         <input 
           type="text" 
           value={color.toUpperCase()} 

@@ -11,7 +11,7 @@ import 'prismjs/components/prism-json';
 import { CodeShape } from "../types";
 
 // Prism tomorrow theme for dark mode
-const PRISM_THEME = `
+const PRISM_DARK = `
   .token.comment, .token.prolog, .token.doctype, .token.cdata { color: #999; }
   .token.punctuation { color: #ccc; }
   .token.namespace { opacity: .7; }
@@ -28,6 +28,23 @@ const PRISM_THEME = `
   }
 `;
 
+const PRISM_LIGHT = `
+  .token.comment, .token.prolog, .token.doctype, .token.cdata { color: #90a4ae; }
+  .token.punctuation { color: #546e7a; }
+  .token.namespace { opacity: .7; }
+  .token.property, .token.tag, .token.boolean, .token.number, .token.constant, .token.symbol, .token.deleted { color: #e53935; }
+  .token.selector, .token.attr-name, .token.string, .token.char, .token.builtin, .token.inserted { color: #43a047; }
+  .token.operator, .token.entity, .token.url, .language-css .token.string, .style .token.string { color: #00acc1; }
+  .token.atrule, .token.attr-value, .token.keyword { color: #7b1fa2; }
+  .token.function, .token.class-name { color: #1e88e5; }
+  .token.regex, .token.important, .token.variable { color: #fb8c00; }
+  .prism-editor textarea, .prism-editor pre { 
+    outline: none !important; 
+    background-color: transparent !important; 
+    min-height: 100% !important;
+  }
+`;
+
 interface CodeBlockProps {
   codeShape: CodeShape;
   isSelected?: boolean;
@@ -35,6 +52,7 @@ interface CodeBlockProps {
   onUpdate: (updates: Partial<CodeShape>) => void;
   canvasToClient: (x: number, y: number) => { x: number; y: number };
   zoom: number;
+  theme?: string;
 }
 
 const CodeBlock: React.FC<CodeBlockProps> = ({
@@ -44,6 +62,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
   onUpdate,
   canvasToClient,
   zoom,
+  theme = "dark",
 }) => {
   const { x, y, width, height, code, fontSize, language } = codeShape;
   const clientPos = canvasToClient(x, y);
@@ -51,13 +70,19 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
   const editorParentRef = useRef<HTMLDivElement>(null);
 
   const prevDimensionsRef = useRef({ width, height });
+  const prevCodeRef = useRef(code);
+  const prevFontSizeRef = useRef(fontSize);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const isDark = theme === "dark";
 
   // Auto-resize based on content - debounced to prevent loops
   useEffect(() => {
-    // Only auto-resize if we are editing or if it's the first time
-    // This prevents auto-resize from fighting with manual resize in Select mode
-    if (!isEditing && prevDimensionsRef.current.width !== 0) {
+    const codeChanged = code !== prevCodeRef.current;
+    const fontSizeChanged = fontSize !== prevFontSizeRef.current;
+
+    // Only auto-resize if we are editing, if it's the first time, or if content/styling changed
+    if (!isEditing && prevDimensionsRef.current.width !== 0 && !codeChanged && !fontSizeChanged) {
       return;
     }
 
@@ -109,6 +134,9 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
           prevDimensionsRef.current = { width: newWidth, height: newHeight };
           onUpdate({ height: newHeight, width: newWidth });
         }
+
+        prevCodeRef.current = code;
+        prevFontSizeRef.current = fontSize;
       }
     }, 100);
 
@@ -146,11 +174,10 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
         width: `${width * zoom}px`,
         height: `${height * zoom}px`,
         pointerEvents: isEditing ? "auto" : "none",
-        transition: 'ring 0.2s, transform 0.2s, background-color 0.2s, box-shadow 0.2s',
       }}
     >
       <style>{`
-        ${PRISM_THEME}
+        ${isDark ? PRISM_DARK : PRISM_LIGHT}
         .prism-editor__textarea:focus { outline: none; }
       `}</style>
       <div 
@@ -159,13 +186,17 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
           isEditing 
             ? "ring-[2px] ring-[rgba(83,182,255,1)] scale-[1.01] border-transparent" 
             : isSelected
-              ? "ring-[2px] ring-[rgba(63,193,255,0.7)] border-transparent"
-              : "border border-white/5 hover:border-white/10"
+              ? "ring-[1.5px] ring-[rgba(63,193,255,0.7)] border-transparent"
+              : isDark
+                ? "border border-white/5 hover:border-white/10"
+                : "border border-black/[0.05] hover:border-black/[0.08]"
         }`}
         style={{
           borderRadius: 8 / zoom,
-          backgroundColor: isEditing ? "rgba(25,25,25,0.98)" : "rgba(13,13,13,0.85)",
-          transition: 'inherit',
+          backgroundColor: isDark 
+            ? (isEditing ? "rgba(25,25,25,0.98)" : "rgba(13,13,13,0.85)")
+            : (isEditing ? "rgba(252,252,252,0.98)" : "rgba(255,255,255,0.85)"),
+          color: isDark ? "#eee" : "#333",
         }}
       >
         <div className="flex-1 w-full overflow-hidden p-0 relative">

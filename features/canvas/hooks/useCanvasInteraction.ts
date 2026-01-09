@@ -431,7 +431,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
       } else if (label === "Code") {
         const next = [
           ...codes,
-          { id: makeId(), x: point.x - 150, y: point.y - 150, width: 300, height: 300, code: "// Write your code here...", language: "javascript" }
+          { id: makeId(), x: point.x - 150, y: point.y - 150, width: 300, height: 300, code: "// Write your code here...", language: "javascript", fontSize: 13 }
         ];
         setCodes(next);
         pushHistory({ codes: next });
@@ -992,28 +992,53 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           if (!p) return;
           const hs = 12 / zoom;
           const corners = [ 
-            { x: p.x, y: p.y, sx: -1, sy: 0 }, 
-            { x: p.x + p.width, y: p.y, sx: 1, sy: 0 }, 
-            { x: p.x, y: p.y + p.height, sx: -1, sy: 0 }, 
-            { x: p.x + p.width, y: p.y + p.height, sx: 1, sy: 0 } 
+            { x: p.x, y: p.y, sx: -1, sy: -1 }, 
+            { x: p.x + p.width, y: p.y, sx: 1, sy: -1 }, 
+            { x: p.x, y: p.y + p.height, sx: -1, sy: 1 }, 
+            { x: p.x + p.width, y: p.y + p.height, sx: 1, sy: 1 } 
           ];
           const hitCorner = corners.find(c => Math.abs(point.x - c.x) <= hs / 2 && Math.abs(point.y - c.y) <= hs / 2);
           
           dragPolyStartRef.current = { ...p } as any;
           if (hitCorner) {
-            dragRectCornerRef.current = { sx: hitCorner.sx, sy: 0 };
-            dragModeRef.current = "resize-h";
+            dragRectCornerRef.current = { sx: hitCorner.sx, sy: hitCorner.sy };
+            dragModeRef.current = "resize-nwse";
           } else {
             const tol = 10 / zoom;
-            const onLeft = Math.abs(point.x - p.x) <= tol;
-            const onRight = Math.abs(point.x - (p.x + p.width)) <= tol;
+            const onTop = Math.abs(point.y - p.y) <= tol && point.x >= p.x - tol && point.x <= p.x + p.width + tol;
+            const onBottom = Math.abs(point.y - (p.y + p.height)) <= tol && point.x >= p.x - tol && point.x <= p.x + p.width + tol;
+            const onLeft = Math.abs(point.x - p.x) <= tol && point.y >= p.y - tol && point.y <= p.y + p.height + tol;
+            const onRight = Math.abs(point.x - (p.x + p.width)) <= tol && point.y >= p.y - tol && point.y <= p.y + p.height + tol;
             
-            if (onLeft || onRight) {
+            if (onTop || onBottom) {
+              dragRectCornerRef.current = { sx: (onLeft ? -1 : (onRight ? 1 : 0)), sy: (onTop ? -1 : 1) };
+              dragModeRef.current = "resize-v";
+            } else if (onLeft || onRight) {
               dragRectCornerRef.current = { sx: (onLeft ? -1 : 1), sy: 0 };
               dragModeRef.current = "resize-h";
             } else {
               dragModeRef.current = "move";
             }
+          }
+        } else if (workingPicked.kind === "line" || workingPicked.kind === "arrow") {
+          const l = workingPicked.kind === "line" ? s_lines[workingPicked.index] : s_arrows[workingPicked.index];
+          if (!l) return;
+          const hs = 14 / zoom;
+          const hitStart = Math.hypot(point.x - l.x1, point.y - l.y1) <= hs / 2;
+          const hitEnd = Math.hypot(point.x - l.x2, point.y - l.y2) <= hs / 2;
+          
+          if (workingPicked.kind === "line") {
+            dragLineStartRef.current = { ...l };
+          } else {
+            dragArrowStartRef.current = { ...l };
+          }
+
+          if (hitStart || hitEnd) {
+            // sx: -1 for start, 1 for end
+            dragRectCornerRef.current = { sx: hitStart ? -1 : 1, sy: 0 };
+            dragModeRef.current = workingPicked.kind === "line" ? "resize-line" : "resize-arrow";
+          } else {
+            dragModeRef.current = "move";
           }
         } else if (workingPicked.kind === "connector") {
           const c = s_connectors[workingPicked.index];
@@ -1247,9 +1272,14 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     }
     
     // Final Hover Anchor update - only if changes from current ref
-    const hasChanged = nearest?.shapeId !== hoverAnchorRef.current?.shapeId || 
-                       nearest?.anchor !== hoverAnchorRef.current?.anchor || 
-                       nearest?.percent !== hoverAnchorRef.current?.percent;
+    const hasChanged = 
+      (nearest === null && hoverAnchorRef.current !== null) ||
+      (nearest !== null && hoverAnchorRef.current === null) ||
+      (nearest?.shapeId !== hoverAnchorRef.current?.shapeId) || 
+      (nearest?.anchor !== hoverAnchorRef.current?.anchor) || 
+      (nearest?.percent !== hoverAnchorRef.current?.percent) ||
+      (nearest?.point?.x !== hoverAnchorRef.current?.point?.x) ||
+      (nearest?.point?.y !== hoverAnchorRef.current?.point?.y);
 
     if (hasChanged) {
       setHoverAnchor(nearest);
@@ -1277,127 +1307,117 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         
         const startState = dragShapesStartRef.current;
 
-        // Cancel any pending update
-        if (pendingMoveUpdateRef.current !== null) {
-          cancelAnimationFrame(pendingMoveUpdateRef.current);
+        const selKinds = new Set(selectedShapeRef.current.map(s => s.kind));
+
+        if (selKinds.has("rect")) {
+          setRectangles(prev => prev.map(r => {
+            const sel = selectedShapeRef.current.find(s => s.kind === "rect" && s.id === r.id);
+            if (sel) {
+              const startR = startState.rectangles.find(sr => sr.id === r.id);
+              if (startR) return { ...r, x: startR.x + dx, y: startR.y + dy };
+            }
+            return r;
+          }));
         }
 
-        // Schedule new update
-        pendingMoveUpdateRef.current = requestAnimationFrame(() => {
-          pendingMoveUpdateRef.current = null;
-          
-          const selKinds = new Set(selectedShapeRef.current.map(s => s.kind));
+        if (selKinds.has("circle")) {
+          setCircles(prev => prev.map(c => {
+            const sel = selectedShapeRef.current.find(s => s.kind === "circle" && s.id === c.id);
+            if (sel) {
+              const startC = startState.circles.find(sc => sc.id === c.id);
+              if (startC) return { ...c, x: startC.x + dx, y: startC.y + dy };
+            }
+            return c;
+          }));
+        }
 
-          if (selKinds.has("rect")) {
-            setRectangles(prev => prev.map(r => {
-              const sel = selectedShapeRef.current.find(s => s.kind === "rect" && s.id === r.id);
-              if (sel) {
-                const startR = startState.rectangles.find(sr => sr.id === r.id);
-                if (startR) return { ...r, x: startR.x + dx, y: startR.y + dy };
-              }
-              return r;
-            }));
-          }
+        if (selKinds.has("image")) {
+          setImages(prev => prev.map(im => {
+            const sel = selectedShapeRef.current.find(s => s.kind === "image" && s.id === im.id);
+            if (sel) {
+              const startIm = startState.images.find(sim => sim.id === im.id);
+              if (startIm) return { ...im, x: startIm.x + dx, y: startIm.y + dy };
+            }
+            return im;
+          }));
+        }
 
-          if (selKinds.has("circle")) {
-            setCircles(prev => prev.map(c => {
-              const sel = selectedShapeRef.current.find(s => s.kind === "circle" && s.id === c.id);
-              if (sel) {
-                const startC = startState.circles.find(sc => sc.id === c.id);
-                if (startC) return { ...c, x: startC.x + dx, y: startC.y + dy };
-              }
-              return c;
-            }));
-          }
+        if (selKinds.has("text")) {
+          setTexts(prev => prev.map(t => {
+            const sel = selectedShapeRef.current.find(s => s.kind === "text" && s.id === t.id);
+            if (sel) {
+              const startT = startState.texts.find(st => st.id === t.id);
+              if (startT) return { ...t, x: startT.x + dx, y: startT.y + dy };
+            }
+            return t;
+          }));
+        }
 
-          if (selKinds.has("image")) {
-            setImages(prev => prev.map(im => {
-              const sel = selectedShapeRef.current.find(s => s.kind === "image" && s.id === im.id);
-              if (sel) {
-                const startIm = startState.images.find(sim => sim.id === im.id);
-                if (startIm) return { ...im, x: startIm.x + dx, y: startIm.y + dy };
-              }
-              return im;
-            }));
-          }
+        if (selKinds.has("frame")) {
+          setFrames(prev => prev.map(f => {
+            const sel = selectedShapeRef.current.find(s => s.kind === "frame" && s.id === f.id);
+            if (sel) {
+              const startF = startState.frames.find(sf => sf.id === f.id);
+              if (startF) return { ...f, x: startF.x + dx, y: startF.y + dy };
+            }
+            return f;
+          }));
+        }
 
-          if (selKinds.has("text")) {
-            setTexts(prev => prev.map(t => {
-              const sel = selectedShapeRef.current.find(s => s.kind === "text" && s.id === t.id);
-              if (sel) {
-                const startT = startState.texts.find(st => st.id === t.id);
-                if (startT) return { ...t, x: startT.x + dx, y: startT.y + dy };
-              }
-              return t;
-            }));
-          }
+        if (selKinds.has("poly")) {
+          setPolygons(prev => prev.map(p => {
+            const sel = selectedShapeRef.current.find(s => s.kind === "poly" && s.id === p.id);
+            if (sel) {
+              const startP = startState.polygons.find(sp => sp.id === p.id);
+              if (startP) return { ...p, x: startP.x + dx, y: startP.y + dy };
+            }
+            return p;
+          }));
+        }
 
-          if (selKinds.has("frame")) {
-            setFrames(prev => prev.map(f => {
-              const sel = selectedShapeRef.current.find(s => s.kind === "frame" && s.id === f.id);
-              if (sel) {
-                const startF = startState.frames.find(sf => sf.id === f.id);
-                if (startF) return { ...f, x: startF.x + dx, y: startF.y + dy };
-              }
-              return f;
-            }));
-          }
+        if (selKinds.has("line")) {
+          setLines(prev => prev.map(l => {
+            const sel = selectedShapeRef.current.find(s => s.kind === "line" && s.id === l.id);
+            if (sel) {
+              const startL = startState.lines.find(sl => sl.id === l.id);
+              if (startL) return { ...l, x1: startL.x1 + dx, y1: startL.y1 + dy, x2: startL.x2 + dx, y2: startL.y2 + dy };
+            }
+            return l;
+          }));
+        }
 
-          if (selKinds.has("poly")) {
-            setPolygons(prev => prev.map(p => {
-              const sel = selectedShapeRef.current.find(s => s.kind === "poly" && s.id === p.id);
-              if (sel) {
-                const startP = startState.polygons.find(sp => sp.id === p.id);
-                if (startP) return { ...p, x: startP.x + dx, y: startP.y + dy };
-              }
-              return p;
-            }));
-          }
+        if (selKinds.has("arrow")) {
+          setArrows(prev => prev.map(a => {
+            const sel = selectedShapeRef.current.find(s => s.kind === "arrow" && s.id === a.id);
+            if (sel) {
+              const startA = startState.arrows.find(sa => sa.id === a.id);
+              if (startA) return { ...a, x1: startA.x1 + dx, y1: startA.y1 + dy, x2: startA.x2 + dx, y2: startA.y2 + dy };
+            }
+            return a;
+          }));
+        }
 
-          if (selKinds.has("line")) {
-            setLines(prev => prev.map(l => {
-              const sel = selectedShapeRef.current.find(s => s.kind === "line" && s.id === l.id);
-              if (sel) {
-                const startL = startState.lines.find(sl => sl.id === l.id);
-                if (startL) return { ...l, x1: startL.x1 + dx, y1: startL.y1 + dy, x2: startL.x2 + dx, y2: startL.y2 + dy };
-              }
-              return l;
-            }));
-          }
+        if (selKinds.has("figure")) {
+          setFigures(prev => prev.map(f => {
+            const sel = selectedShapeRef.current.find(s => s.kind === "figure" && s.id === f.id);
+            if (sel) {
+              const startF = startState.figures.find(sf => sf.id === f.id);
+              if (startF) return { ...f, x: startF.x + dx, y: startF.y + dy };
+            }
+            return f;
+          }));
+        }
 
-          if (selKinds.has("arrow")) {
-            setArrows(prev => prev.map(a => {
-              const sel = selectedShapeRef.current.find(s => s.kind === "arrow" && s.id === a.id);
-              if (sel) {
-                const startA = startState.arrows.find(sa => sa.id === a.id);
-                if (startA) return { ...a, x1: startA.x1 + dx, y1: startA.y1 + dy, x2: startA.x2 + dx, y2: startA.y2 + dy };
-              }
-              return a;
-            }));
-          }
-
-          if (selKinds.has("figure")) {
-            setFigures(prev => prev.map(f => {
-              const sel = selectedShapeRef.current.find(s => s.kind === "figure" && s.id === f.id);
-              if (sel) {
-                const startF = startState.figures.find(sf => sf.id === f.id);
-                if (startF) return { ...f, x: startF.x + dx, y: startF.y + dy };
-              }
-              return f;
-            }));
-          }
-
-          if (selKinds.has("code")) {
-            setCodes(prev => prev.map(c => {
-              const sel = selectedShapeRef.current.find(s => s.kind === "code" && s.id === c.id);
-              if (sel) {
-                const startC = startState.codes.find(sc => sc.id === c.id);
-                if (startC) return { ...c, x: startC.x + dx, y: startC.y + dy };
-              }
-              return c;
-            }));
-          }
-        });
+        if (selKinds.has("code")) {
+          setCodes(prev => prev.map(c => {
+            const sel = selectedShapeRef.current.find(s => s.kind === "code" && s.id === c.id);
+            if (sel) {
+              const startC = startState.codes.find(sc => sc.id === c.id);
+              if (startC) return { ...c, x: startC.x + dx, y: startC.y + dy };
+            }
+            return c;
+          }));
+        }
 
         return;
       }
@@ -1412,7 +1432,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         const cornerPattern = dragModeRef.current;
         const isH = cornerPattern.endsWith("-h");
         const isV = cornerPattern.endsWith("-v");
-        const isNWSE = cornerPattern === "resize-nwse" || cornerPattern === "resize-br" || cornerPattern === "resize-image" || cornerPattern === "resize-text" || cornerPattern === "resize-frame" || cornerPattern === "resize-circle";
+        const dx = point.x - pointerStartRef.current.x;
+        const dy = point.y - pointerStartRef.current.y;
 
         if (kind === "rect" && dragRectStartRef.current) {
           const base = dragRectStartRef.current; const corner = dragRectCornerRef.current ?? { sx: 1, sy: 1 };
@@ -1470,13 +1491,17 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           const newY = eSy < 0 ? base.y + (base.height - newH) : base.y;
           setPolygons(prev => prev.map((p, i) => i === index ? { ...p, x: newX, y: newY, width: newW, height: newH } : p));
         } else if (kind === "line" && dragLineStartRef.current && cornerPattern === "resize-line") {
-          const base = dragLineStartRef.current; const startSelected = (dragRectCornerRef.current?.sx || 1) < 0;
-          const newLine = startSelected ? { ...base, x1: base.x1 + dx, y1: base.y1 + dy } : { ...base, x2: base.x2 + dx, y2: base.y2 + dy };
-          setLines(prev => prev.map((l, i) => (i === index ? newLine : l)));
+          const base = dragLineStartRef.current;
+          const isStart = (dragRectCornerRef.current?.sx || 1) < 0;
+          setLines(prev => prev.map((l, i) => i === index ? 
+            (isStart ? { ...l, x1: point.x, y1: point.y } : { ...l, x2: point.x, y2: point.y }) 
+          : l));
         } else if (kind === "arrow" && dragArrowStartRef.current && cornerPattern === "resize-arrow") {
-          const base = dragArrowStartRef.current; const startSelected = (dragRectCornerRef.current?.sx || 1) < 0;
-          const newArrow = startSelected ? { ...base, x1: base.x1 + dx, y1: base.y1 + dy } : { ...base, x2: base.x2 + dx, y2: base.y2 + dy };
-          setArrows(prev => prev.map((l, i) => (i === index ? newArrow : l)));
+          const base = dragArrowStartRef.current;
+          const isStart = (dragRectCornerRef.current?.sx || 1) < 0;
+          setArrows(prev => prev.map((l, i) => i === index ? 
+            (isStart ? { ...l, x1: point.x, y1: point.y } : { ...l, x2: point.x, y2: point.y }) 
+          : l));
         } else if (kind === "figure" && dragPolyStartRef.current) {
           const base = dragPolyStartRef.current; const corner = dragRectCornerRef.current ?? { sx: 1, sy: 1 };
           const eSx = isV ? 0 : corner.sx; const eSy = isH ? 0 : corner.sy;
@@ -1487,11 +1512,14 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           setFigures(prev => prev.map((f, i) => i === index ? { ...f, x: newX, y: newY, width: newW, height: newH } : f));
         } else if (kind === "code" && dragPolyStartRef.current) {
           const base = dragPolyStartRef.current; 
-          const corner = dragRectCornerRef.current ?? { sx: 1, sy: 0 };
+          const corner = dragRectCornerRef.current ?? { sx: 1, sy: 1 };
           const eSx = isV ? 0 : corner.sx;
+          const eSy = isH ? 0 : corner.sy;
           const newW = Math.max(40/zoom, base.width + dx * eSx);
+          const newH = Math.max(20/zoom, base.height + dy * eSy);
           const newX = eSx < 0 ? base.x + (base.width - newW) : base.x;
-          setCodes(prev => prev.map((c, i) => i === index ? { ...c, x: newX, width: newW } : c));
+          const newY = eSy < 0 ? base.y + (base.height - newH) : base.y;
+          setCodes(prev => prev.map((c, i) => i === index ? { ...c, x: newX, y: newY, width: newW, height: newH } : c));
         } else if (kind === "connector" && dragConnectorStartRef.current && cornerPattern === "resize-connector") {
           const base = dragConnectorStartRef.current;
           const isFrom = (dragRectCornerRef.current?.sx || 1) < 0;
@@ -1561,45 +1589,28 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             }
           }
 
+          let newAnchor: ConnectorAnchor;
           if (nearestAnchor) {
-            const newAnchor: ConnectorAnchor = {
+            newAnchor = {
               kind: nearestAnchor.kind as ShapeKind,
               shapeId: nearestAnchor.shapeId,
-              anchor: nearestAnchor.anchor,
+              anchor: nearestAnchor.anchor as AnchorSide,
               percent: nearestAnchor.percent
             };
-            
-            if (pendingMoveUpdateRef.current !== null) {
-              cancelAnimationFrame(pendingMoveUpdateRef.current);
-            }
-
-            pendingMoveUpdateRef.current = requestAnimationFrame(() => {
-              pendingMoveUpdateRef.current = null;
-              
-              let newAnchor: ConnectorAnchor;
-              if (nearestAnchor) {
-                newAnchor = {
-                  kind: nearestAnchor.kind as ShapeKind,
-                  shapeId: nearestAnchor.shapeId,
-                  anchor: nearestAnchor.anchor as AnchorSide,
-                  percent: nearestAnchor.percent
-                };
-              } else {
-                newAnchor = {
-                  kind: "point",
-                  shapeId: "floating",
-                  anchor: "none",
-                  point: { x: point.x, y: point.y }
-                };
-              }
-
-              setConnectors(prev => prev.map((c, i) => i === index ? {
-                ...c,
-                [isFrom ? 'from' : 'to']: newAnchor
-              } : c));
-              setHoverAnchor(nearestAnchor || null);
-            });
+          } else {
+            newAnchor = {
+              kind: "point",
+              shapeId: "floating",
+              anchor: "none",
+              point: { x: point.x, y: point.y }
+            };
           }
+
+          setConnectors(prev => prev.map((c, i) => i === index ? {
+            ...c,
+            [isFrom ? 'from' : 'to']: newAnchor
+          } : c));
+          setHoverAnchor(nearestAnchor || null);
         }
       }
     }
@@ -1724,21 +1735,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         setSelectionRect(null); 
         selectionStartRef.current = null;
       } else if (selectedShape.length > 0) {
-        if (dragModeRef.current === "resize-connector" && dragConnectorOriginalAnchorRef.current) {
-          const { index } = selectedShape[0];
-          const conn = connectors[index];
-          if (conn) {
-             const isFrom = (dragRectCornerRef.current?.sx || 1) < 0;
-             const currentAnchor = isFrom ? conn.from : conn.to;
-             if (currentAnchor.kind === "point") {
-                // Revert to original
-                setConnectors(prev => prev.map((c, i) => i === index ? {
-                  ...c,
-                  [isFrom ? 'from' : 'to']: dragConnectorOriginalAnchorRef.current
-                } : c));
-             }
-          }
-        }
+
 
         if (dragModeRef.current !== "none") { 
           dragModeRef.current = "none"; 
@@ -1787,11 +1784,15 @@ export const useCanvasInteraction = (props: InteractionProps) => {
       setCurrentLine(null);
     } else if (tool === "Arrow") {
       if (pendingConnector) {
-        if (hoverAnchor) {
-          const next = [...connectors, { id: makeId(), from: pendingConnector.from, to: { kind: hoverAnchor.kind, shapeId: hoverAnchor.shapeId, anchor: hoverAnchor.anchor, percent: hoverAnchor.percent ?? 0.5 } }];
-          setConnectors(next); pushHistory({ connectors: next });
-          setActiveTool("Select");
-        }
+        const point = toCanvasPointFromClient(event.clientX, event.clientY);
+        const toAnchor: ConnectorAnchor = hoverAnchor 
+          ? { kind: hoverAnchor.kind, shapeId: hoverAnchor.shapeId, anchor: hoverAnchor.anchor, percent: hoverAnchor.percent ?? 0.5 }
+          : { kind: "point", shapeId: "floating", anchor: "none", point };
+
+        const next = [...connectors, { id: makeId(), from: pendingConnector.from, to: toAnchor }];
+        setConnectors(next); 
+        pushHistory({ connectors: next });
+        setActiveTool("Select");
         setPendingConnector(null);
       } else if (isDrawingArrowRef.current) {
         isDrawingArrowRef.current = false;

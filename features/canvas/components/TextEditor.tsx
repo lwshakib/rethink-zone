@@ -24,6 +24,7 @@ interface TextEditorProps {
   measureText: (text: string, fontSize: number, fontFamily?: string) => { width: number; height: number };
   commitTextEditor: () => void;
   cancelTextEditor: () => void;
+  theme?: string;
 }
 
 const TextEditor: React.FC<TextEditorProps> = ({
@@ -35,11 +36,13 @@ const TextEditor: React.FC<TextEditorProps> = ({
   measureText,
   commitTextEditor,
   cancelTextEditor,
+  theme = "dark",
 }) => {
   if (!textEditor) return null;
 
   const font = textEditor.fontFamily === "Rough" ? "cursive" : textEditor.fontFamily === "Mono" ? "monospace" : "sans-serif";
-  const color = textEditor.fill || "white";
+  const isDark = theme === "dark";
+  const color = textEditor.fill || (isDark ? "white" : "black");
 
   return (
     <textarea
