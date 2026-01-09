@@ -1,0 +1,75 @@
+const uploadFileToCloudinary = async (file: File, signal?: AbortSignal) => {
+    const sigRes = await fetch("/api/cloudinary-signature");
+    if (!sigRes.ok) {
+      throw new Error("Failed to get upload signature");
+    }
+    const signature = await sigRes.json();
+    const uploadApi = `https://api.cloudinary.com/v1_1/${signature.cloudName}/upload`;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("api_key", signature.apiKey);
+    formData.append("timestamp", signature.timestamp.toString());
+    formData.append("signature", signature.signature);
+    formData.append("folder", signature.folder ?? "rethink-zone");
+
+    const uploadRes = await fetch(uploadApi, {
+      method: "POST",
+      body: formData,
+      signal,
+    });
+
+    if (!uploadRes.ok) {
+      throw new Error("Cloudinary upload failed");
+    }
+
+    const data = await uploadRes.json();
+    return {
+      secureUrl: data.secure_url as string,
+      publicId: data.public_id as string,
+      resourceType: data.resource_type as string,
+    };
+  };
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
+});
+
+export const cloudinaryClient = cloudinary;
+
+import { v2 as cloudinary } from "cloudinary";
+import { NextResponse } from "next/server";
+
+export async function GET() {
+  try {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const folder = "rethink-zone";
+    const signature = cloudinaryClient.utils.api_sign_request(
+      { timestamp, folder },
+      process.env.CLOUDINARY_API_SECRET!
+    );
+    return NextResponse.json({
+      signature,
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME!,
+      timestamp,
+      folder,
+      apiKey: process.env.CLOUDINARY_API_KEY!,
+    });
+  } catch (error) {
+    console.error("Error in cloudinary-signature GET:", error);
+    return NextResponse.json(
+      {
+        error:
+          process.env.NODE_ENV === "development"
+            ? `Internal Server Error: ${error instanceof Error ? error.message : String(error)}`
+            : "Internal Server Error",
+        ...(process.env.NODE_ENV === "development" &&
+          error instanceof Error && { stack: error.stack }),
+      },
+      { status: 500 }
+    );
+  }
+}

@@ -3,9 +3,12 @@ import {
   Copy, Trash2, Palette, Sun, 
   Circle, Square, Triangle, Diamond, Hexagon, Star, 
   Minus, Type, Image as LucideImage, Frame as LucideFrame,
-  Activity, ChevronDown, Check, MoreVertical, Layers
+  Activity, ChevronDown, Check, MoreVertical, Layers,
+  AlignLeft, AlignCenter, AlignRight, MessageSquare, Plus,
+  Code as CodeIcon, Type as TypeIcon
 } from "lucide-react";
-import { SelectedShape, RectShape, CircleShape, ImageShape, TextShape, FrameShape, PolyShape, LineShape, ArrowShape } from "../types";
+import { SelectedShape, RectShape, CircleShape, ImageShape, TextShape, FrameShape, PolyShape, LineShape, ArrowShape, CodeShape } from "../types";
+import ColorPicker from "./ColorPicker";
 
 interface FloatingToolbarProps {
   selectedShape: SelectedShape;
@@ -17,6 +20,7 @@ interface FloatingToolbarProps {
   polygons: PolyShape[];
   lines: LineShape[];
   arrows: ArrowShape[];
+  codes: CodeShape[];
   canvasToClient: (x: number, y: number) => { x: number; y: number };
   onUpdateShape: (kind: string, index: number, updates: any) => void;
   onChangeKind: (kind: string, index: number, newKind: string) => void;
@@ -24,18 +28,9 @@ interface FloatingToolbarProps {
   onDuplicate: () => void;
 }
 
-const COLOR_PALETTES = {
-  Bold: ["#000000", "#ffffff", "#ff4d4f", "#1890ff", "#52c41a", "#faad14", "#722ed1", "#eb2f96", "#fa541c"],
-  Pastel: ["#f5f5f5", "#fff1f0", "#fff7e6", "#f6ffed", "#e6f7ff", "#f9f0ff", "#fff0f6", "#fffbe6", "#e6fffb"],
-  Vibrant: ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff", "#00ffff", "#ff8000", "#8000ff", "#0080ff"]
-};
-
-type PaletteKey = keyof typeof COLOR_PALETTES;
-
-const LINE_STYLES = [
-  { label: "Solid", value: [] },
-  { label: "Dashed", value: [10, 5] },
-  { label: "Dotted", value: [2, 4] },
+const COLOR_PALETTES = [
+  "#000000", "#ffffff", "#ff4d4f", "#1890ff", "#52c41a",
+  "#faad14", "#722ed1", "#eb2f96", "#fa541c", "rainbow"
 ];
 
 const SHAPES = [
@@ -47,12 +42,28 @@ const SHAPES = [
   { kind: "poly:Star", icon: Star, label: "Star" },
 ];
 
-const PopoverContainer = React.memo(({ children, active, className = "" }: { children: React.ReactNode, active: boolean, className?: string }) => {
+const FONT_FAMILIES = ["Rough", "Clean", "Mono"];
+const ALIGNMENTS = [
+  { icon: AlignLeft, value: "left" },
+  { icon: AlignCenter, value: "center" },
+  { icon: AlignRight, value: "right" },
+];
+const SIZE_PRESETS = [
+  { label: "Small", value: 12 },
+  { label: "Medium", value: 18 },
+  { label: "Large", value: 24 },
+  { label: "X-Large", value: 36 },
+];
+const LANGUAGES = ["Auto detect", "Javascript", "Typescript", "Python", "Go", "Rust", "Swift", "Kotlin", "Java", "C++", "C#"];
+
+const PopoverContainer = React.memo(({ children, active, className = "", style = {} }: { children: React.ReactNode, active: boolean, className?: string, style?: React.CSSProperties }) => {
   if (!active) return null;
   return (
     <div 
-      className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex flex-col gap-2 p-2 bg-background/95 backdrop-blur-md rounded-sm border border-border shadow-xl animate-in fade-in slide-in-from-bottom-1 duration-200 min-w-[140px] z-[1001] ${className}`}
+      className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex flex-col gap-2 p-2 bg-[#1e1e1e] backdrop-blur-md rounded-sm border border-border shadow-xl animate-in fade-in slide-in-from-bottom-1 duration-200 z-[1001] ${className}`}
+      style={style}
       onPointerDown={e => e.stopPropagation()}
+      onWheel={e => e.stopPropagation()}
     >
       {children}
     </div>
@@ -71,13 +82,13 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
   polygons,
   lines,
   arrows,
+  codes,
   onUpdateShape,
   onChangeKind,
   onDelete,
   onDuplicate,
 }) => {
-  const [activePopover, setActivePopover] = useState<"none" | "shapes" | "color" | "stroke" | "opacity" | "style" | "more">("none");
-  const [currentPalette, setCurrentPalette] = useState<PaletteKey>("Bold");
+  const [activePopover, setActivePopover] = useState<string>("none");
   const toolbarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -90,12 +101,9 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
     return () => document.removeEventListener("pointerdown", handleClickOutside);
   }, []);
 
-  const isMulti = selectedShape.length > 1;
   const shapeData = useMemo(() => {
     if (selectedShape.length === 0) return null;
     const { kind, id } = selectedShape[0];
-    
-    // Find shape by ID for maximum stability during transformations
     const findById = (arr: any[]) => arr.find(s => s.id === id);
     
     const source = kind === "rect" ? findById(rectangles) :
@@ -105,334 +113,287 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
                    kind === "frame" ? findById(frames) :
                    kind === "poly" ? findById(polygons) :
                    kind === "line" ? findById(lines) :
-                   kind === "arrow" ? findById(arrows) : null;
+                   kind === "arrow" ? findById(arrows) : 
+                   kind === "code" ? findById(codes) : null;
     
     if (!source) return null;
-
     const label = kind === "poly" ? (source as PolyShape).type : kind.charAt(0).toUpperCase() + kind.slice(1);
     return { ...source, kind, label };
-  }, [selectedShape, rectangles, circles, images, texts, frames, polygons, lines, arrows]);
+  }, [selectedShape, rectangles, circles, images, texts, frames, polygons, lines, arrows, codes]);
 
-  // Prevent unmounting if selection exists but data is temporarily missing during transitions
-  if (selectedShape.length === 0) return null;
-
-  const currentOpacity = (shapeData && "opacity" in shapeData) ? (shapeData.opacity as number) : 1;
-  const currentFill = (shapeData && "fill" in shapeData) ? (shapeData.fill as string || "transparent") : "transparent";
-  const currentStroke = (shapeData && "stroke" in shapeData) ? (shapeData.stroke as string || "currentColor") : "currentColor";
-  const currentDash = (shapeData && "strokeDashArray" in shapeData) ? (shapeData.strokeDashArray as number[]) : [];
-  const currentStrokeWidth = (shapeData && "strokeWidth" in shapeData) ? (shapeData.strokeWidth as number) : 2;
-  const hasShadow = (shapeData && "shadow" in shapeData) ? (shapeData.shadow as boolean) : false;
-  const isOutlineOnly = (shapeData && "outlineOnly" in shapeData) ? (shapeData.outlineOnly as boolean) : false;
+  if (selectedShape.length === 0 || !shapeData) return null;
 
   const mainKind = selectedShape[0]?.kind;
   const mainIndex = selectedShape[0]?.index;
+  const isMulti = selectedShape.length > 1;
+
+  const currentOpacity = (shapeData && "opacity" in shapeData) ? (shapeData.opacity as number) : 1;
+  const currentFill = (shapeData && "fill" in shapeData) ? (shapeData.fill as string || "#ffffff") : "#ffffff";
+  const currentFontSize = (shapeData && "fontSize" in shapeData) ? (shapeData.fontSize as number) : 18;
+  const currentFontFamily = (shapeData && "fontFamily" in shapeData) ? (shapeData.fontFamily as string || "Clean") : "Clean";
+  const currentTextAlign = (shapeData && "textAlign" in shapeData) ? (shapeData.textAlign as string || "left") : "left";
+  const currentLanguage = (shapeData && "language" in shapeData) ? (shapeData.language as string || "Auto detect") : "Auto detect";
+
+  const renderColorGrid = () => (
+    <div className="grid grid-cols-5 gap-1.5 p-1">
+      {COLOR_PALETTES.map((color) => {
+        if (color === "rainbow") {
+          return (
+            <button
+              key="rainbow"
+              onClick={() => setActivePopover("custom-color")}
+              className="h-6 w-6 rounded-sm border border-border relative overflow-hidden group hover:scale-110 transition-transform"
+              style={{ background: "conic-gradient(from 0deg, red, yellow, green, cyan, blue, magenta, red)" }}
+              title="Custom Color"
+            >
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+            </button>
+          );
+        }
+        return (
+          <button
+            key={color}
+            onClick={() => onUpdateShape(mainKind, mainIndex, { fill: color })}
+            className={`h-6 w-6 rounded-sm border transition-all hover:scale-110 ${currentFill === color ? 'ring-2 ring-primary ring-offset-2 ring-offset-[#1e1e1e] scale-110' : 'border-border'}`}
+            style={{ backgroundColor: color }}
+          >
+            {currentFill === color && <Check className="h-3 w-3 mx-auto text-white drop-shadow-md" />}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const renderTypography = () => (
+    <div className="flex flex-col min-w-[120px]">
+      <div className="flex flex-col gap-0.5 border-b border-border/50 pb-1.5 mb-1.5">
+        {FONT_FAMILIES.map(ff => (
+          <button
+            key={ff}
+            onClick={() => onUpdateShape(mainKind, mainIndex, { fontFamily: ff })}
+            className={`flex items-center justify-between px-2 py-1.5 rounded-sm text-xs transition-all ${currentFontFamily === ff ? 'bg-primary text-primary-foreground font-bold' : 'text-foreground/80 hover:bg-muted font-medium'}`}
+          >
+            <span style={{ fontFamily: ff === "Rough" ? "cursive" : ff === "Mono" ? "monospace" : "sans-serif" }}>{ff}</span>
+            {currentFontFamily === ff && <Check className="h-3 w-3" />}
+          </button>
+        ))}
+      </div>
+      <div className="flex items-center gap-1 justify-between px-1">
+        {ALIGNMENTS.map(a => (
+          <button
+            key={a.value}
+            onClick={() => onUpdateShape(mainKind, mainIndex, { textAlign: a.value })}
+            className={`h-8 w-8 flex items-center justify-center rounded-sm transition-all ${currentTextAlign === a.value ? 'bg-primary/20 text-primary border border-primary/30 shadow-sm' : 'text-foreground/60 hover:bg-muted hover:text-foreground border border-transparent'}`}
+          >
+            <a.icon className="h-4 w-4" />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderSize = () => (
+    <div className="flex flex-col min-w-[140px]">
+      <div className="flex items-center gap-1 p-1 bg-muted/20 border border-border/50 rounded-sm mb-2 group-focus-within:border-primary/50 transition-colors">
+        <button 
+          onClick={() => onUpdateShape(mainKind, mainIndex, { fontSize: Math.max(8, currentFontSize - 1) })}
+          className="h-6 w-6 flex items-center justify-center rounded-sm text-foreground/60 hover:bg-muted hover:text-foreground active:scale-90 transition-all"
+        >
+          <Minus className="h-3 w-3" />
+        </button>
+        <div className="flex-1 flex items-center justify-center text-[11px] font-bold text-foreground font-mono">
+          {currentFontSize}px
+        </div>
+        <button 
+          onClick={() => onUpdateShape(mainKind, mainIndex, { fontSize: Math.min(200, currentFontSize + 1) })}
+          className="h-6 w-6 flex items-center justify-center rounded-sm text-foreground/60 hover:bg-muted hover:text-foreground active:scale-90 transition-all"
+        >
+          <Plus className="h-3 w-3" />
+        </button>
+      </div>
+      <div className="flex flex-col gap-0.5">
+        {SIZE_PRESETS.map(p => (
+          <button
+            key={p.label}
+            onClick={() => onUpdateShape(mainKind, mainIndex, { fontSize: p.value })}
+            className={`flex items-center justify-between px-2 py-1.5 rounded-sm text-xs transition-all ${currentFontSize === p.value ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground/80 hover:bg-muted font-medium'}`}
+          >
+            <span>{p.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderLanguage = () => (
+    <div className="flex flex-col max-h-[240px] overflow-y-auto min-w-[140px] custom-scrollbar">
+      {LANGUAGES.map(lang => (
+        <button
+          key={lang}
+          onClick={() => onUpdateShape(mainKind, mainIndex, { language: lang })}
+          className={`flex items-center justify-between px-3 py-2 rounded-sm text-xs text-left transition-all ${currentLanguage === lang ? 'bg-primary/10 text-primary font-bold shadow-sm' : 'text-foreground/80 hover:bg-muted font-medium'}`}
+        >
+          <span>{lang}</span>
+          {currentLanguage === lang && <Check className="h-3 w-3" />}
+        </button>
+      ))}
+    </div>
+  );
+
+  const isTextOrCode = ["text", "code"].includes(mainKind);
 
   return (
     <div
       ref={toolbarRef}
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 p-1 rounded-sm bg-background/90 backdrop-blur-xl shadow-lg border border-border z-[1000] animate-in fade-in slide-in-from-bottom-2 duration-300"
+      className={`fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-0.5 p-1 rounded-sm bg-[#121212]/95 backdrop-blur-3xl shadow-2xl border border-white/10 z-[1000] animate-in fade-in slide-in-from-bottom-2 duration-300 ${isMulti ? 'py-1.5' : ''}`}
       onPointerDown={(e) => e.stopPropagation()}
       onWheel={(e) => e.stopPropagation()}
     >
       {isMulti ? (
         <div className="flex items-center gap-1 px-1">
-          <div className="flex items-center gap-2 px-3 py-1.5 border-r border-border/50">
+           {/* Multi selection UI stays mostly same but polished */}
+           <div className="flex items-center gap-2 px-3 py-1.5 border-r border-white/5 mr-1">
             <Layers className="h-3.5 w-3.5 text-primary" />
-            <span className="text-[11px] font-bold text-foreground">{selectedShape.length} items selected</span>
+            <span className="text-[11px] font-bold text-foreground/90 uppercase tracking-widest">{selectedShape.length} selected</span>
           </div>
           <button 
             onClick={onDuplicate}
-            className="h-8 px-3 flex items-center gap-2 rounded-sm text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-            title="Duplicate Selection"
+            className="h-8 px-3 flex items-center gap-2 rounded-sm text-[10px] font-bold uppercase tracking-wider text-foreground/60 hover:bg-white/5 hover:text-foreground transition-all"
           >
-            <Copy className="h-3.5 w-3.5" />
+            <Copy className="h-3 w-3" />
             <span>Duplicate</span>
           </button>
-          <div className="w-px h-4 bg-border/50 mx-0.5" />
           <button 
             onClick={onDelete}
-            className="h-8 px-3 flex items-center gap-2 rounded-sm text-xs text-destructive hover:bg-destructive/10 transition-all"
-            title="Delete Selection"
+            className="h-8 px-3 flex items-center gap-2 rounded-sm text-[10px] font-bold uppercase tracking-wider text-destructive/80 hover:bg-destructive/10 hover:text-destructive transition-all"
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 className="h-3 w-3" />
             <span>Delete</span>
           </button>
         </div>
       ) : (
-        <>
-          {/* Shapes Switcher Popover */}
-          {["rect", "circle", "poly"].includes(mainKind) && (
-            <div className="relative px-1 border-r border-white/10">
-              <button 
-                onClick={() => setActivePopover(activePopover === "shapes" ? "none" : "shapes")}
-                className={`h-8 px-2 flex items-center gap-1.5 rounded-sm transition-all ${activePopover === "shapes" ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`}
+        <div className="flex items-center gap-0.5">
+          {/* Text/Code Toggle */}
+          {isTextOrCode && (
+            <div className="flex items-center p-0.5 bg-white/5 rounded-sm border border-white/5 mr-1">
+              <button
+                onClick={() => onChangeKind(mainKind, mainIndex, "text")}
+                className={`h-7 px-3 flex items-center gap-2 rounded-sm text-[11px] font-bold transition-all ${mainKind === "text" ? 'bg-[#2a2a2a] text-foreground shadow-sm' : 'text-foreground/40 hover:text-foreground/60'}`}
               >
-                {(() => {
-                  const CurrentIcon = SHAPES.find(s => s.kind === mainKind || (mainKind === "poly" && s.kind === `poly:${(shapeData as PolyShape)?.type}`))?.icon || Square;
-                  return <CurrentIcon className="h-[14px] w-[14px]" />;
-                })()}
-                <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${activePopover === "shapes" ? 'rotate-180' : ''}`} />
+                <div className="flex items-center justify-center font-bold">Text</div>
               </button>
-              
-              <PopoverContainer active={activePopover === "shapes"}>
-                <div className="grid grid-cols-2 gap-1 w-full">
-                  {SHAPES.map((s) => {
-                    const active = mainKind === s.kind || (mainKind === "poly" && s.kind === `poly:${(shapeData as PolyShape)?.type}`);
-                    return (
-                      <button
-                        key={s.label}
-                        onClick={() => { onChangeKind(mainKind, mainIndex, s.kind); }}
-                        className={`h-8 w-8 flex items-center justify-center rounded-sm transition-all ${
-                          active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                        }`}
-                        title={s.label}
-                      >
-                        <s.icon className="h-4 w-4" />
-                      </button>
-                    );
-                  })}
-                </div>
+              <button
+                onClick={() => onChangeKind(mainKind, mainIndex, "code")}
+                className={`h-7 px-3 flex items-center gap-2 rounded-sm text-[11px] font-bold transition-all ${mainKind === "code" ? 'bg-[#2a2a2a] text-foreground shadow-sm' : 'text-foreground/40 hover:text-foreground/60'}`}
+              >
+                <div className="flex items-center justify-center font-bold">Code</div>
+              </button>
+            </div>
+          )}
+
+          {/* Size Dropdown */}
+          {isTextOrCode && (
+            <div className="relative border-r border-white/5 pr-0.5">
+              <button
+                onClick={() => setActivePopover(activePopover === "size" ? "none" : "size")}
+                className={`h-8 px-2 flex items-center gap-1.5 rounded-sm text-[11px] font-bold transition-all ${activePopover === "size" ? 'bg-white/10 text-foreground' : 'text-foreground/60 hover:bg-white/5 hover:text-foreground'}`}
+              >
+                <span>{SIZE_PRESETS.find(p => p.value === currentFontSize)?.label || `${currentFontSize}px`}</span>
+                <ChevronDown className="h-3 w-3 opacity-50" />
+              </button>
+              <PopoverContainer active={activePopover === "size"}>
+                {renderSize()}
               </PopoverContainer>
             </div>
           )}
 
-          {/* Color Popover */}
-          {["rect", "circle", "poly", "text", "frame"].includes(mainKind) && (
-            <div className="relative px-1 border-r border-white/10">
-              <button 
+          {/* Language Dropdown for Code */}
+          {mainKind === "code" && (
+            <div className="relative border-r border-white/5 pr-0.5">
+              <button
+                onClick={() => setActivePopover(activePopover === "language" ? "none" : "language")}
+                className={`h-8 px-3 flex items-center gap-1.5 rounded-sm text-[11px] font-bold transition-all ${activePopover === "language" ? 'bg-white/10 text-foreground' : 'text-foreground/60 hover:bg-white/5 hover:text-foreground'}`}
+              >
+                <span>{currentLanguage}</span>
+                <ChevronDown className="h-3 w-3 opacity-50" />
+              </button>
+              <PopoverContainer active={activePopover === "language"}>
+                {renderLanguage()}
+              </PopoverContainer>
+            </div>
+          )}
+
+          {/* Typography Button for Text */}
+          {mainKind === "text" && (
+            <div className="relative border-r border-white/5 pr-0.5">
+              <button
+                onClick={() => setActivePopover(activePopover === "typography" ? "none" : "typography")}
+                className={`h-8 px-3 flex items-center gap-1.5 rounded-sm text-[11px] font-bold transition-all ${activePopover === "typography" ? 'bg-white/10 text-foreground' : 'text-foreground/60 hover:bg-white/5 hover:text-foreground'}`}
+              >
+                <span>{currentFontFamily}</span>
+                <ChevronDown className="h-3 w-3 opacity-50" />
+              </button>
+              <PopoverContainer active={activePopover === "typography"}>
+                {renderTypography()}
+              </PopoverContainer>
+            </div>
+          )}
+
+          {/* Color Tool */}
+          <div className="relative border-r border-white/5 px-1">
+             <button
                 onClick={() => setActivePopover(activePopover === "color" ? "none" : "color")}
-                className={`h-8 w-8 flex items-center justify-center rounded-sm transition-colors ${activePopover === "color" ? 'bg-muted' : 'hover:bg-muted/50'}`}
-                title="Fill Color"
+                className={`h-8 w-8 flex items-center justify-center rounded-sm transition-all ${activePopover === "color" ? 'bg-white/10' : 'hover:bg-white/5'}`}
               >
                 <div 
-                  className="h-4 w-4 rounded-sm border border-border" 
+                  className="h-4 w-4 rounded-sm border border-white/20" 
                   style={{ backgroundColor: currentFill }}
                 />
               </button>
-              
               <PopoverContainer active={activePopover === "color"}>
-                <div className="flex flex-col gap-3">
-                  <div className="flex gap-1 p-0.5 bg-muted/50 rounded-sm">
-                    {(Object.keys(COLOR_PALETTES) as PaletteKey[]).map((p) => (
-                      <button
-                        key={p}
-                        onClick={() => setCurrentPalette(p)}
-                        className={`px-2 py-1 text-[10px] font-bold rounded-sm transition-all ${currentPalette === p ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-                      >
-                        {p}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-3 gap-1.5 min-w-[130px]">
-                    <button
-                      onClick={() => onUpdateShape(mainKind, mainIndex, { fill: "transparent" })}
-                      className={`h-7 w-7 rounded-sm border flex items-center justify-center transition-all ${currentFill === "transparent" ? 'border-primary bg-primary/10' : 'border-border hover:bg-muted'}`}
-                      title="Transparent"
-                    >
-                      <Check className={`h-3 w-3 ${currentFill === "transparent" ? 'text-primary' : 'text-transparent'}`} />
-                    </button>
-                    {COLOR_PALETTES[currentPalette].map((color) => (
-                      <button
-                        key={color}
-                        onClick={() => onUpdateShape(mainKind, mainIndex, { fill: color })}
-                        className={`h-7 w-7 rounded-sm border transition-all hover:scale-110 ${currentFill === color ? 'border-primary ring-1 ring-primary/20 scale-110' : 'border-border'}`}
-                        style={{ backgroundColor: color }}
-                      >
-                        {currentFill === color && <Check className="h-3 w-3 mx-auto text-white drop-shadow-md" />}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Custom Hex & Opacity */}
-                  <div className="flex flex-col gap-2 pt-2 border-t border-white/10">
-                    <div className="flex items-center gap-2">
-                       <input 
-                         type="text"
-                         value={typeof currentFill === 'string' && currentFill.startsWith('#') ? currentFill : ''}
-                         onChange={(e) => onUpdateShape(mainKind, mainIndex, { fill: e.target.value })}
-                         placeholder="#HEX"
-                         className="flex-1 min-w-0 bg-muted/50 border border-border rounded-sm px-2 py-1 text-[10px] font-mono focus:outline-none focus:ring-1 focus:ring-primary/30"
-                       />
-                       <div className="h-4 w-4 rounded-full border border-white/20" style={{ backgroundColor: currentFill }} />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <div className="flex justify-between items-center px-1">
-                        <span className="text-[10px] font-medium text-muted-foreground">Opacity</span>
-                        <span className="text-[10px] font-mono text-muted-foreground">{Math.round(currentOpacity * 100)}%</span>
-                      </div>
-                      <input 
-                        type="range" min="0" max="1" step="0.01"
-                        value={currentOpacity}
-                        onChange={(e) => onUpdateShape(mainKind, mainIndex, { opacity: parseFloat(e.target.value) })}
-                        className="w-full h-1 bg-muted rounded-sm appearance-none cursor-pointer accent-primary"
-                      />
-                    </div>
-                  </div>
-                </div>
+                {renderColorGrid()}
               </PopoverContainer>
-            </div>
-          )}
-
-          {/* Stroke Settings Popover */}
-          {["rect", "circle", "poly", "line", "arrow", "frame"].includes(mainKind) && (
-            <div className="relative px-1 border-r border-white/10">
-              <button 
-                onClick={() => setActivePopover(activePopover === "stroke" ? "none" : "stroke")}
-                className={`h-8 w-8 flex items-center justify-center rounded-sm transition-colors ${activePopover === "stroke" ? 'bg-muted' : 'hover:bg-muted/50'}`}
-                title="Stroke Settings"
+              <PopoverContainer 
+                active={activePopover === "custom-color"} 
+                style={{ marginLeft: '100px' }} // Positioned to the side of the color grid
               >
-                <Activity className="h-[14px] w-[14px] text-muted-foreground" />
+                <ColorPicker color={currentFill} onChange={(c) => onUpdateShape(mainKind, mainIndex, { fill: c })} />
+              </PopoverContainer>
+          </div>
+
+          <div className="flex items-center gap-0.5 px-0.5">
+            <button className="h-8 w-8 flex items-center justify-center rounded-sm text-foreground/40 hover:bg-white/5 hover:text-foreground transition-all">
+              <MessageSquare className="h-3.5 w-3.5" />
+            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setActivePopover(activePopover === "more" ? "none" : "more")}
+                className={`h-8 w-8 flex items-center justify-center rounded-sm transition-all ${activePopover === "more" ? 'bg-white/10 text-foreground' : 'text-foreground/40 hover:bg-white/5 hover:text-foreground'}`}
+              >
+                <MoreVertical className="h-3.5 w-3.5" />
               </button>
-              
-              <PopoverContainer active={activePopover === "stroke"}>
-                <div className="flex flex-col gap-3 p-1 w-48">
-                  {/* Stroke Width */}
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Stroke Width</span>
-                    <div className="flex items-center gap-2 px-1">
-                      <input 
-                        type="range" min="1" max="20" step="1" 
-                        value={currentStrokeWidth}
-                        onChange={(e) => onUpdateShape(mainKind, mainIndex, { strokeWidth: parseInt(e.target.value) })}
-                        className="flex-1 h-1 bg-muted rounded-sm appearance-none cursor-pointer accent-primary"
-                      />
-                      <input 
-                        type="number" min="1" max="50"
-                        value={currentStrokeWidth}
-                        onChange={(e) => onUpdateShape(mainKind, mainIndex, { strokeWidth: parseInt(e.target.value) || 1 })}
-                        className="w-10 h-6 bg-muted border border-border rounded-sm text-[11px] text-center focus:outline-none focus:border-primary/50"
-                      />
-                    </div>
+              <PopoverContainer active={activePopover === "more"} className="min-w-[140px]">
+                  <div className="flex flex-col gap-0.5">
+                    <button 
+                      onClick={onDuplicate}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-xs font-medium rounded-sm hover:bg-white/5 transition-colors text-foreground/80"
+                    >
+                      <Copy className="h-3.5 w-3.5 opacity-60" />
+                      <span>Duplicate</span>
+                    </button>
+                    <div className="h-px bg-white/5 my-1" />
+                    <button 
+                      onClick={onDelete}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-xs font-medium rounded-sm hover:bg-destructive/10 transition-colors text-destructive/80"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 opacity-60" />
+                      <span>Delete</span>
+                    </button>
                   </div>
-
-                  {/* Stroke Style */}
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Dash Style</span>
-                    <div className="flex gap-1 px-1">
-                      {LINE_STYLES.map((style) => {
-                        const active = JSON.stringify(currentDash) === JSON.stringify(style.value);
-                        return (
-                          <button
-                            key={style.label}
-                            onClick={() => onUpdateShape(mainKind, mainIndex, { strokeDashArray: style.value })}
-                            className={`flex-1 py-1 px-2 rounded-sm text-[10px] font-medium transition-all ${
-                              active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                            }`}
-                          >
-                            {style.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Stroke Color */}
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Border Color</span>
-                    <div className="grid grid-cols-5 gap-1 px-1">
-                      {COLOR_PALETTES.Bold.map((color) => (
-                        <button
-                          key={color}
-                          onClick={() => onUpdateShape(mainKind, mainIndex, { stroke: color })}
-                          className={`h-5 w-5 rounded-sm transition-all hover:scale-110 ${currentStroke === color ? 'ring-1 ring-primary' : ''}`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                      <button
-                        onClick={() => onUpdateShape(mainKind, mainIndex, { stroke: undefined })}
-                        className="h-5 w-5 rounded-sm bg-muted border border-border flex items-center justify-center text-[8px] font-bold text-muted-foreground hover:bg-muted/80"
-                        title="Reset"
-                      >
-                        D
-                      </button>
-                    </div>
-                  </div>
-                </div>
               </PopoverContainer>
             </div>
-          )}
-
-          <div className="relative px-1">
-            <button 
-              onClick={() => setActivePopover(activePopover === "more" ? "none" : "more")}
-              className={`h-8 w-8 flex items-center justify-center rounded-sm transition-colors ${activePopover === "more" ? 'bg-muted' : 'hover:bg-muted/50'}`}
-              title="More Actions"
-            >
-              <MoreVertical className="h-[14px] w-[14px] text-muted-foreground" />
-            </button>
-            <PopoverContainer active={activePopover === "more"} className="min-w-[160px]">
-              <div className="flex flex-col gap-0.5">
-                {/* Visual Style */}
-                <div className="px-2 py-1.5 flex flex-col gap-2 border-b border-border/50 mb-1">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Effects</span>
-                  <div className="flex flex-col gap-0.5">
-                    <button
-                      onClick={() => onUpdateShape(mainKind, mainIndex, { shadow: !hasShadow })}
-                      className={`flex items-center justify-between px-2 py-1.5 rounded-sm text-xs transition-all ${hasShadow ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-foreground'}`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Palette className="h-3.5 w-3.5 opacity-70" />
-                        <span>Shadow</span>
-                      </div>
-                      {hasShadow && <Check className="h-3 w-3" />}
-                    </button>
-                    <button
-                      onClick={() => onUpdateShape(mainKind, mainIndex, { outlineOnly: !isOutlineOnly })}
-                      className={`flex items-center justify-between px-2 py-1.5 rounded-sm text-xs transition-all ${isOutlineOnly ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-foreground'}`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Minus className="h-3.5 w-3.5 opacity-70" />
-                        <span>Outline Only</span>
-                      </div>
-                      {isOutlineOnly && <Check className="h-3 w-3" />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Opacity slider refined */}
-                <div className="px-2 py-1.5 flex flex-col gap-2 border-b border-border/50 mb-1">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Opacity</span>
-                  <input 
-                    type="range" min="0" max="1" step="0.01" 
-                    value={currentOpacity}
-                    onChange={(e) => onUpdateShape(mainKind, mainIndex, { opacity: parseFloat(e.target.value) })}
-                    className="w-full h-1 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
-                  />
-                  <div className="flex justify-between items-center text-[10px] font-mono text-muted-foreground">
-                    <Sun className="h-3 w-3 opacity-50" />
-                    <span>{Math.round(currentOpacity * 100)}%</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-0.5">
-                  <button 
-                    onClick={() => { onDuplicate(); setActivePopover('none'); }}
-                    className="flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded-sm hover:bg-muted transition-colors"
-                  >
-                    <Copy className="h-3.5 w-3.5 opacity-70" />
-                    <span>Duplicate</span>
-                  </button>
-                  
-                  {/* Coming soon section */}
-                  <div className="h-px bg-border/50 my-1" />
-                  <div className="px-2 py-1">
-                    <span className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-tight">Coming soon...</span>
-                  </div>
-
-                  <div className="h-px bg-border/50 my-1" />
-
-                  <button 
-                    onClick={() => { onDelete(); setActivePopover('none'); }}
-                    className="flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded-sm text-destructive hover:bg-destructive/10 transition-colors"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    <span>Delete</span>
-                  </button>
-                </div>
-              </div>
-            </PopoverContainer>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

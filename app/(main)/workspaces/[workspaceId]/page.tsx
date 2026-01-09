@@ -204,6 +204,21 @@ export default function WorkspaceDetailPage() {
     setEditingName(false);
   };
 
+  const handleDocumentChange = useCallback((data: any) => {
+    setDocumentData(data);
+    setDirty(true);
+  }, []);
+
+  const handleCanvasChange = useCallback((data: any) => {
+    setCanvasData(data);
+    setDirty(true);
+  }, []);
+
+  const handleKanbanChange = useCallback((data: any) => {
+    setKanbanBoard(data);
+    setDirty(true);
+  }, []);
+
   if (loading) return <LoadingState />;
 
   return (
@@ -401,10 +416,7 @@ export default function WorkspaceDetailPage() {
           >
             <DocumentTab
               initialContent={documentData}
-              onChange={(data) => {
-                setDocumentData(data);
-                setDirty(true);
-              }}
+              onChange={handleDocumentChange}
             />
           </TabsContent>
 
@@ -414,10 +426,7 @@ export default function WorkspaceDetailPage() {
           >
             <CanvasTab
               initialData={canvasData}
-              onChange={(data) => {
-                setCanvasData(data);
-                setDirty(true);
-              }}
+              onChange={handleCanvasChange}
             />
           </TabsContent>
 
@@ -427,10 +436,7 @@ export default function WorkspaceDetailPage() {
           >
             <KanbanTab
               board={kanbanBoard}
-              onChange={(data) => {
-                setKanbanBoard(data);
-                setDirty(true);
-              }}
+              onChange={handleKanbanChange}
             />
           </TabsContent>
         </main>

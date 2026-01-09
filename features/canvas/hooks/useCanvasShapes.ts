@@ -14,6 +14,8 @@ import {
   CanvasData,
   AnchorSide,
   ShapeKind,
+  FigureShape,
+  CodeShape,
 } from "../types";
 
 interface CurrentRect { x: number; y: number; width: number; height: number }
@@ -54,6 +56,12 @@ export const useCanvasShapes = (initialData: CanvasData | null | undefined) => {
   const [connectors, setConnectors] = useState<Connector[]>(
     initialData?.snapshot?.connectors || []
   );
+  const [figures, setFigures] = useState<FigureShape[]>(
+    initialData?.snapshot?.figures || []
+  );
+  const [codes, setCodes] = useState<CodeShape[]>(
+    initialData?.snapshot?.codes || []
+  );
 
   const [selectedShape, setSelectedShape] = useState<SelectedShape>([]);
   const [hoverAnchor, setHoverAnchor] = useState<{
@@ -72,6 +80,9 @@ export const useCanvasShapes = (initialData: CanvasData | null | undefined) => {
   const [currentFrame, setCurrentFrame] = useState<CurrentFrame | null>(null);
 
   const imageCacheRef = useRef<Record<string, HTMLImageElement>>({});
+
+  const [strokeColor, setStrokeColor] = useState("#ffffff");
+  const [strokeWidth, setStrokeWidth] = useState(2);
 
   return {
     rectangles,
@@ -110,6 +121,14 @@ export const useCanvasShapes = (initialData: CanvasData | null | undefined) => {
     setCurrentPath,
     currentFrame,
     setCurrentFrame,
+    figures,
+    setFigures,
+    codes,
+    setCodes,
     imageCacheRef,
+    strokeColor,
+    setStrokeColor,
+    strokeWidth,
+    setStrokeWidth,
   };
 };

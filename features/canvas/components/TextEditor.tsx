@@ -4,11 +4,16 @@ interface TextEditorProps {
   textEditor: {
     value: string;
     fontSize: number;
+    fontFamily?: string;
+    textAlign?: "left" | "center" | "right";
+    fill?: string;
     boxWidth?: number;
     boxHeight?: number;
     canvasX: number;
     canvasY: number;
     pad?: number;
+    kind?: string;
+    index: number | null;
   } | null;
   setTextEditor: React.Dispatch<
     React.SetStateAction<TextEditorProps["textEditor"]>
@@ -16,7 +21,7 @@ interface TextEditorProps {
   textAreaRef: RefObject<HTMLTextAreaElement | null>;
   canvasToClient: (x: number, y: number) => { x: number; y: number };
   zoom: number;
-  measureText: (text: string, fontSize: number) => { width: number; height: number };
+  measureText: (text: string, fontSize: number, fontFamily?: string) => { width: number; height: number };
   commitTextEditor: () => void;
   cancelTextEditor: () => void;
 }
@@ -33,13 +38,16 @@ const TextEditor: React.FC<TextEditorProps> = ({
 }) => {
   if (!textEditor) return null;
 
+  const font = textEditor.fontFamily === "Rough" ? "cursive" : textEditor.fontFamily === "Mono" ? "monospace" : "sans-serif";
+  const color = textEditor.fill || "white";
+
   return (
     <textarea
       autoFocus
       value={textEditor.value}
       onChange={(e) => {
         const val = e.target.value;
-        const measured = measureText(val, textEditor.fontSize);
+        const measured = measureText(val, textEditor.fontSize, textEditor.fontFamily);
         setTextEditor((prev) =>
           prev
             ? {
@@ -76,7 +84,8 @@ const TextEditor: React.FC<TextEditorProps> = ({
             textEditor.canvasY - (textEditor.pad ?? 0)
           ).y
         }px`,
-        zIndex: 10,
+        zIndex: 2000,
+        pointerEvents: "auto",
         width: `${
           ((textEditor.boxWidth ?? 120) + (textEditor.pad ?? 4 / zoom) * 2) *
             zoom +
@@ -89,13 +98,15 @@ const TextEditor: React.FC<TextEditorProps> = ({
           zoom
         }px`,
         background: "transparent",
-        color: "white",
+        color: color,
         border: "1.6px solid rgba(63,193,255,0.95)",
         outline: "none",
         borderRadius: 0,
         padding: `${(textEditor.pad ?? 4 / zoom) * zoom}px`,
         fontSize: textEditor.fontSize * zoom,
-        fontFamily: "sans-serif",
+        fontFamily: font,
+        textAlign: textEditor.textAlign || "left",
+        fontWeight: textEditor.kind === "figure" ? "bold" : "normal",
         lineHeight: `${textEditor.fontSize * 1.2 * zoom}px`,
         resize: "none",
         overflow: "hidden",

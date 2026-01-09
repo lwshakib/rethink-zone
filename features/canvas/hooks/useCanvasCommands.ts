@@ -4,7 +4,7 @@ import { makeId } from "../utils";
 import { 
   HistoryEntry, SelectedShape, SelectedShapeInfo,
   RectShape, CircleShape, LineShape, ArrowShape, PathShape, 
-  ImageShape, TextShape, FrameShape, PolyShape, Connector 
+  ImageShape, TextShape, FrameShape, PolyShape, Connector, FigureShape, CodeShape
 } from "../types";
 
 interface CanvasCommandsProps {
@@ -30,6 +30,10 @@ interface CanvasCommandsProps {
   setConnectors: React.Dispatch<React.SetStateAction<Connector[]>>;
   selectedShape: SelectedShape;
   setSelectedShape: React.Dispatch<React.SetStateAction<SelectedShape>>;
+  figures: FigureShape[];
+  setFigures: React.Dispatch<React.SetStateAction<FigureShape[]>>;
+  codes: CodeShape[];
+  setCodes: React.Dispatch<React.SetStateAction<CodeShape[]>>;
 }
 
 export const useCanvasCommands = (
@@ -40,7 +44,7 @@ export const useCanvasCommands = (
     rectangles, setRectangles, circles, setCircles, lines, setLines,
     arrows, setArrows, images, setImages, texts, setTexts, frames, setFrames,
     polygons, setPolygons, connectors, setConnectors, selectedShape, setSelectedShape,
-    paths, setPaths
+    paths, setPaths, figures, setFigures, codes, setCodes
   } = props;
 
   const deleteSelected = useCallback(() => {
@@ -49,7 +53,7 @@ export const useCanvasCommands = (
     const idsToDeleteByKind: Record<string, Set<string>> = {
       rect: new Set(), circle: new Set(), image: new Set(), text: new Set(),
       frame: new Set(), line: new Set(), arrow: new Set(), poly: new Set(),
-      connector: new Set()
+      connector: new Set(), figure: new Set(), code: new Set()
     };
 
     selectedShape.forEach(({ kind, index }: SelectedShapeInfo) => {
@@ -63,6 +67,8 @@ export const useCanvasCommands = (
       else if (kind === "arrow") id = arrows[index]?.id;
       else if (kind === "poly") id = polygons[index]?.id;
       else if (kind === "connector") id = connectors[index]?.id;
+      else if (kind === "figure") id = figures[index]?.id;
+      else if (kind === "code") id = codes[index]?.id;
       if (id) idsToDeleteByKind[kind].add(id);
     });
 
@@ -82,6 +88,8 @@ export const useCanvasCommands = (
       !allDeletedIds.has(c.from.shapeId) && 
       !allDeletedIds.has(c.to.shapeId)
     );
+    const nextFigures = figures.filter(f => !idsToDeleteByKind.figure.has(f.id));
+    const nextCodes = codes.filter(c => !idsToDeleteByKind.code.has(c.id));
 
     setRectangles(nextRects);
     setCircles(nextCircles);
@@ -92,6 +100,8 @@ export const useCanvasCommands = (
     setArrows(nextArrows);
     setPolygons(nextPolys);
     setConnectors(nextConnectors);
+    setFigures(nextFigures);
+    setCodes(nextCodes);
 
     pushHistory({
       rectangles: nextRects,
@@ -102,11 +112,13 @@ export const useCanvasCommands = (
       lines: nextLines,
       arrows: nextArrows,
       polygons: nextPolys,
-      connectors: nextConnectors
+      connectors: nextConnectors,
+      figures: nextFigures,
+      codes: nextCodes
     });
 
     setSelectedShape([]);
-  }, [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, connectors, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setConnectors, pushHistory, setSelectedShape]);
+  }, [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, connectors, figures, codes, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setConnectors, setFigures, setCodes, pushHistory, setSelectedShape]);
 
   const duplicateSelection = useCallback(
     (offset = 20) => {
@@ -164,6 +176,18 @@ export const useCanvasCommands = (
           if (!updates.polygons) updates.polygons = [...polygons];
           updates.polygons.push(clone);
           newSelection.push({ kind: "poly", index: updates.polygons.length - 1, id: clone.id });
+        } else if (kind === "figure") {
+          const src = figures[index]; if (!src) return;
+          const clone = { ...src, id: makeId(), x: src.x + offset, y: src.y + offset };
+          if (!updates.figures) updates.figures = [...figures];
+          updates.figures.push(clone);
+          newSelection.push({ kind: "figure", index: updates.figures.length - 1, id: clone.id });
+        } else if (kind === "code") {
+          const src = codes[index]; if (!src) return;
+          const clone = { ...src, id: makeId(), x: src.x + offset, y: src.y + offset };
+          if (!updates.codes) updates.codes = [...codes];
+          updates.codes.push(clone);
+          newSelection.push({ kind: "code", index: updates.codes.length - 1, id: clone.id });
         }
       });
 
@@ -175,11 +199,13 @@ export const useCanvasCommands = (
       if (updates.lines) setLines(updates.lines);
       if (updates.arrows) setArrows(updates.arrows);
       if (updates.polygons) setPolygons(updates.polygons);
+      if (updates.figures) setFigures(updates.figures);
+      if (updates.codes) setCodes(updates.codes);
 
       pushHistory(updates);
       setSelectedShape(newSelection);
     },
-    [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, pushHistory, setSelectedShape]
+    [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, figures, codes, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setFigures, setCodes, pushHistory, setSelectedShape]
   );
 
   return { deleteSelected, duplicateSelection };

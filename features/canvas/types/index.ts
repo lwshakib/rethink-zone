@@ -74,6 +74,8 @@ export type TextShape = {
   height: number;
   fill?: string;
   opacity?: number;
+  fontFamily?: "Rough" | "Clean" | "Mono";
+  textAlign?: "left" | "center" | "right";
 };
 export type FrameShape = {
   id: string;
@@ -82,6 +84,7 @@ export type FrameShape = {
   width: number;
   height: number;
   frameNumber: number;
+  deviceType?: "phone" | "tablet" | "desktop" | "browser";
   fill?: string;
   stroke?: string;
   opacity?: number;
@@ -102,7 +105,37 @@ export type PolyShape = {
   strokeWidth?: number;
 };
 
-export type ShapeKind = "rect" | "circle" | "image" | "text" | "frame" | "poly";
+export type FigureShape = {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  figureNumber: number;
+  title?: string;
+  fill?: string;
+  stroke?: string;
+  opacity?: number;
+  strokeWidth?: number;
+};
+
+export type CodeShape = {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  code: string;
+  language: string;
+  fill?: string;
+  stroke?: string;
+  opacity?: number;
+  fontFamily?: "Rough" | "Clean" | "Mono";
+  textAlign?: "left" | "center" | "right";
+  fontSize?: number;
+};
+
+export type ShapeKind = "rect" | "circle" | "image" | "text" | "frame" | "poly" | "figure" | "code";
 export type AnchorSide = "top" | "bottom" | "left" | "right";
 export type ConnectorAnchor = {
   kind: ShapeKind;
@@ -127,6 +160,8 @@ export type HistoryEntry = {
   frames: FrameShape[];
   connectors: Connector[];
   polygons: PolyShape[];
+  figures: FigureShape[];
+  codes: CodeShape[];
 };
 
 export type CanvasData = {
@@ -159,7 +194,8 @@ export type PlusMenuView =
   | "shape"
   | "icon"
   | "cloud-icon"
-  | "provider-icons";
+  | "provider-icons"
+  | "device-frame";
 
 export type SelectedShapeInfo = {
   kind:
@@ -171,7 +207,9 @@ export type SelectedShapeInfo = {
     | "connector"
     | "line"
     | "arrow"
-    | "poly";
+    | "poly"
+    | "figure"
+    | "code";
   index: number;
   id: string;
 };

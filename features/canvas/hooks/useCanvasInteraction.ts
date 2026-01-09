@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState, Dispatch, SetStateAction, useEffect } from "react";
 import { 
   Tool, AnchorSide, ShapeKind, ConnectorAnchor, HistoryEntry, 
-  RectShape, CircleShape, SelectedShape, SelectedShapeInfo, DragMode, PolyShape, Connector, LineShape, ArrowShape, PathShape, ImageShape, TextShape, FrameShape
+  RectShape, CircleShape, SelectedShape, SelectedShapeInfo, DragMode, PolyShape, Connector, LineShape, ArrowShape, PathShape, ImageShape, TextShape, FrameShape, FigureShape, CodeShape
 } from "../types";
 import { makeId } from "../utils";
 import { distToSegment } from "../utils/geometry";
@@ -38,6 +38,10 @@ type InteractionProps = {
   setConnectors: React.Dispatch<React.SetStateAction<Connector[]>>;
   selectedShape: SelectedShape;
   setSelectedShape: React.Dispatch<React.SetStateAction<SelectedShape>>;
+  figures: FigureShape[];
+  setFigures: React.Dispatch<React.SetStateAction<FigureShape[]>>;
+  codes: CodeShape[];
+  setCodes: React.Dispatch<React.SetStateAction<CodeShape[]>>;
   currentRect: any;
   setCurrentRect: (r: { x: number; y: number; width: number; height: number } | null) => void;
   currentCircle: any;
@@ -47,7 +51,7 @@ type InteractionProps = {
   currentArrow: any;
   setCurrentArrow: Dispatch<SetStateAction<{ x1: number; y1: number; x2: number; y2: number } | null>>;
   currentPath: any;
-  setCurrentPath: Dispatch<SetStateAction<{ points: { x: number; y: number }[] } | null>>;
+  setCurrentPath: Dispatch<SetStateAction<{ points: { x: number; y: number }[]; stroke?: string; strokeWidth?: number } | null>>;
   currentFrame: any;
   setCurrentFrame: (f: { x: number; y: number; width: number; height: number } | null) => void;
   pushHistory: (overrides?: Partial<HistoryEntry>) => void;
@@ -83,6 +87,9 @@ type InteractionProps = {
   } | null;
   setRerenderTick: React.Dispatch<React.SetStateAction<number>>;
   containerRef: React.RefObject<HTMLDivElement | null>;
+  strokeColor: string;
+  strokeWidth: number;
+  theme: string;
 };
 
 export const useCanvasInteraction = (props: InteractionProps) => {
@@ -95,11 +102,12 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     setCurrentRect, setCurrentCircle,
     currentLine, setCurrentLine, currentArrow, setCurrentArrow,
     currentPath, setCurrentPath, setCurrentFrame,
+    figures, setFigures, codes, setCodes,
     pushHistory, isSpacePanning, setIsHandPanning, isHandPanning,
     anchorHandles, pendingAddIcon, setPendingAddIcon, pendingAddShapeLabel, setPendingAddShapeLabel,
     isPlusMenuOpen, setIsPlusMenuOpen, canvasRef,
-    getAnchorPoint, getContentBounds, clampZoom, imageCacheRef,
-    setHoverAnchor, hoverAnchor, setRerenderTick, containerRef
+    getAnchorPoint, getContentBounds, clampZoom,    imageCacheRef, setHoverAnchor, hoverAnchor, setRerenderTick, containerRef,
+    strokeColor, strokeWidth, theme
   } = props;
 
   const isPanningRef = useRef(false);
@@ -133,13 +141,38 @@ export const useCanvasInteraction = (props: InteractionProps) => {
   const selectionStartRef = useRef<any>(null);
   const pointerToolRef = useRef<Tool | "">("");
   const pendingMoveUpdateRef = useRef<number | null>(null);
+  const selectedShapeRef = useRef(selectedShape);
+  const stateRef = useRef({
+    rectangles, circles, lines, arrows, paths, images, texts, frames, polygons, connectors, anchorHandles, figures, codes
+  });
+
+  useEffect(() => {
+    selectedShapeRef.current = selectedShape;
+  }, [selectedShape]);
+
+  useEffect(() => {
+    stateRef.current = {
+      rectangles, circles, lines, arrows, paths, images, texts, frames, polygons, connectors, anchorHandles, figures, codes
+    };
+  }, [rectangles, circles, lines, arrows, paths, images, texts, frames, polygons, connectors, anchorHandles, figures, codes]);
 
   const [cursorStyle, setCursorStyle] = useState("default");
+  const cursorStyleRef = useRef(cursorStyle);
+  const hoverAnchorRef = useRef(hoverAnchor);
+
+  useEffect(() => {
+    cursorStyleRef.current = cursorStyle;
+  }, [cursorStyle]);
+
+  useEffect(() => {
+    hoverAnchorRef.current = hoverAnchor;
+  }, [hoverAnchor]);
   const [pendingConnector, setPendingConnector] = useState<{
     from: ConnectorAnchor;
     previewPoint: { x: number; y: number };
   } | null>(null);
   const [textEditor, setTextEditor] = useState<any>(null);
+  const [editingCodeId, setEditingCodeId] = useState<string | null>(null);
   const [selectionRect, setSelectionRect] = useState<any>(null);
 
   const canvasToClient = useCallback((x: number, y: number) => {
@@ -171,19 +204,16 @@ export const useCanvasInteraction = (props: InteractionProps) => {
   }, [activeTool, isSpacePanning]);
 
   const eraseAtPoint = useCallback((point: { x: number; y: number }) => {
-    const tolerance = 8 / zoom;
-    setRectangles(prev => prev.filter(r => !(point.x >= r.x - tolerance && point.x <= r.x + r.width + tolerance && point.y >= r.y - tolerance && point.y <= r.y + r.height + tolerance)));
-    setCircles(prev => prev.filter(c => {
-      const dx = (point.x - c.x) / (c.rx + tolerance);
-      const dy = (point.y - c.y) / (c.ry + tolerance);
-      return dx * dx + dy * dy > 1;
+    // Make erasing area slightly larger than the visual stroke weight for better feel
+    const tolerance = (strokeWidth / 2 + 10) / zoom;
+    setPaths(prev => prev.filter(path => {
+      return !path.points.some(p => {
+        const dx = p.x - point.x;
+        const dy = p.y - point.y;
+        return Math.sqrt(dx * dx + dy * dy) <= tolerance;
+      });
     }));
-    setLines(prev => prev.filter(l => distToSegment(point.x, point.y, l.x1, l.y1, l.x2, l.y2) > tolerance));
-    setArrows(prev => prev.filter(a => distToSegment(point.x, point.y, a.x1, a.y1, a.x2, a.y2) > tolerance));
-    setPolygons(prev => prev.filter(p => !(point.x >= p.x - tolerance && point.x <= p.x + p.width + tolerance && point.y >= p.y - tolerance && point.y <= p.y + p.height + tolerance)));
-    setImages(prev => prev.filter(im => !(point.x >= im.x - tolerance && point.x <= im.x + im.width + tolerance && point.y >= im.y - tolerance && point.y <= im.y + im.height + tolerance)));
-    setTexts(prev => prev.filter(t => !(point.x >= t.x - tolerance && point.x <= t.x + t.width + tolerance && point.y >= t.y - tolerance && point.y <= t.y + t.height + tolerance)));
-  }, [zoom, setRectangles, setCircles, setLines, setArrows, setPolygons, setImages, setTexts]);
+  }, [zoom, setPaths, strokeWidth]);
 
   const duplicateForDrag = useCallback((items: SelectedShape) => {
     if (items.length === 0) return null;
@@ -198,6 +228,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     const newFrames = [...frames];
     const newPolys = [...polygons];
     const newConnectors = [...connectors];
+    const newFigures = [...figures];
+    const newCodes = [...codes];
 
     const newSelection: SelectedShape = [];
 
@@ -237,6 +269,20 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           newFrames.push(dup);
           newSelection.push({ kind: "frame", index: newFrames.length - 1, id: dup.id });
         }
+      } else if (item.kind === "figure") {
+        const src = figures[item.index];
+        if (src) {
+          const dup = { ...src, id: makeId(), figureNumber: figures.length + newFigures.length - figures.length + 1 };
+          newFigures.push(dup);
+          newSelection.push({ kind: "figure", index: newFigures.length - 1, id: dup.id });
+        }
+      } else if (item.kind === "code") {
+        const src = codes[item.index];
+        if (src) {
+          const dup = { ...src, id: makeId() };
+          newCodes.push(dup);
+          newSelection.push({ kind: "code", index: newCodes.length - 1, id: dup.id });
+        }
       } else if (item.kind === "poly") {
         const src = polygons[item.index];
         if (src) {
@@ -272,6 +318,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     setTexts(newTexts);
     setFrames(newFrames);
     setPolygons(newPolys);
+    setFigures(newFigures);
+    setCodes(newCodes);
     setConnectors(newConnectors);
 
     const nextState: HistoryEntry = {
@@ -283,18 +331,62 @@ export const useCanvasInteraction = (props: InteractionProps) => {
       images: newImages,
       texts: newTexts,
       frames: newFrames,
+      polygons: newPolys,
+      figures: newFigures,
+      codes: newCodes,
       connectors: newConnectors,
-      polygons: newPolys
     };
 
     pushHistory(nextState);
     return { selection: newSelection, state: nextState };
-  }, [rectangles, circles, lines, arrows, paths, images, texts, frames, polygons, connectors, setRectangles, setCircles, setLines, setArrows, setPaths, setImages, setTexts, setFrames, setPolygons, setConnectors, pushHistory]);
+  }, [rectangles, circles, lines, arrows, paths, images, texts, frames, polygons, connectors, figures, codes, setRectangles, setCircles, setLines, setArrows, setPaths, setImages, setTexts, setFrames, setPolygons, setFigures, setCodes, setConnectors, pushHistory]);
+
+  const commitTextEditor = useCallback(() => {
+    if (!textEditor) return;
+    const val = textEditor.value.trim();
+    if (!val) { setTextEditor(null); return; }
+    const size = measureText(val, textEditor.fontSize, textEditor.fontFamily);
+    
+    if (textEditor.kind === "figure") {
+      const next = figures.map((f, i) => i === textEditor.index ? { ...f, title: val } : f);
+      setFigures(next);
+      pushHistory({ figures: next });
+    } else if (textEditor.index === null) {
+      const next: any[] = [...texts, { 
+        id: makeId(), 
+        x: textEditor.canvasX, 
+        y: textEditor.canvasY, 
+        text: val, 
+        fontSize: textEditor.fontSize, 
+        width: size.width, 
+        height: size.height,
+        fontFamily: textEditor.fontFamily,
+        textAlign: textEditor.textAlign
+      }];
+      setTexts(next); pushHistory({ texts: next });
+    } else {
+      const next = texts.map((t, i) => i === textEditor.index ? { 
+        ...t, 
+        text: val, 
+        width: size.width, 
+        height: size.height,
+        fontFamily: textEditor.fontFamily,
+        textAlign: textEditor.textAlign
+      } : t);
+      setTexts(next); pushHistory({ texts: next });
+    }
+    setTextEditor(null);
+  }, [textEditor, texts, setTexts, figures, setFigures, pushHistory]);
+
+  const cancelTextEditor = useCallback(() => setTextEditor(null), []);
 
   const handlePointerDown = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
     event.preventDefault();
     const tool = resolveTool(event);
     pointerToolRef.current = tool;
+
+    if (editingCodeId) setEditingCodeId(null);
+    if (textEditor) commitTextEditor();
 
     if (event.button === 1) {
       startPan(event, true);
@@ -325,6 +417,46 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         setCircles(next);
         pushHistory({ circles: next });
         setSelectedShape([{ kind: "circle", index: next.length - 1, id: next[next.length - 1].id }]);
+      } else if (label === "Figure") {
+        const next = [
+          ...figures,
+          { id: makeId(), x: point.x - 150, y: point.y - 120, width: 300, height: 240, figureNumber: figures.length + 1 }
+        ];
+        setFigures(next);
+        pushHistory({ figures: next });
+        setSelectedShape([{ kind: "figure", index: next.length - 1, id: next[next.length - 1].id }]);
+      } else if (label === "Code") {
+        const next = [
+          ...codes,
+          { id: makeId(), x: point.x - 150, y: point.y - 150, width: 300, height: 300, code: "// Write your code here...", language: "javascript" }
+        ];
+        setCodes(next);
+        pushHistory({ codes: next });
+        setSelectedShape([{ kind: "code", index: next.length - 1, id: next[next.length - 1].id }]);
+      } else if (label.startsWith("Device:")) {
+        const type = label.split(":")[1] as any;
+        let width = 120;
+        let height = 200;
+        if (type === "phone") { width = 180; height = 360; }
+        else if (type === "tablet") { width = 400; height = 550; }
+        else if (type === "desktop") { width = 600; height = 450; }
+        else if (type === "browser") { width = 600; height = 400; }
+
+        const next = [
+          ...frames,
+          { 
+            id: makeId(), 
+            x: point.x - width / 2, 
+            y: point.y - height / 2, 
+            width, 
+            height, 
+            frameNumber: frames.length + 1,
+            deviceType: type
+          },
+        ];
+        setFrames(next);
+        pushHistory({ frames: next });
+        setSelectedShape([{ kind: "frame", index: next.length - 1, id: next[next.length - 1].id }]);
       } else {
         const next = [
           ...polygons,
@@ -476,11 +608,41 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           if (point.x >= f.x && point.x <= f.x + f.width && point.y >= f.y && point.y <= f.y + f.height) return i;
           if (selectedShape.some(s => s.kind === "frame" && s.index === i)) {
             const hs = 14 / zoom;
-            const pad = 0;
-            const x = f.x - pad;
-            const y = f.y - pad;
-            const w = f.width + pad * 2;
-            const h = f.height + pad * 2;
+            const x = f.x, y = f.y, w = f.width, h = f.height;
+            const handles = [
+              { x: x, y: y }, { x: x + w, y: y }, { x: x, y: y + h }, { x: x + w, y: y + h },
+              { x: x + w / 2, y: y }, { x: x + w / 2, y: y + h }, { x: x, y: y + h / 2 }, { x: x + w, y: y + h / 2 }
+            ];
+            if (handles.some(h => Math.abs(point.x - h.x) <= hs / 2 && Math.abs(point.y - h.y) <= hs / 2)) return i;
+          }
+        }
+        return null;
+      })();
+
+      const hitFigure = (() => {
+        for (let i = figures.length - 1; i >= 0; i--) {
+          const f = figures[i];
+          if (point.x >= f.x && point.x <= f.x + f.width && point.y >= f.y && point.y <= f.y + f.height) return i;
+          if (selectedShape.some(s => s.kind === "figure" && s.index === i)) {
+            const hs = 14 / zoom;
+            const x = f.x, y = f.y, w = f.width, h = f.height;
+            const handles = [
+              { x: x, y: y }, { x: x + w, y: y }, { x: x, y: y + h }, { x: x + w, y: y + h },
+              { x: x + w / 2, y: y }, { x: x + w / 2, y: y + h }, { x: x, y: y + h / 2 }, { x: x + w, y: y + h / 2 }
+            ];
+            if (handles.some(h => Math.abs(point.x - h.x) <= hs / 2 && Math.abs(point.y - h.y) <= hs / 2)) return i;
+          }
+        }
+        return null;
+      })();
+
+      const hitCode = (() => {
+        for (let i = codes.length - 1; i >= 0; i--) {
+          const c = codes[i];
+          if (point.x >= c.x && point.x <= c.x + c.width && point.y >= c.y && point.y <= c.y + c.height) return i;
+          if (selectedShape.some(s => s.kind === "code" && s.index === i)) {
+            const hs = 14 / zoom;
+            const x = c.x, y = c.y, w = c.width, h = c.height;
             const handles = [
               { x: x, y: y }, { x: x + w, y: y }, { x: x, y: y + h }, { x: x + w, y: y + h },
               { x: x + w / 2, y: y }, { x: x + w / 2, y: y + h }, { x: x, y: y + h / 2 }, { x: x + w, y: y + h / 2 }
@@ -532,7 +694,9 @@ export const useCanvasInteraction = (props: InteractionProps) => {
       else if (hitArrowShape != null) picked = { kind: "arrow", index: hitArrowShape, id: arrows[hitArrowShape].id };
       else if (hitRect != null) picked = { kind: "rect", index: hitRect, id: rectangles[hitRect].id };
       else if (hitConnector != null) picked = { kind: "connector", index: hitConnector, id: connectors[hitConnector].id };
-      else if (hitFrame != null) picked = { kind: "frame", index: hitFrame, id: frames[hitFrame].id };
+      else if (hitFrame !== null) picked = { kind: "frame", index: hitFrame, id: frames[hitFrame].id };
+      else if (hitFigure !== null) picked = { kind: "figure", index: hitFigure, id: figures[hitFigure].id };
+      else if (hitCode !== null) picked = { kind: "code", index: hitCode, id: codes[hitCode].id };
 
       if (picked) {
         let workingPicked = picked;
@@ -568,6 +732,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           frames: [...frames],
           connectors: [...connectors],
           polygons: [...polygons],
+          figures: [...figures],
+          codes: [...codes],
         };
 
         // Setup Drag Modes
@@ -579,6 +745,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         const s_polygons = workingState ? workingState.polygons : polygons;
         const s_lines = workingState ? workingState.lines : lines;
         const s_arrows = workingState ? workingState.arrows : arrows;
+        const s_figures = workingState ? workingState.figures : figures;
+        const s_codes = workingState ? workingState.codes : codes;
 
         if (workingPicked.kind === "rect") {
           const r = s_rects[workingPicked.index];
@@ -758,7 +926,40 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           ];
           const hitCorner = corners.find(c => Math.abs(point.x - c.x) <= hs / 2 && Math.abs(point.y - c.y) <= hs / 2);
           
-          dragPolyStartRef.current = { ...p };
+          dragPolyStartRef.current = { ...p } as any; // hack
+          if (hitCorner) {
+            dragRectCornerRef.current = { sx: hitCorner.sx, sy: hitCorner.sy };
+            dragModeRef.current = "resize-nwse";
+          } else {
+            const tol = 10 / zoom;
+            const onTop = Math.abs(point.y - p.y) <= tol && point.x >= p.x - tol && point.x <= p.x + p.width + tol;
+            const onBottom = Math.abs(point.y - (p.y + p.height)) <= tol && point.x >= p.x - tol && point.x <= p.x + p.width + tol;
+            const onLeft = Math.abs(point.x - p.x) <= tol && point.y >= p.y - tol && point.y <= p.y + p.height + tol;
+            const onRight = Math.abs(point.x - (p.x + p.width)) <= tol && point.y >= p.y - tol && point.y <= p.y + p.width + tol;
+            
+            if (onTop || onBottom) {
+              dragRectCornerRef.current = { sx: (onLeft ? -1 : (onRight ? 1 : 0)), sy: (onTop ? -1 : 1) };
+              dragModeRef.current = "resize-v";
+            } else if (onLeft || onRight) {
+              dragRectCornerRef.current = { sx: (onLeft ? -1 : 1), sy: 0 };
+              dragModeRef.current = "resize-h";
+            } else {
+              dragModeRef.current = "move";
+            }
+          }
+        } else if (workingPicked.kind === "figure") {
+          const p = s_figures[workingPicked.index];
+          if (!p) return;
+          const hs = 12 / zoom;
+          const corners = [ 
+            { x: p.x, y: p.y, sx: -1, sy: -1 }, 
+            { x: p.x + p.width, y: p.y, sx: 1, sy: -1 }, 
+            { x: p.x, y: p.y + p.height, sx: -1, sy: 1 }, 
+            { x: p.x + p.width, y: p.y + p.height, sx: 1, sy: 1 } 
+          ];
+          const hitCorner = corners.find(c => Math.abs(point.x - c.x) <= hs / 2 && Math.abs(point.y - c.y) <= hs / 2);
+          
+          dragPolyStartRef.current = { ...p } as any;
           if (hitCorner) {
             dragRectCornerRef.current = { sx: hitCorner.sx, sy: hitCorner.sy };
             dragModeRef.current = "resize-nwse";
@@ -779,26 +980,35 @@ export const useCanvasInteraction = (props: InteractionProps) => {
               dragModeRef.current = "move";
             }
           }
-        } else if (workingPicked.kind === "line") {
-          const l = s_lines[workingPicked.index];
-          if (!l) return;
-          const hs = 10 / zoom;
-          const handles = [ { x: l.x1, y: l.y1, anchor: "start" as const }, { x: l.x2, y: l.y2, anchor: "end" as const } ];
-          const hit = handles.find(h => Math.abs(point.x - h.x) <= hs && Math.abs(point.y - h.y) <= hs);
-          dragLineStartRef.current = { ...l };
-          dragRectCornerRef.current = hit ? { sx: hit.anchor === "start" ? -1 : 1, sy: 1 } : null;
-          dragModeRef.current = hit ? "resize-line" : "move";
-        } else if (workingPicked.kind === "arrow") {
-          const a = s_arrows[workingPicked.index];
-          if (!a) return;
-          const hs = 10 / zoom;
-          const handles = [ { x: a.x1, y: a.y1, anchor: "start" as const }, { x: a.x2, y: a.y2, anchor: "end" as const } ];
-          const hit = handles.find(h => Math.abs(point.x - h.x) <= hs && Math.abs(point.y - h.y) <= hs);
-          dragArrowStartRef.current = { ...a };
-          dragRectCornerRef.current = hit ? { sx: hit.anchor === "start" ? -1 : 1, sy: 1 } : null;
-          dragModeRef.current = hit ? "resize-arrow" : "move";
+        } else if (workingPicked.kind === "code") {
+          const p = s_codes[workingPicked.index];
+          if (!p) return;
+          const hs = 12 / zoom;
+          const corners = [ 
+            { x: p.x, y: p.y, sx: -1, sy: 0 }, 
+            { x: p.x + p.width, y: p.y, sx: 1, sy: 0 }, 
+            { x: p.x, y: p.y + p.height, sx: -1, sy: 0 }, 
+            { x: p.x + p.width, y: p.y + p.height, sx: 1, sy: 0 } 
+          ];
+          const hitCorner = corners.find(c => Math.abs(point.x - c.x) <= hs / 2 && Math.abs(point.y - c.y) <= hs / 2);
+          
+          dragPolyStartRef.current = { ...p } as any;
+          if (hitCorner) {
+            dragRectCornerRef.current = { sx: hitCorner.sx, sy: 0 };
+            dragModeRef.current = "resize-h";
+          } else {
+            const tol = 10 / zoom;
+            const onLeft = Math.abs(point.x - p.x) <= tol;
+            const onRight = Math.abs(point.x - (p.x + p.width)) <= tol;
+            
+            if (onLeft || onRight) {
+              dragRectCornerRef.current = { sx: (onLeft ? -1 : 1), sy: 0 };
+              dragModeRef.current = "resize-h";
+            } else {
+              dragModeRef.current = "move";
+            }
+          }
         }
-
         (event.target as HTMLElement).setPointerCapture(event.pointerId);
         return;
       } else {
@@ -827,17 +1037,30 @@ export const useCanvasInteraction = (props: InteractionProps) => {
       }
       (event.target as HTMLElement).setPointerCapture(event.pointerId);
     }
-    else if (tool === "Pencil") { isDrawingPathRef.current = true; setCurrentPath({ points: [point] }); (event.target as HTMLElement).setPointerCapture(event.pointerId); }
+    else if (tool === "Pencil") { isDrawingPathRef.current = true; setCurrentPath({ points: [point], stroke: strokeColor, strokeWidth: strokeWidth }); (event.target as HTMLElement).setPointerCapture(event.pointerId); }
     else if (tool === "Frame") { rectStartRef.current = point; isDrawingFrameRef.current = true; setCurrentFrame({ x: point.x, y: point.y, width: 0, height: 0 }); (event.target as HTMLElement).setPointerCapture(event.pointerId); }
-    else if (tool === "Text") { 
-      setTextEditor({ canvasX: point.x, canvasY: point.y, value: "", fontSize: 18, index: null }); 
-      setSelectedShape([]); 
+    else if (tool === "Text") {
+      const initialFontSize = 18;
+      const measured = measureText("", initialFontSize);
+      setTextEditor({ 
+        canvasX: point.x, 
+        canvasY: point.y, 
+        value: "", 
+        fontSize: initialFontSize, 
+        boxWidth: measured.width || 20,
+        boxHeight: measured.height || 25,
+        index: null 
+      });
+      setSelectedShape([]);
+      setActiveTool("Select");
     }
-  }, [resolveTool, startPan, isPlusMenuOpen, setIsPlusMenuOpen, toCanvasPointFromClient, pendingAddShapeLabel, rectangles, setRectangles, pushHistory, setSelectedShape, circles, setCircles, polygons, setPolygons, setActiveTool, setPendingAddShapeLabel, activeTool, pendingAddIcon, setImages, images, setPendingAddIcon, setSelectionRect, zoom, texts, lines, arrows, frames, duplicateForDrag, setCurrentRect, setCurrentCircle, setCurrentLine, setCurrentArrow, setCurrentPath, setCurrentFrame, setTextEditor, eraseAtPoint, selectedShape, anchorHandles, hoverAnchor, setPendingConnector, connectors, getAnchorPoint]);
+  }, [resolveTool, startPan, isPlusMenuOpen, setIsPlusMenuOpen, toCanvasPointFromClient, pendingAddShapeLabel, rectangles, setRectangles, pushHistory, setSelectedShape, circles, setCircles, polygons, setPolygons, setActiveTool, setPendingAddShapeLabel, activeTool, pendingAddIcon, setImages, images, setPendingAddIcon, setSelectionRect, zoom, texts, lines, arrows, frames, duplicateForDrag, setCurrentRect, setCurrentCircle, setCurrentLine, setCurrentArrow, setCurrentPath, setCurrentFrame, setTextEditor, eraseAtPoint, selectedShape, anchorHandles, hoverAnchor, setPendingConnector, connectors, getAnchorPoint, strokeColor, strokeWidth, theme, figures, setFigures, codes, setCodes, isPanningRef, panStartRef, pointerStartRef, textEditor, commitTextEditor, editingCodeId]);
 
   const handlePointerMove = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
     const point = toCanvasPointFromClient(event.clientX, event.clientY);
     const tool = resolveTool(event);
+
+    const isDragging = dragModeRef.current !== "none" || isErasingRef.current || isDrawingRectRef.current || isDrawingCircleRef.current || isDrawingLineRef.current || isDrawingArrowRef.current || isDrawingPathRef.current || isDrawingFrameRef.current;
 
     // Cursor Styling & Hover State
     let nextCursor = "default";
@@ -846,20 +1069,27 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     } else if (tool === "Hand") {
       nextCursor = "grab";
     } else if (tool === "Eraser") {
-      const svg = `<svg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M17.9995 13L10.9995 6.00004M20.9995 21H7.99955M10.9368 20.0628L19.6054 11.3941C20.7935 10.2061 21.3875 9.61207 21.6101 8.92709C21.8058 8.32456 21.8058 7.67551 21.6101 7.07298C21.3875 6.388 20.7935 5.79397 19.6054 4.60592L19.3937 4.39415C18.2056 3.2061 17.6116 2.61207 16.9266 2.38951C16.3241 2.19373 15.675 2.19373 15.0725 2.38951C14.3875 2.61207 13.7935 3.2061 12.6054 4.39415L4.39366 12.6059C3.20561 13.794 2.61158 14.388 2.38902 15.073C2.19324 15.6755 2.19324 16.3246 2.38902 16.9271C2.61158 17.6121 3.20561 18.2061 4.39366 19.3941L5.06229 20.0628C5.40819 20.4087 5.58114 20.5816 5.78298 20.7053C5.96192 20.815 6.15701 20.8958 6.36108 20.9448C6.59126 21 6.83585 21 7.32503 21H8.67406C9.16324 21 9.40784 21 9.63801 20.9448C9.84208 20.8958 10.0372 20.815 10.2161 20.7053C10.418 20.5816 10.5909 20.4087 10.9368 20.0628Z' stroke='%23ef4444' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E`;
-      nextCursor = `url("data:image/svg+xml,${svg}") 2 22, auto`;
+      const radius = Math.max(8, strokeWidth);
+      const cursorSize = radius * 2;
+      const color = theme === "dark" ? "%23ffffff" : "%23000000";
+      const svg = `<svg width='${cursorSize}' height='${cursorSize}' viewBox='0 0 ${cursorSize} ${cursorSize}' xmlns='http://www.w3.org/2000/svg'><circle cx='${radius}' cy='${radius}' r='${radius-2}' fill='${color}' stroke='white' stroke-width='1'/></svg>`;
+      nextCursor = `url("data:image/svg+xml,${svg}") ${radius} ${radius}, auto`;
+    } else if (tool === "Pencil") {
+      const color = theme === "dark" ? "%23ffffff" : "%23000000";
+      const svg = `<svg width='24' height='24' viewBox='-5 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'><path d='M18.344 4.781l-3.406 3.063s1.125 0.688 2.156 1.656c1 0.969 1.719 2.063 1.719 2.063l2.906-3.469s-0.031-0.625-1.406-1.969c-1.406-1.344-1.969-1.344-1.969-1.344zM7.25 21.938l-0.156 1.5 10.813-11.25s-0.719-1-1.594-1.844c-0.906-0.875-1.938-1.563-1.938-1.563l-10.813 11.25 1.688-0.094 0.188 1.813zM0 26.719l2.688-5.5 1.5-0.125 0.125 1.719 1.813 0.25-0.188 1.375-5.438 2.75z' fill='${color}'/></svg>`;
+      nextCursor = `url("data:image/svg+xml,${svg}") 3 20, auto`;
     } else if (tool !== "Select") {
       nextCursor = "crosshair";
+    } else if (dragModeRef.current !== "none") {
+      if (dragModeRef.current === "move") {
+        nextCursor = "move";
+      } else if (dragModeRef.current.includes("-h")) nextCursor = "ew-resize";
+      else if (dragModeRef.current.includes("-v")) nextCursor = "ns-resize";
+      else nextCursor = "nwse-resize";
     } else {
-      // tool === "Select"
-      if (dragModeRef.current !== "none") {
-        if (dragModeRef.current === "move") nextCursor = "move";
-        else if (dragModeRef.current.includes("-h")) nextCursor = "ew-resize";
-        else if (dragModeRef.current.includes("-v")) nextCursor = "ns-resize";
-        else if (dragModeRef.current === "resize-br" || dragModeRef.current === "resize-image" || dragModeRef.current === "resize-text" || dragModeRef.current === "resize-frame") nextCursor = "nwse-resize";
-        else nextCursor = "move";
-      } else if (selectedShape.length > 0) {
-        const { kind, index } = selectedShape[0];
+      const { rectangles, circles, images, texts, frames, polygons, lines, arrows, figures, codes } = stateRef.current;
+      if (selectedShapeRef.current.length > 0) {
+        const { kind, index } = selectedShapeRef.current[0];
         let s: any = null;
         if (kind === "rect") s = rectangles[index];
         else if (kind === "circle") s = circles[index];
@@ -869,17 +1099,16 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         else if (kind === "poly") s = polygons[index];
         else if (kind === "line") s = lines[index];
         else if (kind === "arrow") s = arrows[index];
+        else if (kind === "figure") s = figures[index];
+        else if (kind === "code") s = codes[index];
 
         if (s) {
           let b = { x: 0, y: 0, w: 0, h: 0 };
-          if (kind === "circle") {
-            b = { x: s.x - s.rx, y: s.y - s.ry, w: s.rx * 2, h: s.ry * 2 };
-          } else if (kind === "line" || kind === "arrow") {
+          if (kind === "circle") { b = { x: s.x - s.rx, y: s.y - s.ry, w: s.rx * 2, h: s.ry * 2 }; }
+          else if (kind === "line" || kind === "arrow") {
             const x = Math.min(s.x1, s.x2); const y = Math.min(s.y1, s.y2);
             b = { x, y, w: Math.max(1, Math.abs(s.x2 - s.x1)), h: Math.max(1, Math.abs(s.y2 - s.y1)) };
-          } else {
-            b = { x: s.x, y: s.y, w: s.width, h: s.height };
-          }
+          } else { b = { x: s.x, y: s.y, w: s.width, h: s.height }; }
 
           const tol = 10 / zoom;
           const onLeft = Math.abs(point.x - b.x) <= tol;
@@ -890,40 +1119,44 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           const inY = point.y >= b.y - tol && point.y <= b.y + b.h + tol;
 
           if (inX && inY) {
-            if ((onLeft && onTop) || (onRight && onBottom)) nextCursor = "nwse-resize";
-            else if ((onRight && onTop) || (onLeft && onBottom)) nextCursor = "nesw-resize";
-            else if (onLeft || onRight) nextCursor = "ew-resize";
-            else if (onTop || onBottom) nextCursor = "ns-resize";
-            else nextCursor = "move";
+            if (kind === "code") {
+              // Code Block: only horizontal resizing
+              if ((onLeft || onRight) && !(onTop || onBottom)) { 
+                 nextCursor = "ew-resize";
+              } else {
+                 nextCursor = "move"; // Don't show resize cursor for corners or top/bottom
+              }
+            } else {
+              if ((onLeft && onTop) || (onRight && onBottom)) nextCursor = "nwse-resize";
+              else if ((onRight && onTop) || (onLeft && onBottom)) nextCursor = "nesw-resize";
+              else if (onLeft || onRight) nextCursor = "ew-resize";
+              else if (onTop || onBottom) nextCursor = "ns-resize";
+              else nextCursor = "move";
+            }
           }
         }
       }
       
-      if (nextCursor === "default") {
-        const hit = [...rectangles, ...circles, ...images, ...texts, ...frames, ...polygons].some(s => {
+        const hitNormal = [...rectangles, ...circles, ...images, ...texts, ...frames, ...polygons, ...codes, ...figures].some(s => {
           if ("rx" in s) {
             const dx = (point.x - s.x) / s.rx; const dy = (point.y - s.y) / s.ry;
             return dx * dx + dy * dy <= 1.05;
           }
           return point.x >= s.x && point.x <= s.x + (s.width || 0) && point.y >= s.y && point.y <= s.y + (s.height || 0);
         }) || [...lines, ...arrows].some(l => distToSegment(point.x, point.y, l.x1, l.y1, l.x2, l.y2) <= 8 / zoom);
-        if (hit) nextCursor = "move";
+        
+        if (hitNormal) nextCursor = "move";
       }
-    }
-    if (nextCursor !== cursorStyle) {
+    if (nextCursor !== cursorStyleRef.current) {
       setCursorStyle(nextCursor);
     }
 
-    if (tool === "Arrow") {
+    // Anchor Detection for Arrows
+    let nearest: any = null;
+    if (tool === "Arrow" && !isDragging) {
+      const { rectangles, images, texts, frames, polygons, circles, anchorHandles } = stateRef.current;
       const tolerance = 14 / zoom;
       const borderTolerance = 20 / zoom;
-      let nearest: {
-        kind: ShapeKind;
-        shapeId: string;
-        anchor: AnchorSide;
-        percent?: number;
-        point: { x: number; y: number };
-      } | null = null;
       let bestDist = tolerance;
 
       for (const h of anchorHandles) {
@@ -985,10 +1218,16 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         }
       }
 
-      setHoverAnchor(nearest);
       if (pendingConnector) setPendingConnector((prev) => prev ? { ...prev, previewPoint: nearest ? nearest.point : point } : null);
-    } else if (hoverAnchor) {
-      setHoverAnchor(null);
+    }
+    
+    // Final Hover Anchor update - only if changes from current ref
+    const hasChanged = nearest?.shapeId !== hoverAnchorRef.current?.shapeId || 
+                       nearest?.anchor !== hoverAnchorRef.current?.anchor || 
+                       nearest?.percent !== hoverAnchorRef.current?.percent;
+
+    if (hasChanged) {
+      setHoverAnchor(nearest);
     }
 
     if (isPanningRef.current) {
@@ -1003,7 +1242,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
       return;
     }
 
-    if (tool === "Select" && selectedShape.length > 0) {
+    if (tool === "Select" && selectedShapeRef.current.length > 0) {
       if (dragModeRef.current === "move" && dragShapesStartRef.current) {
         const dx = point.x - pointerStartRef.current.x;
         const dy = point.y - pointerStartRef.current.y;
@@ -1024,7 +1263,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           
           setRectangles(prev => {
             const next = prev.map(r => {
-              const sel = selectedShape.find(s => s.kind === "rect" && s.id === r.id);
+              const sel = selectedShapeRef.current.find(s => s.kind === "rect" && s.id === r.id);
               if (sel) {
                 const startR = startState.rectangles.find(sr => sr.id === r.id);
                 if (startR) {
@@ -1041,7 +1280,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
           setCircles(prev => {
             const next = prev.map(c => {
-              const sel = selectedShape.find(s => s.kind === "circle" && s.id === c.id);
+              const sel = selectedShapeRef.current.find(s => s.kind === "circle" && s.id === c.id);
               if (sel) {
                 const startC = startState.circles.find(sc => sc.id === c.id);
                 if (startC) {
@@ -1058,7 +1297,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
           setImages(prev => {
             const next = prev.map(im => {
-              const sel = selectedShape.find(s => s.kind === "image" && s.id === im.id);
+              const sel = selectedShapeRef.current.find(s => s.kind === "image" && s.id === im.id);
               if (sel) {
                 const startIm = startState.images.find(sim => sim.id === im.id);
                 if (startIm) {
@@ -1075,7 +1314,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
           setTexts(prev => {
             const next = prev.map(t => {
-              const sel = selectedShape.find(s => s.kind === "text" && s.id === t.id);
+              const sel = selectedShapeRef.current.find(s => s.kind === "text" && s.id === t.id);
               if (sel) {
                 const startT = startState.texts.find(st => st.id === t.id);
                 if (startT) {
@@ -1092,7 +1331,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
           setFrames(prev => {
             const next = prev.map(f => {
-              const sel = selectedShape.find(s => s.kind === "frame" && s.id === f.id);
+              const sel = selectedShapeRef.current.find(s => s.kind === "frame" && s.id === f.id);
               if (sel) {
                 const startF = startState.frames.find(sf => sf.id === f.id);
                 if (startF) {
@@ -1109,7 +1348,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
           setPolygons(prev => {
             const next = prev.map(p => {
-              const sel = selectedShape.find(s => s.kind === "poly" && s.id === p.id);
+              const sel = selectedShapeRef.current.find(s => s.kind === "poly" && s.id === p.id);
               if (sel) {
                 const startP = startState.polygons.find(sp => sp.id === p.id);
                 if (startP) {
@@ -1126,7 +1365,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
           setLines(prev => {
             const next = prev.map(l => {
-              const sel = selectedShape.find(s => s.kind === "line" && s.id === l.id);
+              const sel = selectedShapeRef.current.find(s => s.kind === "line" && s.id === l.id);
               if (sel) {
                 const startL = startState.lines.find(sl => sl.id === l.id);
                 if (startL) {
@@ -1145,7 +1384,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
           setArrows(prev => {
             const next = prev.map(a => {
-              const sel = selectedShape.find(s => s.kind === "arrow" && s.id === a.id);
+              const sel = selectedShapeRef.current.find(s => s.kind === "arrow" && s.id === a.id);
               if (sel) {
                 const startA = startState.arrows.find(sa => sa.id === a.id);
                 if (startA) {
@@ -1158,6 +1397,40 @@ export const useCanvasInteraction = (props: InteractionProps) => {
                 }
               }
               return a;
+            });
+            return next;
+          });
+
+          setFigures(prev => {
+            const next = prev.map(f => {
+              const sel = selectedShapeRef.current.find(s => s.kind === "figure" && s.id === f.id);
+              if (sel) {
+                const startF = startState.figures.find(sf => sf.id === f.id);
+                if (startF) {
+                  const newX = startF.x + dx;
+                  const newY = startF.y + dy;
+                  if (f.x === newX && f.y === newY) return f;
+                  return { ...f, x: newX, y: newY };
+                }
+              }
+              return f;
+            });
+            return next;
+          });
+
+          setCodes(prev => {
+            const next = prev.map(c => {
+              const sel = selectedShapeRef.current.find(s => s.kind === "code" && s.id === c.id);
+              if (sel) {
+                const startC = startState.codes.find(sc => sc.id === c.id);
+                if (startC) {
+                  const newX = startC.x + dx;
+                  const newY = startC.y + dy;
+                  if (c.x === newX && c.y === newY) return c;
+                  return { ...c, x: newX, y: newY };
+                }
+              }
+              return c;
             });
             return next;
           });
@@ -1239,6 +1512,21 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           const base = dragArrowStartRef.current; const startSelected = (dragRectCornerRef.current?.sx || 1) < 0;
           const newArrow = startSelected ? { ...base, x1: base.x1 + dx, y1: base.y1 + dy } : { ...base, x2: base.x2 + dx, y2: base.y2 + dy };
           setArrows(prev => prev.map((l, i) => (i === index ? newArrow : l)));
+        } else if (kind === "figure" && dragPolyStartRef.current) {
+          const base = dragPolyStartRef.current; const corner = dragRectCornerRef.current ?? { sx: 1, sy: 1 };
+          const eSx = isV ? 0 : corner.sx; const eSy = isH ? 0 : corner.sy;
+          const newW = Math.max(20/zoom, base.width + dx * eSx);
+          const newH = Math.max(20/zoom, base.height + dy * eSy);
+          const newX = eSx < 0 ? base.x + (base.width - newW) : base.x;
+          const newY = eSy < 0 ? base.y + (base.height - newH) : base.y;
+          setFigures(prev => prev.map((f, i) => i === index ? { ...f, x: newX, y: newY, width: newW, height: newH } : f));
+        } else if (kind === "code" && dragPolyStartRef.current) {
+          const base = dragPolyStartRef.current; 
+          const corner = dragRectCornerRef.current ?? { sx: 1, sy: 0 };
+          const eSx = isV ? 0 : corner.sx;
+          const newW = Math.max(40/zoom, base.width + dx * eSx);
+          const newX = eSx < 0 ? base.x + (base.width - newW) : base.x;
+          setCodes(prev => prev.map((c, i) => i === index ? { ...c, x: newX, width: newW } : c));
         }
       }
     }
@@ -1277,14 +1565,16 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         const last = prev.points[prev.points.length - 1];
         let { x, y } = point;
         if (event.shiftKey && last) { if (Math.abs(x - last.x) >= Math.abs(y - last.y)) y = last.y; else x = last.x; }
-        return { points: [...prev.points, { x, y }] };
+        return { ...prev, points: [...prev.points, { x, y }] };
       });
     } else if (tool === "Frame" && isDrawingFrameRef.current) {
       let width = point.x - rectStartRef.current.x; let height = point.y - rectStartRef.current.y;
       if (event.shiftKey) { const size = Math.max(Math.abs(width), Math.abs(height)); width = width >= 0 ? size : -size; height = height >= 0 ? size : -size; }
       setCurrentFrame({ x: rectStartRef.current.x, y: rectStartRef.current.y, width, height });
+    } else if (isErasingRef.current) {
+      eraseAtPoint(point);
     }
-  }, [toCanvasPointFromClient, resolveTool, isHandPanning, zoom, anchorHandles, hoverAnchor, pendingConnector, setHoverAnchor, selectedShape, setRectangles, setCircles, setImages, setTexts, setFrames, setPolygons, setArrows, setLines, isPanningRef, panStartRef, pointerStartRef, setPan, isErasingRef, eraseAtPoint, isDrawingRectRef, rectStartRef, setCurrentRect, isDrawingCircleRef, circleStartRef, setCurrentCircle, isDrawingLineRef, setCurrentLine, isDrawingArrowRef, setCurrentArrow, isDrawingPathRef, setCurrentPath, isDrawingFrameRef, setCurrentFrame, setSelectionRect, lines, arrows, circles]);
+  }, [toCanvasPointFromClient, resolveTool, isHandPanning, zoom, pendingConnector, setHoverAnchor, setRectangles, setCircles, setImages, setTexts, setFrames, setPolygons, setArrows, setLines, isPanningRef, panStartRef, pointerStartRef, setPan, isErasingRef, eraseAtPoint, isDrawingRectRef, rectStartRef, setCurrentRect, isDrawingCircleRef, circleStartRef, setCurrentCircle, isDrawingLineRef, setCurrentLine, isDrawingArrowRef, setCurrentArrow, isDrawingPathRef, setCurrentPath, isDrawingFrameRef, setCurrentFrame, setSelectionRect, theme, strokeWidth, figures, codes, setFigures, setCodes, selectedShape]);
 
   const handlePointerUp = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
     const tool = pointerToolRef.current || resolveTool(event);
@@ -1427,9 +1717,13 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     } else if (tool === "Pencil" && isDrawingPathRef.current) {
       isDrawingPathRef.current = false;
       if (currentPath && currentPath.points.length > 2) {
-        const next = [...paths, { id: makeId(), points: currentPath.points }];
+        const next = [...paths, { 
+          id: makeId(), 
+          points: currentPath.points,
+          stroke: currentPath.stroke || strokeColor,
+          strokeWidth: currentPath.strokeWidth || strokeWidth
+        }];
         setPaths(next); pushHistory({ paths: next });
-        setActiveTool("Select");
       }
       setCurrentPath(null);
     } else if (tool === "Frame" && isDrawingFrameRef.current) {
@@ -1448,15 +1742,69 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     
     setRerenderTick(t => t + 1);
     (event.target as HTMLElement).releasePointerCapture(event.pointerId);
-  }, [resolveTool, setIsHandPanning, pushHistory, selectionRect, selectedShape, rectangles, setRectangles, pan, zoom, canvasRef, setCurrentRect, setCurrentCircle, setCurrentLine, setCurrentArrow, setCurrentPath, setCurrentFrame, circles, setCircles, lines, setLines, arrows, setArrows, paths, setPaths, frames, setFrames, connectors, setConnectors, pendingConnector, hoverAnchor, toCanvasPointFromClient, currentLine, currentArrow, currentPath, setRerenderTick]);
+  }, [resolveTool, setIsHandPanning, pushHistory, selectionRect, selectedShape, rectangles, setRectangles, pan, zoom, canvasRef, setCurrentRect, setCurrentCircle, setCurrentLine, setCurrentArrow, setCurrentPath, setCurrentFrame, circles, setCircles, lines, setLines, arrows, setArrows, paths, setPaths, frames, setFrames, connectors, setConnectors, pendingConnector, hoverAnchor, toCanvasPointFromClient, currentLine, currentArrow, currentPath, setRerenderTick, strokeColor, strokeWidth, theme, figures, setFigures, codes, setCodes]);
 
   const handleDoubleClick = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
     const point = toCanvasPointFromClient(event.clientX, event.clientY);
-    if (activeTool === "Text") {
-      setTextEditor({ canvasX: point.x, canvasY: point.y, value: "", fontSize: 18, index: null });
-      setSelectedShape([]);
+    const tool = resolveTool(event as any);
+
+    if (tool === "Select" || tool === "Hand") {
+      const hitFigIndex = figures.findIndex(f => 
+        point.x >= f.x && point.x <= f.x + f.width && 
+        point.y >= f.y - 30/zoom && point.y <= f.y + 10/zoom
+      );
+      if (hitFigIndex !== -1) {
+        const f = figures[hitFigIndex];
+        const initialText = f.title || `Figure ${f.figureNumber}`;
+        const measured = measureText(initialText, 12 / zoom);
+        setTextEditor({ 
+          canvasX: f.x, 
+          canvasY: f.y - 20/zoom, 
+          value: initialText, 
+          fontSize: 12/zoom, 
+          fill: theme === "dark" ? "white" : "black",
+          boxWidth: measured.width,
+          boxHeight: measured.height,
+          index: hitFigIndex, 
+          kind: "figure" 
+        } as any);
+        return;
+      }
+
+      const hitTextIndex = texts.findIndex(t => 
+        point.x >= t.x && point.x <= t.x + t.width && 
+        point.y >= t.y && point.y <= t.y + t.height
+      );
+      if (hitTextIndex !== -1) {
+        const t = texts[hitTextIndex];
+        const measured = measureText(t.text, t.fontSize, t.fontFamily);
+        setTextEditor({ 
+          canvasX: t.x, 
+          canvasY: t.y, 
+          value: t.text, 
+          fontSize: t.fontSize, 
+          fontFamily: t.fontFamily,
+          textAlign: t.textAlign,
+          fill: t.fill,
+          boxWidth: measured.width,
+          boxHeight: measured.height,
+          index: hitTextIndex 
+        });
+        setSelectedShape([]);
+        return;
+      }
+
+      const hitCodeIndex = codes.findIndex(c => 
+        point.x >= c.x && point.x <= c.x + c.width && 
+        point.y >= c.y && point.y <= c.y + c.height
+      );
+      if (hitCodeIndex !== -1) {
+        setEditingCodeId(codes[hitCodeIndex].id);
+        setSelectedShape([]);
+        return;
+      }
     }
-  }, [activeTool, toCanvasPointFromClient, setTextEditor, setSelectedShape]);
+  }, [activeTool, figures, texts, codes, zoom, toCanvasPointFromClient, resolveTool, setTextEditor, setEditingCodeId, setSelectedShape]);
 
   const handleWheel = useCallback((event: WheelEvent) => {
     // Crucial: calling on the native event to prevent browser zoom
@@ -1515,22 +1863,6 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     });
   }, [toCanvasPointFromClient, images, setImages, pushHistory, imageCacheRef]);
 
-  const commitTextEditor = useCallback(() => {
-    if (!textEditor) return;
-    const val = textEditor.value.trim();
-    if (!val) { setTextEditor(null); return; }
-    const size = measureText(val, textEditor.fontSize);
-    if (textEditor.index === null) {
-      const next = [...texts, { id: makeId(), x: textEditor.canvasX, y: textEditor.canvasY, text: val, fontSize: textEditor.fontSize, width: size.width, height: size.height }];
-      setTexts(next); pushHistory({ texts: next });
-    } else {
-      const next = texts.map((t, i) => i === textEditor.index ? { ...t, text: val, width: size.width, height: size.height } : t);
-      setTexts(next); pushHistory({ texts: next });
-    }
-    setTextEditor(null);
-  }, [textEditor, texts, setTexts, pushHistory]);
-
-  const cancelTextEditor = useCallback(() => setTextEditor(null), []);
 
   const fitToScreen = useCallback(() => {
     const bounds = getContentBounds();
@@ -1545,8 +1877,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
   }, [getContentBounds, canvasRef, clampZoom, setZoom, setPan]);
 
   return {
-    cursorStyle, hoverAnchor, pendingConnector, textEditor, selectionRect,
-    setHoverAnchor, setPendingConnector, setTextEditor, setSelectionRect,
+    cursorStyle, hoverAnchor, pendingConnector, textEditor, selectionRect, editingCodeId,
+    setHoverAnchor, setPendingConnector, setTextEditor, setSelectionRect, setEditingCodeId,
     toCanvasPointFromClient, canvasToClient, startPan, resolveTool, setCursorStyle, 
     handlePointerDown, handlePointerMove, handlePointerUp, handleDoubleClick, handleWheel, handleDrop,
     commitTextEditor, cancelTextEditor, fitToScreen

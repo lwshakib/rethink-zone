@@ -7,11 +7,8 @@ import {
   Minus,
   ArrowRight,
   Type,
-  Frame,
-  Eraser,
   PenLine,
   LucideIcon,
-  Plus,
 } from "lucide-react";
 import { Tool } from "../types";
 
@@ -29,8 +26,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ activeTool, setActiveTool }) => {
     { icon: Minus, label: "Line" },
     { icon: ArrowRight, label: "Arrow" },
     { icon: Type, label: "Text" },
-    { icon: Frame, label: "Frame" },
-    { icon: Eraser, label: "Eraser" },
     { icon: PenLine, label: "Pencil" },
   ];
 

@@ -38,6 +38,8 @@ import {
   drawArrow,
   drawConnector,
   drawPath,
+  drawFigure,
+  drawSelectionOverlay,
 } from "./utils/drawing";
 
 import { useCanvasView } from "./hooks/useCanvasView";
@@ -55,6 +57,8 @@ import { TextEditor } from "./components/TextEditor";
 import { FrameButtons } from "./components/FrameButtons";
 import { ConnectorHandles } from "./components/ConnectorHandles";
 import FloatingToolbar from "./components/FloatingToolbar";
+import { PencilToolbar } from "./components/PencilToolbar";
+import CodeBlock from "./components/CodeBlock";
 
 const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -83,17 +87,19 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   const {
     rectangles, setRectangles, circles, setCircles, lines, setLines, arrows, setArrows,
     paths, setPaths, images, setImages, texts, setTexts, frames, setFrames,
-    polygons, setPolygons, connectors, setConnectors, selectedShape, setSelectedShape,
-    currentRect, setCurrentRect, currentCircle, setCurrentCircle, currentLine, setCurrentLine,
-    currentArrow, setCurrentArrow, currentPath, setCurrentPath, currentFrame, setCurrentFrame,
-    imageCacheRef, setHoverAnchor, hoverAnchor
+    polygons, setPolygons, connectors, setConnectors, figures, setFigures, codes, setCodes,
+    selectedShape, setSelectedShape, hoverAnchor, setHoverAnchor,
+    currentRect, setCurrentRect, currentCircle, setCurrentCircle,
+    currentLine, setCurrentLine, currentArrow, setCurrentArrow,
+    currentPath, setCurrentPath, currentFrame, setCurrentFrame,
+    imageCacheRef, strokeColor, setStrokeColor, strokeWidth, setStrokeWidth
   } = useCanvasShapes(initialData);
 
   const {
     history, setHistory, historyIndex, setHistoryIndex, pushHistory: basePushHistory,
     undo: _undo, redo: _redo, canUndo, canRedo, isUndoRedoRef
   } = useCanvasHistory({
-    rectangles, circles, lines, arrows, paths, images, texts, frames, connectors, polygons
+    rectangles, circles, lines, arrows, paths, images, texts, frames, connectors, polygons, figures, codes
   });
 
   const [isHandPanning, setIsHandPanning] = useState(false);
@@ -112,8 +118,10 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       frames: overrides?.frames ?? frames,
       connectors: overrides?.connectors ?? connectors,
       polygons: overrides?.polygons ?? polygons,
+      figures: overrides?.figures ?? figures,
+      codes: overrides?.codes ?? codes,
     }),
-    [rectangles, circles, lines, arrows, paths, images, texts, frames, connectors, polygons]
+    [rectangles, circles, lines, arrows, paths, images, texts, frames, connectors, polygons, figures, codes]
   );
 
   const pushHistory = useCallback((overrides?: Partial<HistoryEntry>) => {
@@ -124,7 +132,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   const { deleteSelected, duplicateSelection } = useCanvasCommands({
     rectangles, setRectangles, circles, setCircles, lines, setLines, arrows, setArrows,
     paths, setPaths, images, setImages, texts, setTexts, frames, setFrames,
-    polygons, setPolygons, connectors, setConnectors, selectedShape, setSelectedShape
+    polygons, setPolygons, connectors, setConnectors, figures, setFigures, codes, setCodes, selectedShape, setSelectedShape
   }, pushHistory);
 
   // Icons library
@@ -166,6 +174,8 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     texts.forEach((t) => addRectHandles(t, "text"));
     frames.forEach((f) => addRectHandles(f, "frame"));
     polygons.forEach((p) => addRectHandles(p, "poly"));
+    figures.forEach((f) => addRectHandles(f, "figure"));
+    codes.forEach((c) => addRectHandles(c, "code"));
 
     circles.forEach((c) => {
       (["top", "right", "bottom", "left"] as AnchorSide[]).forEach((side) => {
@@ -178,7 +188,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       });
     });
     return handles;
-  }, [activeTool, circles, rectangles, images, texts, frames, polygons]);
+  }, [activeTool, circles, rectangles, images, texts, frames, polygons, figures, codes]);
 
   const onUpdateShape = useCallback((kind: string, index: number, updates: Record<string, any>) => {
     const updateFn = <T extends object>(prev: T[]) => {
@@ -191,10 +201,26 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     else if (kind === "poly") { setPolygons((prev) => { const n = updateFn(prev); pushHistory({ polygons: n }); return n; }); }
     else if (kind === "line") { setLines((prev) => { const n = updateFn(prev); pushHistory({ lines: n }); return n; }); }
     else if (kind === "arrow") { setArrows((prev) => { const n = updateFn(prev); pushHistory({ arrows: n }); return n; }); }
-    else if (kind === "text") { setTexts((prev) => { const n = updateFn(prev); pushHistory({ texts: n }); return n; }); }
+    else if (kind === "text") { 
+      setTexts((prev) => { 
+        const next = [...prev]; 
+        const old = next[index];
+        const updated = { ...old, ...updates };
+        if (updates.fontSize !== undefined || updates.text !== undefined || updates.fontFamily !== undefined) {
+           const size = measureText(updated.text, updated.fontSize, updated.fontFamily);
+           updated.width = size.width;
+           updated.height = size.height;
+        }
+        next[index] = updated;
+        pushHistory({ texts: next }); 
+        return next; 
+      }); 
+    }
     else if (kind === "frame") { setFrames((prev) => { const n = updateFn(prev); pushHistory({ frames: n }); return n; }); }
     else if (kind === "image") { setImages((prev) => { const n = updateFn(prev); pushHistory({ images: n }); return n; }); }
-  }, [setRectangles, setCircles, setPolygons, setLines, setArrows, setTexts, setFrames, setImages, pushHistory]);
+    else if (kind === "figure") { setFigures((prev) => { const n = updateFn(prev); pushHistory({ figures: n }); return n; }); }
+    else if (kind === "code") { setCodes((prev) => { const n = updateFn(prev); pushHistory({ codes: n }); return n; }); }
+  }, [setRectangles, setCircles, setPolygons, setLines, setArrows, setTexts, setFrames, setImages, setFigures, setCodes, pushHistory]);
 
   const onChangeKind = useCallback((kind: string, index: number, newKind: string) => {
     if (kind === newKind) return;
@@ -202,6 +228,8 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     if (kind === "rect") source = rectangles[index];
     else if (kind === "circle") source = circles[index];
     else if (kind === "poly") source = polygons[index];
+    else if (kind === "text") source = texts[index];
+    else if (kind === "code") source = codes[index];
     
     if (!source) return;
 
@@ -217,6 +245,8 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     if (kind === "rect") setRectangles(prev => prev.filter((_, i) => i !== index));
     else if (kind === "circle") setCircles(prev => prev.filter((_, i) => i !== index));
     else if (kind === "poly") setPolygons(prev => prev.filter((_, i) => i !== index));
+    else if (kind === "text") setTexts(prev => prev.filter((_, i) => i !== index));
+    else if (kind === "code") setCodes(prev => prev.filter((_, i) => i !== index));
 
     // Handle new kind
     if (newKind === "rect") {
@@ -241,6 +271,25 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
         pushHistory({ circles: next });
         return next;
       });
+    } else if (newKind === "text") {
+      const val = kind === "code" ? source.code : "Text";
+      setTexts(prev => {
+        const measured = measureText(val, 18);
+        const next = [...prev, { ...common, x: source.x, y: source.y, text: val, fontSize: 18, width: measured.width, height: measured.height, fontFamily: "Clean" as const }];
+        setSelectedShape([{ kind: "text", index: next.length - 1, id: common.id }]);
+        pushHistory({ texts: next });
+        return next;
+      });
+    } else if (newKind === "code") {
+      const val = kind === "text" ? source.text : "// Write your code here...";
+      setCodes(prev => {
+        const lineCount = val.split('\n').length;
+        const estimatedHeight = Math.max(100, lineCount * 20 + 40);
+        const next = [...prev, { ...common, x: source.x, y: source.y, width: 300, height: estimatedHeight, code: val, language: "Javascript" }];
+        setSelectedShape([{ kind: "code", index: next.length - 1, id: common.id }]);
+        pushHistory({ codes: next });
+        return next;
+      });
     } else if (newKind.startsWith("poly:")) {
       const type = newKind.split(":")[1];
       const w = kind === "circle" ? source.rx * 2 : source.width;
@@ -254,10 +303,10 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
         return next;
       });
     }
-  }, [rectangles, circles, polygons, setRectangles, setCircles, setPolygons, setSelectedShape, pushHistory]);
+  }, [rectangles, circles, polygons, texts, codes, setRectangles, setCircles, setPolygons, setTexts, setCodes, setSelectedShape, pushHistory]);
 
   const {
-    cursorStyle, pendingConnector, textEditor, selectionRect,
+    cursorStyle, pendingConnector, textEditor, selectionRect, editingCodeId,
     setPendingConnector: _setPendingConnector, setTextEditor, 
     handlePointerDown, handlePointerMove, handlePointerUp, handleDoubleClick, handleWheel, handleDrop,
     commitTextEditor, cancelTextEditor, fitToScreen
@@ -266,6 +315,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     rectangles, setRectangles, circles, setCircles, lines, setLines, arrows, setArrows,
     paths, setPaths, images, setImages, texts, setTexts, frames, setFrames,
     polygons, setPolygons, connectors, setConnectors, selectedShape, setSelectedShape,
+    figures, setFigures, codes, setCodes,
     currentRect, setCurrentRect, currentCircle, setCurrentCircle, currentLine, setCurrentLine,
     currentArrow, setCurrentArrow, currentPath, setCurrentPath, currentFrame, setCurrentFrame,
     pushHistory, isSpacePanning,
@@ -276,7 +326,9 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     getShapeBounds: getShapeBoundsLocal,
     getContentBounds: getContentBoundsLocal,
     clampZoom, imageCacheRef, setHoverAnchor, hoverAnchor, setRerenderTick,
-    containerRef: canvasContainerRef
+    containerRef: canvasContainerRef,
+    strokeColor, strokeWidth,
+    theme: resolvedTheme || "light"
   });
 
   const applySnapshot = useCallback(
@@ -294,11 +346,13 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       setFrames(entry.frames || []);
       setPolygons(entry.polygons || []);
       setConnectors(entry.connectors || []);
+      setFigures(entry.figures || []);
+      setCodes(entry.codes || []);
       
       isUndoRedoRef.current = false;
       setRerenderTick((t) => t + 1);
     },
-    [setRectangles, setCircles, setLines, setArrows, setPaths, setImages, setTexts, setFrames, setPolygons, setConnectors, setSelectedShape]
+    [setRectangles, setCircles, setLines, setArrows, setPaths, setImages, setTexts, setFrames, setPolygons, setConnectors, setFigures, setCodes, setSelectedShape]
   );
 
   const handleUndo = useCallback(() => {
@@ -418,14 +472,24 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     frames.forEach((f, idx) =>
       drawFrame(ctx, f, themeStroke, themeText, themeFrameBg, zoom, 1, selectedShape.some(s => s.kind === "frame" && s.index === idx))
     );
+    figures.forEach((f, idx) =>
+      drawFigure(ctx, f, themeStroke, themeText, zoom, selectedShape.some(s => s.kind === "figure" && s.index === idx), {
+        hideTitle: textEditor?.kind === "figure" && textEditor?.index === idx
+      })
+    );
+    // codes.forEach((c, idx) => {
+    //   if (selectedShape.some(s => s.kind === "code" && s.id === c.id)) {
+    //     drawSelectionOverlay(ctx, c.x, c.y, c.width, c.height, zoom, "code");
+    //   }
+    // });
 
     // Draw current drawing previews
-    if (currentRect) drawRect(ctx, currentRect, themeStroke, zoom);
-    if (currentCircle) drawCircle(ctx, currentCircle, themeStroke, zoom);
-    if (currentLine) drawLine(ctx, currentLine, themeStroke, zoom);
-    if (currentArrow) drawArrow(ctx, currentArrow, themeStroke, zoom);
-    if (currentPath) drawPath(ctx, currentPath, themeStroke, zoom);
-    if (currentFrame) drawFrame(ctx, { ...currentFrame, frameNumber: frames.length + 1 }, themeStroke, themeText, themeFrameBg, zoom);
+    if (currentRect) drawRect(ctx, { ...currentRect, id: "preview" }, themeStroke, zoom);
+    if (currentCircle) drawCircle(ctx, { ...currentCircle, id: "preview" }, themeStroke, zoom);
+    if (currentLine) drawLine(ctx, { ...currentLine, id: "preview" }, themeStroke, zoom);
+    if (currentArrow) drawArrow(ctx, { ...currentArrow, id: "preview" }, themeStroke, zoom);
+    if (currentPath) drawPath(ctx, { ...currentPath }, themeStroke, zoom);
+    if (currentFrame) drawFrame(ctx, { ...currentFrame, id: "preview", frameNumber: frames.length + 1 }, themeStroke, themeText, themeFrameBg, zoom);
 
     if (pendingConnector) {
       const fromPt = getAnchorPointLocal(pendingConnector.from);
@@ -472,24 +536,6 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     });
   }, [images]);
 
-  const zoomPercent = Math.round(zoom * 100);
-  
-  const selectionOverlayStyle = useMemo(() => {
-    if (!selectionRect) return undefined;
-    const normX = selectionRect.width < 0 ? selectionRect.x + selectionRect.width : selectionRect.x;
-    const normY = selectionRect.height < 0 ? selectionRect.y + selectionRect.height : selectionRect.y;
-    const width = Math.abs(selectionRect.width);
-    const height = Math.abs(selectionRect.height);
-    const topLeft = canvasToClient(normX, normY);
-    const bottomRight = canvasToClient(normX + width, normY + height);
-    return {
-      left: `${topLeft.x}px`,
-      top: `${topLeft.y}px`,
-      width: `${bottomRight.x - topLeft.x}px`,
-      height: `${bottomRight.y - topLeft.y}px`,
-    };
-  }, [canvasToClient, selectionRect]);
-
   useEffect(() => {
     const handleResize = () => {
       if (!canvasContainerRef.current || !canvasRef.current) return;
@@ -513,135 +559,191 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     return () => observer.disconnect();
   }, []);
 
+  const zoomPercent = Math.round(zoom * 100);
+  
+  const selectionOverlayStyle = useMemo(() => {
+    if (!selectionRect) return undefined;
+    const normX = selectionRect.width < 0 ? selectionRect.x + selectionRect.width : selectionRect.x;
+    const normY = selectionRect.height < 0 ? selectionRect.y + selectionRect.height : selectionRect.y;
+    const width = Math.abs(selectionRect.width);
+    const height = Math.abs(selectionRect.height);
+    const topLeft = canvasToClient(normX, normY);
+    const bottomRight = canvasToClient(normX + width, normY + height);
+    return {
+      left: `${topLeft.x}px`,
+      top: `${topLeft.y}px`,
+      width: `${bottomRight.x - topLeft.x}px`,
+      height: `${bottomRight.y - topLeft.y}px`,
+    };
+  }, [canvasToClient, selectionRect]);
+
   return (
     <div
       ref={canvasContainerRef}
       className={`relative w-full h-full bg-background overflow-hidden`}
-      onDragOver={handleDrop} // Placeholder if needed
+      onDragOver={handleDrop}
       onDrop={handleDrop}
     >
-      <TextEditor
-        textEditor={textEditor}
-        setTextEditor={setTextEditor}
-        textAreaRef={textAreaRef}
-        canvasToClient={canvasToClient}
-        zoom={zoom}
-        measureText={measureText}
-        commitTextEditor={commitTextEditor}
-        cancelTextEditor={cancelTextEditor}
-      />
+      {/* Background Layer (Visual) */}
+      <div className={`absolute inset-0 pointer-events-none ${editingCodeId ? "z-30" : "z-0"}`}>
+        {codes.map((c, i) => (
+          <CodeBlock
+            key={c.id}
+            codeShape={c}
+            isSelected={selectedShape.some((s) => s.kind === "code" && s.id === c.id)}
+            isEditing={editingCodeId === c.id}
+            onUpdate={(updates) => onUpdateShape("code", i, updates)}
+            canvasToClient={canvasToClient}
+            zoom={zoom}
+          />
+        ))}
+      </div>
 
-      <FrameButtons
-        frames={frames}
-        canvasToClient={canvasToClient}
-        zoom={zoom}
-      />
-
-      <FloatingToolbar
-        selectedShape={selectedShape}
-        rectangles={rectangles}
-        circles={circles}
-        images={images}
-        texts={texts}
-        frames={frames}
-        polygons={polygons}
-        lines={lines}
-        arrows={arrows}
-        canvasToClient={canvasToClient}
-        onUpdateShape={onUpdateShape}
-        onChangeKind={onChangeKind}
-        onDelete={deleteSelected}
-        onDuplicate={() => duplicateSelection(20)}
-      />
-
+      {/* Rendering Layer (Canvas) */}
       <canvas
         ref={canvasRef}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
-        onDoubleClick={handleDoubleClick}
+        className="absolute inset-0 w-full h-full block pointer-events-none z-10"
+      />
+
+      {/* Interaction Layer */}
+      <div
+        className="absolute inset-0 z-20 touch-none"
+        onPointerDown={handlePointerDown as any}
+        onPointerMove={handlePointerMove as any}
+        onPointerUp={handlePointerUp as any}
+        onPointerLeave={handlePointerUp as any}
+        onDoubleClick={handleDoubleClick as any}
         onContextMenu={(e) => e.preventDefault()}
-        className={`w-full h-full block touch-none bg-background transition-colors duration-500`}
         style={{ cursor: cursorStyle }}
       />
 
-      {selectionOverlayStyle && (
-        <div
-          className="absolute border border-blue-500 bg-blue-500/10 pointer-events-none"
-          style={selectionOverlayStyle}
+      {/* UI Overlay Layer */}
+      <div className="absolute inset-0 pointer-events-none z-[1000]">
+        <TextEditor
+          textEditor={textEditor}
+          setTextEditor={setTextEditor}
+          textAreaRef={textAreaRef}
+          canvasToClient={canvasToClient}
+          zoom={zoom}
+          measureText={measureText}
+          commitTextEditor={commitTextEditor}
+          cancelTextEditor={cancelTextEditor}
         />
-      )}
 
-      <ConnectorHandles
-        activeTool={activeTool}
-        anchorHandles={anchorHandles}
-        hoverAnchor={hoverAnchor}
-        canvasToClient={canvasToClient}
-      />
+        {selectionOverlayStyle && (
+          <div
+            className="absolute border border-blue-500 bg-blue-500/10 pointer-events-none z-30"
+            style={selectionOverlayStyle}
+          />
+        )}
 
-      <HistoryControls
-        canUndo={canUndo}
-        canRedo={canRedo}
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-      />
+        <div className="pointer-events-auto contents">
+          <ConnectorHandles
+            activeTool={activeTool}
+            anchorHandles={anchorHandles}
+            hoverAnchor={hoverAnchor}
+            canvasToClient={canvasToClient}
+          />
 
-      <ZoomControls
-        zoomPercent={zoomPercent}
-        onZoomIn={zoomIn}
-        onZoomOut={zoomOut}
-        onFitToScreen={fitToScreen}
-        onResetView={resetView}
-      />
+          <FrameButtons
+            frames={frames}
+            canvasToClient={canvasToClient}
+            zoom={zoom}
+          />
 
-      <PlusMenu
-        isOpen={isPlusMenuOpen}
-        onClose={() => setIsPlusMenuOpen(false)}
-        setIsOpen={setIsPlusMenuOpen}
-        view={plusMenuView}
-        setView={setPlusMenuView}
-        subView={plusMenuSubView}
-        setSubView={setSubView}
-        searchQuery={iconSearchQuery}
-        setSearchQuery={setIconSearchQuery}
-        visibleIconsLimit={visibleIconsLimit}
-        setVisibleIconsLimit={setVisibleIconsLimit}
-        isLoading={isLibraryLoading}
-        setIsLoading={() => {}} // Hook manages its own state
-        onAddIcon={(name, src) => setPendingAddIcon({ name, src })}
-        onAddShape={(label) => setPendingAddShapeLabel(label)}
-        icons={filteredLibraryIcons}
-        setActiveTool={setActiveTool}
-        pendingAddIcon={pendingAddIcon}
-        pendingAddShapeLabel={pendingAddShapeLabel}
-      />
+          <FloatingToolbar
+            selectedShape={selectedShape}
+            rectangles={rectangles}
+            circles={circles}
+            images={images}
+            texts={texts}
+            frames={frames}
+            polygons={polygons}
+            lines={lines}
+            arrows={arrows}
+            codes={codes}
+            canvasToClient={canvasToClient}
+            onUpdateShape={onUpdateShape}
+            onChangeKind={onChangeKind}
+            onDelete={deleteSelected}
+            onDuplicate={() => duplicateSelection(20)}
+          />
 
-      <button
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => {
-          if (isPlusMenuOpen) {
-            setIsPlusMenuOpen(false);
-          } else {
-            setPlusMenuView("categories");
-            setSubView(null);
-            setIsPlusMenuOpen(true);
-          }
-        }}
-        className={`absolute left-6 top-6 h-10 w-10 flex items-center justify-center rounded-sm border transition-all duration-300 z-[1002] ${
-          isPlusMenuOpen 
-            ? "bg-primary text-primary-foreground border-primary shadow-lg" 
-            : "bg-background/80 backdrop-blur-xl border-border/40 text-muted-foreground hover:bg-muted hover:text-foreground shadow-lg"
-        }`}
-        title={isPlusMenuOpen ? "Close Menu" : "Add Elements"}
-      >
-        <Plus className={`h-5 w-5 transition-transform duration-300 ${isPlusMenuOpen ? 'rotate-45' : 'rotate-0'}`} />
-      </button>
+          <HistoryControls
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+          />
 
-      <Toolbar
-        activeTool={activeTool}
-        setActiveTool={setActiveTool}
-      />
+          <ZoomControls
+            zoomPercent={zoomPercent}
+            onZoomIn={zoomIn}
+            onZoomOut={zoomOut}
+            onFitToScreen={fitToScreen}
+            onResetView={resetView}
+          />
+
+          <PlusMenu
+            isOpen={isPlusMenuOpen}
+            onClose={() => setIsPlusMenuOpen(false)}
+            setIsOpen={setIsPlusMenuOpen}
+            view={plusMenuView}
+            setView={setPlusMenuView}
+            subView={plusMenuSubView}
+            setSubView={setSubView}
+            searchQuery={iconSearchQuery}
+            setSearchQuery={setIconSearchQuery}
+            visibleIconsLimit={visibleIconsLimit}
+            setVisibleIconsLimit={setVisibleIconsLimit}
+            isLoading={isLibraryLoading}
+            setIsLoading={() => {}} // Hook manages its own state
+            onAddIcon={(name, src) => setPendingAddIcon({ name, src })}
+            onAddShape={(label) => setPendingAddShapeLabel(label)}
+            icons={filteredLibraryIcons}
+            setActiveTool={setActiveTool}
+            pendingAddIcon={pendingAddIcon}
+            pendingAddShapeLabel={pendingAddShapeLabel}
+          />
+
+          <button
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => {
+              if (isPlusMenuOpen) {
+                setIsPlusMenuOpen(false);
+              } else {
+                setPlusMenuView("categories");
+                setSubView(null);
+                setIsPlusMenuOpen(true);
+              }
+            }}
+            className={`absolute left-6 top-6 h-10 w-10 flex items-center justify-center rounded-sm border transition-all duration-300 ${
+              isPlusMenuOpen 
+                ? "bg-primary text-primary-foreground border-primary shadow-lg" 
+                : "bg-background/80 backdrop-blur-xl border-border/40 text-muted-foreground hover:bg-muted hover:text-foreground shadow-lg"
+            }`}
+            title={isPlusMenuOpen ? "Close Menu" : "Add Elements"}
+          >
+            <Plus className={`h-5 w-5 transition-transform duration-300 ${isPlusMenuOpen ? 'rotate-45' : 'rotate-0'}`} />
+          </button>
+
+          <Toolbar
+            activeTool={activeTool}
+            setActiveTool={setActiveTool}
+          />
+
+          {(activeTool === "Pencil" || activeTool === "Eraser") && (
+            <PencilToolbar
+              activeTool={activeTool}
+              setActiveTool={setActiveTool}
+              strokeColor={strokeColor}
+              setStrokeColor={setStrokeColor}
+              strokeWidth={strokeWidth}
+              setStrokeWidth={setStrokeWidth}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 };

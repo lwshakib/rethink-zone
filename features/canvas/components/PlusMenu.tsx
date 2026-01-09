@@ -29,6 +29,9 @@ import {
   Square,
   Circle,
   Cloud,
+  Smartphone,
+  Tablet,
+  Globe,
 } from "lucide-react";
 import { PlusMenuView, Tool } from "../types";
 import { GENERAL_ICONS } from "../constants";
@@ -114,16 +117,16 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
             className="flex items-center gap-2 px-3.5 py-3 border-b border-border/50 bg-muted/30"
             onWheel={(e) => e.stopPropagation()}
           >
-            <Search className="h-3.5 w-3.5 text-muted-foreground" />
+            <Search className="h-3.5 w-3.5 text-muted-foreground/70" />
             <input
               type="text"
-              placeholder="Find icons, shapes, and more..."
+              placeholder="Insert item"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
                 setVisibleIconsLimit(60); // Reset limit on search
               }}
-              className="bg-transparent border-none outline-none text-[13px] text-foreground w-full placeholder:text-muted-foreground/50"
+              className="bg-transparent border-none outline-none text-[13px] text-foreground w-full placeholder:text-muted-foreground/40 font-medium"
               autoFocus
             />
           </div>
@@ -194,20 +197,6 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                     All Categories
                   </div>
 
-                  <button className="flex items-center gap-3 w-full px-3 py-2.5 rounded-sm hover:bg-accent/50 transition-all text-left group">
-                    <div className="h-9 w-9 flex items-center justify-center rounded-sm bg-primary/10 border border-primary/20 shadow-sm transition-transform group-hover:scale-105">
-                      <Sparkles className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-[13px] font-bold text-foreground">
-                        AI diagram
-                      </div>
-                      <div className="text-[10px] text-muted-foreground line-clamp-1">
-                        Generate diagram with natural language
-                      </div>
-                    </div>
-                  </button>
-
                   {[
                     {
                       id: "code",
@@ -245,6 +234,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                       onClick={() => {
                         if (item.id === "shape") setView("shape");
                         if (item.id === "icon") setView("icon");
+                        if (item.id === "frame") setView("device-frame");
                       }}
                       className="flex items-center gap-3 w-full px-3 py-2.5 rounded-sm hover:bg-accent transition-all text-left group"
                     >
@@ -267,12 +257,50 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                 {/* Bottom Quick Actions */}
                 <div className="grid grid-cols-3 gap-3 px-3 pb-3">
                   {[
-                    { icon: Maximize, label: "Figure" },
-                    { icon: Code, label: "Code" },
-                    { icon: ImageIcon, label: "Image" },
+                    { 
+                      icon: Maximize, 
+                      label: "Figure", 
+                      onClick: () => { 
+                        onAddShape("Figure"); 
+                        setActiveTool("PlusAdd");
+                        onClose();
+                      } 
+                    },
+                    { 
+                      icon: Code, 
+                      label: "Code", 
+                      onClick: () => { 
+                        onAddShape("Code"); 
+                        setActiveTool("PlusAdd");
+                        onClose();
+                      } 
+                    },
+                    { 
+                      icon: ImageIcon, 
+                      label: "Image",
+                      onClick: () => {
+                        const input = document.createElement("input");
+                        input.type = "file";
+                        input.accept = "image/*";
+                        input.onchange = (e: any) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (re) => {
+                              onAddIcon(file.name, re.target?.result as string);
+                              setActiveTool("IconAdd");
+                              onClose();
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        };
+                        input.click();
+                      }
+                    },
                   ].map((action, i) => (
                     <button
                       key={i}
+                      onClick={action.onClick}
                       className="flex flex-col items-center gap-1.5 p-3 rounded-sm bg-accent/20 border border-border/50 hover:border-border transition-all group shadow-sm active:scale-95"
                     >
                       <action.icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -515,6 +543,46 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                   </div>
                 </div>
               </div>
+            ) : view === "device-frame" ? (
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 px-3 py-2 text-[11px] font-bold tracking-tight">
+                    <button
+                      onClick={() => setView("categories")}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      All Categories
+                    </button>
+                    <span className="text-muted-foreground/30 font-normal">/</span>
+                    <span className="text-foreground">Device Frame</span>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-4 px-2 pt-1">
+                    {[
+                      { icon: Smartphone, label: "Phone", type: "phone" },
+                      { icon: Tablet, label: "Tablet", type: "tablet" },
+                      { icon: Monitor, label: "Desktop", type: "desktop" },
+                      { icon: Globe, label: "Browser", type: "browser" },
+                    ].map((device, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          onAddShape(`Device:${device.type}`);
+                          setActiveTool("PlusAdd");
+                        }}
+                        className="flex flex-col items-center gap-2 group"
+                      >
+                        <div className="h-14 w-14 flex items-center justify-center rounded-md bg-[#1a1a1a] border border-border/40 transition-all group-hover:bg-[#252525] group-hover:border-primary/50 group-active:scale-95 shadow-sm">
+                          <device.icon className="h-6 w-6 text-foreground/80 group-hover:text-primary transition-all" />
+                        </div>
+                        <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground text-center transition-colors">
+                          {device.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="space-y-4">
                 <div className="space-y-1.5">
@@ -606,43 +674,31 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-3 py-2 bg-muted/30 border-t border-border/50">
-            <div className="text-[10px] font-bold text-muted-foreground/60 tracking-wider">
-              {pendingAddIcon ? (
-                <span className="text-primary flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
-                  <span className="h-1 w-1 rounded-full bg-primary" />
-                  READY TO PLACE: {pendingAddIcon.name.toUpperCase()}
-                </span>
-              ) : pendingAddShapeLabel ? (
-                <span className="text-primary flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
-                  <span className="h-1 w-1 rounded-full bg-primary" />
-                  READY TO PLACE: {pendingAddShapeLabel.toUpperCase()}
-                </span>
-              ) : view === "categories" ? (
-                "DIAGRAM CATALOG"
-              ) : view === "shape" ? (
-                "SHAPES"
-              ) : view === "icon" ? (
-                subView === "general" ? "GENERAL ICONS" : "CUSTOM ICONS"
-              ) : view === "provider-icons" ? (
-                (subView || "").toUpperCase()
-              ) : (
-                "CLOUD PROVIDERS"
+          <div className="flex items-center justify-between px-4 py-3 bg-muted/40 border-t border-border/50">
+            <div className="text-[11px] font-bold text-foreground/80 tracking-tight">
+              {view === "device-frame" ? "Phone" : (
+                pendingAddIcon ? (
+                  <span className="text-primary flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
+                    READY TO PLACE: {pendingAddIcon.name.toUpperCase()}
+                  </span>
+                ) : pendingAddShapeLabel ? (
+                  <span className="text-primary flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
+                    READY TO PLACE: {pendingAddShapeLabel.toUpperCase()}
+                  </span>
+                ) : "All Categories"
               )}
             </div>
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground/40">
-                <div className="flex items-center bg-muted px-1 rounded border border-border/50">
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground/50">
+                <div className="flex items-center gap-0.5">
                   <ArrowUp className="h-2.5 w-2.5" />
                   <ArrowDown className="h-2.5 w-2.5" />
                 </div>
-                <span>NAVIGATE</span>
+                <span>to navigate</span>
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground/40">
-                <div className="bg-muted px-1 rounded border border-border/50">
-                  <CornerDownLeft className="h-2.5 w-2.5" />
-                </div>
-                <span>INSERT</span>
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground/50">
+                <span className="text-foreground/60">enter</span>
+                <span>to insert</span>
               </div>
             </div>
           </div>

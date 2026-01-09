@@ -11,7 +11,7 @@ import {
   PolyShape,
 } from "../types";
 
-export const measureText = (text: string, fontSize: number) => {
+export const measureText = (text: string, fontSize: number, fontFamily?: string) => {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   const lineHeight = fontSize * 1.2;
@@ -23,7 +23,8 @@ export const measureText = (text: string, fontSize: number) => {
       height: lineHeight * lines.length,
     };
   }
-  ctx.font = `${fontSize}px sans-serif`;
+  const font = fontFamily === "Rough" ? "cursive" : fontFamily === "Mono" ? "monospace" : "sans-serif";
+  ctx.font = `${fontSize}px ${font}`;
   const widths = lines.map((l) => ctx.measureText(l).width);
   const width = widths.length ? Math.max(...widths) : 0;
   return { width, height: lineHeight * Math.max(lines.length, 1) };
