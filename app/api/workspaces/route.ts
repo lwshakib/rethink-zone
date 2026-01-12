@@ -1,15 +1,26 @@
+/**
+ * This API route handles fetching and creating workspaces.
+ * It serves as an alternative/complement to Server Actions for client-side fetch calls.
+ */
+
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { workspacePayloadSchema } from "@/validations/workspace";
 import { ZodError } from "zod";
 import { getUser } from "@/actions/user";
 
+/**
+ * GET Handler
+ * Fetches a list of metadata for all workspaces belonging to the current user.
+ */
 export async function GET() {
   try {
     const user = await getUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
+
+    // Retrieve lightweight workspace records (excluding heavy JSON data fields)
     const workspaces = await prisma.workspace.findMany({
       where: { userId: user.id },
       select: {
@@ -31,28 +42,37 @@ export async function GET() {
   }
 }
 
+/**
+ * POST Handler
+ * Creates a new workspace for the authenticated user.
+ */
 export async function POST(request: Request) {
   try {
     const user = await getUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
+
+    // Parse and validate the request body
     const body = await request.json();
     const { name, documentData, canvasData, kanbanBoard } =
       workspacePayloadSchema.parse(body);
 
+    // Create the record in the database
     const workspace = await prisma.workspace.create({
       data: {
         userId: user.id,
         name,
-        documentData: documentData === null ? {} : documentData,
-        canvasData: canvasData === null ? {} : canvasData,
-        kanbanBoard: kanbanBoard === null ? {} : kanbanBoard,
+        // Ensure default empty objects if data is missing
+        documentData: documentData === null ? {} : documentData as any,
+        canvasData: canvasData === null ? {} : canvasData as any,
+        kanbanBoard: kanbanBoard === null ? {} : kanbanBoard as any,
       },
     });
 
     return NextResponse.json({ workspace }, { status: 201 });
   } catch (error) {
+    // Handle validation errors from Zod
     if (error instanceof ZodError) {
       return NextResponse.json(
         {

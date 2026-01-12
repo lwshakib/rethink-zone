@@ -1,3 +1,8 @@
+/**
+ * This API module handles GET, PUT, and DELETE requests for a specific workspace.
+ * It strictly enforces ownership by checking the 'userId' associated with the workspace.
+ */
+
 import { NextResponse, type NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { workspaceUpdateSchema } from "@/validations/workspace";
@@ -5,10 +10,10 @@ import { ZodError } from "zod";
 import { getUser } from "@/actions/user";
 import { Prisma } from "@/generated/prisma/client";
 
-type RouteContext = {
-  params: Promise<{ workspaceId: string }>;
-};
-
+/**
+ * GET Handler
+ * Fetches the full data for a specific workspace.
+ */
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ workspaceId: string }> }
@@ -26,6 +31,7 @@ export async function GET(
       );
     }
 
+    // Find workspace and verify owner
     const workspace = await prisma.workspace.findFirst({
       where: {
         id: workspaceId,
@@ -50,6 +56,10 @@ export async function GET(
   }
 }
 
+/**
+ * PUT Handler
+ * Updates the contents or metadata of a specific workspace.
+ */
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ workspaceId: string }> }
@@ -67,6 +77,7 @@ export async function PUT(
       );
     }
 
+    // ownership check
     const existingWorkspace = await prisma.workspace.findFirst({
       where: {
         id: workspaceId,
@@ -82,11 +93,10 @@ export async function PUT(
     }
 
     const body = await request.json();
-    console.log("Update request body:", JSON.stringify(body, null, 2));
-
+    // Validate payload against update schema
     const payload = workspaceUpdateSchema.parse(body);
-    console.log("Parsed payload:", JSON.stringify(payload, null, 2));
 
+    // Map payload into Prisma update input
     const updateData: Prisma.WorkspaceUpdateInput = {
       ...(payload.name !== undefined ? { name: payload.name } : {}),
       ...(payload.documentData !== undefined
@@ -115,9 +125,6 @@ export async function PUT(
         : {}),
     };
 
-    console.log("Update data:", JSON.stringify(updateData, null, 2));
-
-    // Check if updateData is empty
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
         { error: "No fields to update." },
@@ -125,6 +132,7 @@ export async function PUT(
       );
     }
 
+    // commit the changes
     const workspace = await prisma.workspace.update({
       where: {
         id: workspaceId,
@@ -135,7 +143,6 @@ export async function PUT(
     return NextResponse.json({ workspace });
   } catch (error) {
     if (error instanceof ZodError) {
-      console.error("Validation error:", error.issues);
       return NextResponse.json(
         { error: "Invalid workspace payload.", issues: error.issues },
         { status: 400 }
@@ -152,11 +159,7 @@ export async function PUT(
       );
     }
 
-    console.error("Failed to update workspace - Full error:", error);
-    if (error instanceof Error) {
-      console.error("Error message:", error.message);
-      console.error("Error stack:", error.stack);
-    }
+    console.error("Failed to update workspace", error);
     return NextResponse.json(
       {
         error: "Unable to update workspace.",
@@ -167,6 +170,10 @@ export async function PUT(
   }
 }
 
+/**
+ * DELETE Handler
+ * Removes a workspace and all its data.
+ */
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ workspaceId: string }> }
@@ -184,7 +191,7 @@ export async function DELETE(
       );
     }
 
-    // First check if workspace exists and belongs to user
+    // Verify ownership before deletion
     const existingWorkspace = await prisma.workspace.findFirst({
       where: {
         id: workspaceId,

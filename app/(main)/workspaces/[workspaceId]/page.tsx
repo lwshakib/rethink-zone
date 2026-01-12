@@ -1,3 +1,9 @@
+/**
+ * This page represents the detailed view of a specific workspace.
+ * It manages the multi-tab interface (Document, Canvas, Kanban) and orchestrates 
+ * persistence (fetching and saving) of the workspace state.
+ */
+
 "use client";
 
 import Link from "next/link";
@@ -45,6 +51,9 @@ import CanvasTab from "@/features/canvas/canvas-tab";
 import KanbanTab from "@/features/kanban/kanban-tab";
 import { ModeToggle } from "@/components/mode-toggle";
 
+/**
+ * Centered loading spinner shown while the workspace data is being fetched.
+ */
 const LoadingState = () => (
   <div className="flex h-screen w-full items-center justify-center bg-background">
     <div className="flex flex-col items-center gap-4">
@@ -60,40 +69,46 @@ const LoadingState = () => (
 );
 
 export default function WorkspaceDetailPage() {
-  const { workspaceId } = useParams<{ workspaceId: string }>();
+  const { workspaceId } = useParams<{ workspaceId: string }>(); // Extract ID from URL
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { data: session } = authClient.useSession();
 
+  // List of available features within a workspace
   const availableTabs = useMemo(() => ["document", "canvas", "kanban"], []);
 
+  /** determines which tab to show on page load based on the 'tab' URL parameter */
   const initialTab = useMemo(() => {
     const fromUrl = searchParams?.get("tab") || "";
     return availableTabs.includes(fromUrl) ? fromUrl : "document";
   }, [availableTabs, searchParams]);
 
+  // --- LOCAL STATE ---
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [dirty, setDirty] = useState(false);
-  const [editingName, setEditingName] = useState(false);
-  const [nameDraft, setNameDraft] = useState("");
+  const [dirty, setDirty] = useState(false); // Tracks if there are unsaved changes
+  const [editingName, setEditingName] = useState(false); // Title edit mode toggle
+  const [nameDraft, setNameDraft] = useState(""); // Temporary title while editing
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
+  // Content state for each individual feature
   const [documentData, setDocumentData] = useState<any>(null);
   const [canvasData, setCanvasData] = useState<any>(null);
   const [kanbanBoard, setKanbanBoard] = useState<any>(null);
 
+  /** sync active tab state with URL search params */
   useEffect(() => {
     const fromUrl = searchParams?.get("tab") || "";
     const resolved = availableTabs.includes(fromUrl) ? fromUrl : "document";
     setActiveTab(resolved);
   }, [availableTabs, searchParams]);
 
+  /** switch tabs and update the URL accordingly */
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     const params = new URLSearchParams(
@@ -103,6 +118,7 @@ export default function WorkspaceDetailPage() {
     router.replace(`${pathname}?${params.toString()}`);
   };
 
+  /** Fetches the workspace details and all sub-feature data from the server */
   const loadWorkspace = async () => {
     try {
       if (!workspaceId) {
@@ -121,6 +137,7 @@ export default function WorkspaceDetailPage() {
       const ws: Workspace | undefined = data.workspace;
       if (!ws) throw new Error("Workspace not found");
 
+      // Populate local state with fetched data
       setWorkspace(ws);
       setNameDraft(ws.name);
       setDocumentData(ws.documentData);
@@ -133,10 +150,11 @@ export default function WorkspaceDetailPage() {
       );
     } finally {
       setLoading(false);
-      setDirty(false);
+      setDirty(false); // Reset dirty flag after load
     }
   };
 
+  /** Persists all current tab data and workspace metadata to the server */
   const saveWorkspace = useCallback(async () => {
     if (!workspace) return;
     try {
@@ -159,7 +177,7 @@ export default function WorkspaceDetailPage() {
       }
       const data = await res.json();
       setWorkspace(data.workspace);
-      setDirty(false);
+      setDirty(false); // Reset dirty flag after successful save
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : "Unable to save.");
@@ -168,6 +186,7 @@ export default function WorkspaceDetailPage() {
     }
   }, [workspace, documentData, canvasData, kanbanBoard]);
 
+  /** triggers workspace deletion and redirects to dashboard */
   const deleteWorkspace = async () => {
     if (!workspaceId) return;
     try {
@@ -191,6 +210,7 @@ export default function WorkspaceDetailPage() {
     loadWorkspace();
   }, [workspaceId]);
 
+  /** finalizes a workspace title edit */
   const commitName = () => {
     if (!workspace) return;
     const nextName = nameDraft.trim();
@@ -203,6 +223,8 @@ export default function WorkspaceDetailPage() {
     setDirty(true);
     setEditingName(false);
   };
+
+  // --- Content change handlers (memoized to prevent unneeded re-renders in children) ---
 
   const handleDocumentChange = useCallback((data: any) => {
     setDocumentData(data);
@@ -228,11 +250,11 @@ export default function WorkspaceDetailPage() {
         onValueChange={handleTabChange}
         className="flex h-full w-full flex-col"
       >
-        {/* Header Section */}
-        <header className="z-10 bg-background/80 backdrop-blur-xl">
-          <div className="flex flex-col gap-4 px-4 py-4 ">
+        {/* --- HEADER BAR --- */}
+        <header className="z-10 bg-background/80 backdrop-blur-xl border-b border-border/50">
+          <div className="flex flex-col gap-4 px-4 py-3 ">
             <div className="flex items-center justify-between">
-              {/* Left: Breadcrumbs & App Name */}
+              {/* Left: Navigation and Workspace Title */}
               <div className="flex items-center gap-4">
                 <Link
                   href="/workspaces"
@@ -250,7 +272,7 @@ export default function WorkspaceDetailPage() {
                       onChange={(e) => setNameDraft(e.target.value)}
                       onBlur={commitName}
                       onKeyDown={(e) => e.key === "Enter" && commitName()}
-                      className="bg-transparent text-sm font-semibold text-foreground outline-none ring-0"
+                      className="bg-transparent text-sm font-semibold text-foreground outline-none ring-0 border-b border-primary/50"
                     />
                   ) : (
                     <div
@@ -263,35 +285,35 @@ export default function WorkspaceDetailPage() {
                       <Edit2 className="h-3 w-3 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100" />
                     </div>
                   )}
-                  {/* Unsaved changes indicator removed as requested */}
                 </div>
               </div>
 
-              {/* Middle: Improved TabsList */}
-              <TabsList className="hidden h-11 items-center justify-center rounded-full bg-muted/50 p-1 md:flex border border-border/50 backdrop-blur-sm">
+              {/* Middle: Feature Selectors (Tabs) */}
+              <TabsList className="hidden h-10 items-center justify-center rounded-full bg-muted/50 p-1 md:flex border border-border/50 backdrop-blur-sm">
                 <TabsTrigger
                   value="document"
-                  className="rounded-full px-6 py-1.5 text-xs font-bold transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 active:scale-95"
+                  className="rounded-full px-6 py-1.5 text-xs font-bold transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-lg active:scale-95"
                 >
                   Document
                 </TabsTrigger>
                 <TabsTrigger
                   value="canvas"
-                  className="rounded-full px-6 py-1.5 text-xs font-bold transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 active:scale-95"
+                  className="rounded-full px-6 py-1.5 text-xs font-bold transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-lg active:scale-95"
                 >
                   Canvas
                 </TabsTrigger>
                 <TabsTrigger
                   value="kanban"
-                  className="rounded-full px-6 py-1.5 text-xs font-bold transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 active:scale-95"
+                  className="rounded-full px-6 py-1.5 text-xs font-bold transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-lg active:scale-95"
                 >
                   Kanban
                 </TabsTrigger>
               </TabsList>
 
-              {/* Right: Actions & User */}
+              {/* Right: Workspace Actions (Save, Delete) and User Profile */}
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 pr-2 border-r border-border">
+                  {/* Delete Confirmation Dialog */}
                   <AlertDialog
                     open={deleteDialogOpen}
                     onOpenChange={setDeleteDialogOpen}
@@ -327,6 +349,7 @@ export default function WorkspaceDetailPage() {
                     </AlertDialogContent>
                   </AlertDialog>
 
+                  {/* Manual Save Button (shows dirty state) */}
                   <Button
                     onClick={saveWorkspace}
                     disabled={saving || !dirty}
@@ -393,7 +416,7 @@ export default function WorkspaceDetailPage() {
               </div>
             </div>
 
-            {/* Mobile TabsList */}
+            {/* Mobile-only Tabs Navigation (simpler UI) */}
             <TabsList className="flex h-9 w-full bg-muted p-1 md:hidden">
               <TabsTrigger value="document" className="flex-1 text-[10px]">
                 Doc
@@ -408,8 +431,9 @@ export default function WorkspaceDetailPage() {
           </div>
         </header>
 
-        {/* Content Area */}
+        {/* --- MAIN CONTENT PANELS --- */}
         <main className="flex-1 min-h-0 relative">
+          {/* Document Tab View */}
           <TabsContent
             value="document"
             className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
@@ -420,6 +444,7 @@ export default function WorkspaceDetailPage() {
             />
           </TabsContent>
 
+          {/* Canvas Tab View */}
           <TabsContent
             value="canvas"
             className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
@@ -430,6 +455,7 @@ export default function WorkspaceDetailPage() {
             />
           </TabsContent>
 
+          {/* Kanban Tab View */}
           <TabsContent
             value="kanban"
             className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"

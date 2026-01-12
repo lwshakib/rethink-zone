@@ -1,3 +1,8 @@
+/**
+ * This page displays a grid of all workspaces owned by the current user.
+ * It provides functionality to list, create, and navigate to individual workspaces.
+ */
+
 "use client";
 
 import Link from "next/link";
@@ -29,6 +34,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+/**
+ * Utility to generate a unique gradient SVG thumbnail for workspace cards.
+ */
 const generateGradientThumbnail = () => {
   const gradients = [
     "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
@@ -62,6 +70,9 @@ const generateGradientThumbnail = () => {
   return `data:image/svg+xml;base64,${btoa(svgContent)}`;
 };
 
+/**
+ * Placeholder UI shown during the initial workspace list fetch.
+ */
 const WorkspacesSkeleton = () => (
   <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
     {[...Array(10)].map((_, idx) => (
@@ -82,7 +93,7 @@ const WorkspacesSkeleton = () => (
 );
 
 export default function WorkspacesPage() {
-  const { workspaces, setWorkspaces } = useWorkspaceStore();
+  const { workspaces, setWorkspaces } = useWorkspaceStore(); // Global store for caching workspaces
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -90,8 +101,12 @@ export default function WorkspacesPage() {
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
   const router = useRouter();
-  const { data: session } = authClient.useSession();
+  const { data: session } = authClient.useSession(); // Client-side authentication session hook
 
+  /**
+   * Memoized thumbnails map to ensure stability across re-renders 
+   * (prevents flickering of random gradients).
+   */
   const workspaceThumbnails = useMemo(() => {
     const thumbnails = new Map<string, string>();
     workspaces.forEach((workspace: Workspace) => {
@@ -100,6 +115,7 @@ export default function WorkspacesPage() {
     return thumbnails;
   }, [workspaces]);
 
+  /** Fetches all workspaces from the API route */
   const loadWorkspaces = async () => {
     try {
       setLoading(true);
@@ -118,6 +134,7 @@ export default function WorkspacesPage() {
     }
   };
 
+  /** triggers the creation of a new workspace via API */
   const createWorkspace = async () => {
     try {
       setCreating(true);
@@ -134,10 +151,12 @@ export default function WorkspacesPage() {
         throw new Error("Failed to create workspace");
       }
       const data = await res.json();
+      // append new workspace to global store
       setWorkspaces((prev: Workspace[]) => [
         ...prev,
         data.workspace as Workspace,
       ]);
+      // Reset creation state
       setCreateDialogOpen(false);
       setNewWorkspaceName("");
     } catch (err) {
@@ -154,13 +173,15 @@ export default function WorkspacesPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground w-full">
-      {/* Top chrome */}
+      {/* --- APP HEADER --- */}
       <header className="flex items-center justify-between px-6 pt-4 sm:px-10 lg:px-16">
         <div className="flex items-center gap-3">
           <Logo className="text-foreground" />
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span className="hidden text-[11px] sm:inline">Limited credits</span>
+          
+          {/* User Profile dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -203,6 +224,8 @@ export default function WorkspacesPage() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Dialog for creating a new workspace */}
           <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button
@@ -274,7 +297,7 @@ export default function WorkspacesPage() {
         </div>
       </header>
 
-      {/* Content */}
+      {/* --- MAIN DASHBOARD CONTENT --- */}
       <main className="flex flex-1 items-start justify-center px-4 pb-10 pt-10 sm:px-8 lg:px-20">
         <div className="w-full max-w-5xl">
           <div className="mb-6">
@@ -302,6 +325,7 @@ export default function WorkspacesPage() {
                   const thumbnail = workspaceThumbnails.get(workspace.id);
                   return (
                     <div key={workspace.id} className="flex flex-col gap-2">
+                      {/* Workspace Card Link */}
                       <Link
                         href={`/workspaces/${workspace.id}`}
                         className="group block w-full aspect-square rounded-3xl bg-accent/40 p-px text-left transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.2)] dark:hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
@@ -314,6 +338,7 @@ export default function WorkspacesPage() {
                               className="absolute inset-0 h-full w-full object-cover"
                             />
                           ) : null}
+                          {/* Light/Dark dynamic glow effect */}
                           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(255,255,255,0.15),transparent_65%)] dark:bg-[radial-gradient(circle_at_50%_30%,rgba(255,255,255,0.7),transparent_55%)] opacity-80" />
                           <div className="relative flex items-center justify-center">
                             <div className="size-10 rounded-full bg-white shadow-[0_0_30px_rgba(255,255,255,0.4)] dark:shadow-[0_0_30px_rgba(255,255,255,0.6)]" />
@@ -321,6 +346,7 @@ export default function WorkspacesPage() {
                         </div>
                       </Link>
 
+                      {/* Workspace card info */}
                       <div className="px-1 text-[11px] text-foreground/90">
                         <div className="font-medium">{workspace.name}</div>
                         <div className="mt-0.5 text-[10px] text-muted-foreground">
