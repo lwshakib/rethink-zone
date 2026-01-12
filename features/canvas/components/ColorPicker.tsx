@@ -1,17 +1,22 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react"; // Importing core React hooks
 
+// Properties for the ColorPicker component
 interface ColorPickerProps {
-  color: string;
-  onChange: (color: string) => void;
-  theme?: string;
+  color: string; // Current color in hex format (e.g., "#FF0000")
+  onChange: (color: string) => void; // Callback function called when color changes
+  theme?: string; // Application theme (light/dark) for visual styling
 }
 
+/**
+ * ColorPicker - A custom HSV-based color selection component.
+ */
 const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange, theme = "dark" }) => {
+  // State for Hue, Saturation, and Value to drive the UI
   const [hue, setHue] = useState(0);
   const [sat, setSat] = useState(0);
   const [val, setVal] = useState(100);
   
-  // Convert Hex to HSV on mount/color change
+  // Synchronize internal HSV state whenever the 'color' hex prop changes
   useEffect(() => {
     if (color && color.startsWith("#")) {
       const { h, s, v } = hexToHsv(color);
@@ -21,19 +26,22 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange, theme = "dar
     }
   }, [color]);
 
+  // Refs for tracking DOM elements to calculate interactive coordinates
   const satValRef = useRef<HTMLDivElement>(null);
   const hueRef = useRef<HTMLDivElement>(null);
 
+  // Handles mouse/touch interactions on the Hue slider (the rainbow bar)
   const handleHueMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const move = (clientX: number) => {
       if (!hueRef.current) return;
       const rect = hueRef.current.getBoundingClientRect();
       const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
-      const h = (x / rect.width) * 360;
+      const h = (x / rect.width) * 360; // Map screen X coordinate to 0-360 degrees
       setHue(h);
-      onChange(hsvToHex(h, sat, val));
+      onChange(hsvToHex(h, sat, val)); // Commit change back to parent as hex
     };
 
+    // Global listeners to handle dragging outside the element boundaries
     const onMouseMove = (e: MouseEvent) => move(e.clientX);
     const onTouchMove = (e: TouchEvent) => move(e.touches[0].clientX);
     const onEnd = () => {
@@ -48,23 +56,26 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange, theme = "dar
     window.addEventListener("touchmove", onTouchMove);
     window.addEventListener("touchend", onEnd);
     
+    // Initial movement on click
     if ('clientX' in e) move(e.clientX);
     else move(e.touches[0].clientX);
   };
 
+  // Handles mouse/touch interactions on the Saturation/Value area (the square picker)
   const handleSatValMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const move = (clientX: number, clientY: number) => {
       if (!satValRef.current) return;
       const rect = satValRef.current.getBoundingClientRect();
       const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
       const y = Math.max(0, Math.min(rect.height, clientY - rect.top));
-      const s = (x / rect.width) * 100;
-      const v = 100 - (y / rect.height) * 100;
+      const s = (x / rect.width) * 100; // Map X to 0-100% Saturation
+      const v = 100 - (y / rect.height) * 100; // Map Y to 0-100% Value (inverted)
       setSat(s);
       setVal(v);
-      onChange(hsvToHex(hue, s, v));
+      onChange(hsvToHex(hue, s, v)); // Commit change as hex
     };
 
+    // Global listeners for dragging behavior
     const onMouseMove = (e: MouseEvent) => move(e.clientX, e.clientY);
     const onTouchMove = (e: TouchEvent) => move(e.touches[0].clientX, e.touches[0].clientY);
     const onEnd = () => {
@@ -83,13 +94,14 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange, theme = "dar
     else move(e.touches[0].clientX, e.touches[0].clientY);
   };
 
-  const isDark = theme === "dark";
+  const isDark = theme === "dark"; // Boolean for styling logic
 
   return (
+    // Main container with theme-aware background and borders
     <div className={`flex flex-col gap-3 p-3 rounded-lg border shadow-2xl w-[200px] ${
       isDark ? "bg-[#1e1e1e] border-white/10" : "bg-white border-black/10"
     }`}>
-      {/* Hue Slider */}
+      {/* Hue Slider: The rainbow horizontal bar */}
       <div 
         ref={hueRef}
         className="h-3 w-full rounded-full cursor-pointer relative"
@@ -97,29 +109,32 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange, theme = "dar
         onMouseDown={handleHueMouseDown}
         onTouchStart={handleHueMouseDown}
       >
+        {/* The visual handle indicator on the hue slider */}
         <div 
           className="absolute top-1/2 -translate-y-1/2 h-5 w-2 bg-white border border-black/20 rounded-full pointer-events-none"
           style={{ left: `${(hue / 360) * 100}%`, transform: "translate(-50%, -50%)" }}
         />
       </div>
 
-      {/* Saturation/Value Area */}
+      {/* Saturation/Value Area: The large square for fine-tuning colors */}
       <div 
         ref={satValRef}
         className="h-[150px] w-full rounded-md cursor-crosshair relative overflow-hidden ring-1 ring-black/10"
-        style={{ backgroundColor: hsvToHex(hue, 100, 100) }}
+        style={{ backgroundColor: hsvToHex(hue, 100, 100) }} // Background color is the full-saturated hue
         onMouseDown={handleSatValMouseDown}
         onTouchStart={handleSatValMouseDown}
       >
+        {/* Gradients to simulate the HSV color space mixing (White for Sat, Black for Val) */}
         <div className="absolute inset-0 bg-gradient-to-r from-white to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />
+        {/* The target reticle indicator */}
         <div 
           className="absolute h-4 w-4 border-2 border-white rounded-full shadow-md pointer-events-none -translate-x-1/2 -translate-y-1/2"
           style={{ left: `${sat}%`, top: `${100 - val}%` }}
         />
       </div>
 
-      {/* Hex Input */}
+      {/* Hex Input: Manual code entry and color preview */}
       <div className={`flex items-center gap-2 px-2 py-1.5 rounded-md border ${
         isDark ? "bg-muted/30 border-white/10" : "bg-black/[0.03] border-black/10"
       }`}>
@@ -127,7 +142,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange, theme = "dar
         <input 
           type="text" 
           value={color.toUpperCase()} 
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => onChange(e.target.value)} // Allows users to type custom hex codes
           className="bg-transparent border-none outline-none text-[11px] font-mono font-bold w-full text-foreground"
         />
       </div>
@@ -135,7 +150,9 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange, theme = "dar
   );
 };
 
-// Helper functions for HSV/Hex conversion
+/**
+ * HELPER: Converts HSV values to a standard Hex string.
+ */
 function hsvToHex(h: number, s: number, v: number) {
   s /= 100;
   v /= 100;
@@ -145,6 +162,7 @@ function hsvToHex(h: number, s: number, v: number) {
   const q = v * (1 - f * s);
   const t = v * (1 - (1 - f) * s);
   let r = 0, g = 0, b = 0;
+  // Choose algorithm based on hue sector (6 sectors of 60 degrees)
   switch (i % 6) {
     case 0: r = v; g = t; b = p; break;
     case 1: r = q; g = v; b = p; break;
@@ -157,8 +175,12 @@ function hsvToHex(h: number, s: number, v: number) {
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
+/**
+ * HELPER: Parses a Hex string into its HSV components.
+ */
 function hexToHsv(hex: string) {
   let r = 0, g = 0, b = 0;
+  // Handle both shorthand (#FFF) and full length (#FFFFFF) hex
   if (hex.length === 4) {
     r = parseInt(hex[1] + hex[1], 16);
     g = parseInt(hex[2] + hex[2], 16);

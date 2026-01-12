@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
-import React, { useRef, useEffect } from "react";
-import ReactDOMServer from "react-dom/server";
+import React, { useRef, useEffect } from "react"; // React core
+import ReactDOMServer from "react-dom/server"; // Used for converting Lucide components to static SVG strings
+// A large collection of icons for navigation and categories
 import {
   Plus,
   Search,
@@ -12,7 +13,7 @@ import {
   Monitor,
   ChevronRight,
   Code,
-  Image as ImageIcon,
+  ImageIcon,
   ArrowUp,
   ArrowDown,
   CornerDownLeft,
@@ -33,31 +34,36 @@ import {
   Tablet,
   Globe,
 } from "lucide-react";
-import { PlusMenuView, Tool } from "../types";
-import { GENERAL_ICONS } from "../constants";
+import { PlusMenuView, Tool } from "../types"; // Type definitions for the menu view state and canvas tools
+import { GENERAL_ICONS } from "../constants"; // Pre-defined list of general purpose icons
 
+// Interface defining the state and callbacks needed by the Plus Menu overlay
 interface PlusMenuProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen: boolean;           // Visibility toggle
+  onClose: () => void;       // Function to trigger closing
   setIsOpen: (open: boolean) => void;
-  view: PlusMenuView;
+  view: PlusMenuView;        // Current page within the menu (Categories vs Shapes vs Icons)
   setView: (view: PlusMenuView) => void;
-  subView: string | null;
+  subView: string | null;    // Current sub-category selection
   setSubView: (subView: string | null) => void;
-  searchQuery: string;
+  searchQuery: string;       // Current text filter
   setSearchQuery: (query: string) => void;
-  visibleIconsLimit: number;
+  visibleIconsLimit: number; // Pagination limit for icon results
   setVisibleIconsLimit: (limit: number | ((prev: number) => number)) => void;
-  isLoading: boolean;
+  isLoading: boolean;        // Loading state for external icon fetching
   setIsLoading: (loading: boolean) => void;
-  onAddIcon: (name: string, src: string) => void;
-  onAddShape: (label: string) => void;
-  icons: string[];
-  setActiveTool: (tool: Tool) => void;
-  pendingAddIcon?: { name: string; src: string } | null;
-  pendingAddShapeLabel?: string | null;
+  onAddIcon: (name: string, src: string) => void; // Callback to place an icon on canvas
+  onAddShape: (label: string) => void;            // Callback to place a shape on canvas
+  icons: string[];           // List of icon file paths/URLs
+  setActiveTool: (tool: Tool) => void;            // Update canvas interaction mode
+  pendingAddIcon?: { name: string; src: string } | null; // Preview of icon about to be placed
+  pendingAddShapeLabel?: string | null;                  // Preview of shape about to be placed
 }
 
+/**
+ * PlusMenu Component - A complex overlay for searching and inserting various assets
+ * (shapes, icons, device frames, code blocks) into the workspace.
+ */
 const PlusMenu: React.FC<PlusMenuProps> = ({
   isOpen,
   onClose,
@@ -81,14 +87,17 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // EFFECT: Handle outside clicks and wheel event locking
   useEffect(() => {
     const el = menuRef.current;
     if (!el) return;
 
+    // Prevent propagation of wheel events so it doesn't zoom the canvas behind the menu
     const handleWheel = (e: WheelEvent) => {
       e.stopPropagation();
     };
 
+    // Auto-close menu if clicking on the canvas or other UI elements
     const handleClickOutside = (e: PointerEvent) => {
       if (menuRef.current && !e.composedPath().includes(menuRef.current)) {
         onClose();
@@ -105,14 +114,16 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
 
   return (
     <>
+      {/* Root Conditional Render */}
       {isOpen && (
         <div
           ref={menuRef}
           onPointerDown={(e) => e.stopPropagation()}
           onPointerUp={(e) => e.stopPropagation()}
+          // Positioned floating near the left toolbar
           className="fixed left-20 top-27 flex flex-col rounded-sm bg-background/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-border w-80 max-h-[85vh] overflow-hidden z-[1001] animate-in fade-in slide-in-from-left-2 duration-300"
         >
-          {/* Search Section */}
+          {/* TOP SECTION: Integrated Search Bar */}
           <div 
             className="flex items-center gap-2 px-3.5 py-3 border-b border-border/50 bg-muted/30"
             onWheel={(e) => {
@@ -127,10 +138,10 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
-                setVisibleIconsLimit(60); // Reset limit on search
+                setVisibleIconsLimit(60); // Reset pagination limit when starting a new search
               }}
               className="bg-transparent border-none outline-none text-[13px] text-foreground w-full placeholder:text-muted-foreground/40 font-medium"
-              autoFocus
+              autoFocus // Grab focus as soon as the menu pops open
             />
           </div>
 
@@ -141,6 +152,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
             }}
             onScroll={(e) => {
               const target = e.currentTarget;
+              // Infinite Scroll Logic: Load more items when reaching the bottom
               if (
                 target.scrollTop + target.clientHeight >=
                 target.scrollHeight - 20
@@ -150,6 +162,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
             }}
             className="flex-1 overflow-y-auto max-h-[600px] p-2 space-y-4"
           >
+            {/* VIEW A: Search Results (Shown only when typing) */}
             {searchQuery && view !== "provider-icons" ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between px-3 py-1.5 bg-muted/20 rounded-sm">
@@ -163,6 +176,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                     Clear
                   </button>
                 </div>
+                {/* Grid of icons filtered by the search query */}
                 <div className="grid grid-cols-5 gap-y-3 px-2 pb-4">
                   {icons.slice(0, visibleIconsLimit).map((path, i) => {
                     const name = path.split("/").pop()?.replace(".svg", "").replace(/_/g, " ") || "icon";
@@ -171,7 +185,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                         <button
                           onClick={() => {
                             onAddIcon(name, path);
-                            setActiveTool("IconAdd");
+                            setActiveTool("IconAdd"); // Prepare the canvas for placement
                           }}
                           className="h-10 w-10 flex items-center justify-center rounded-sm transition-all shadow-none overflow-hidden group active:scale-90"
                         >
@@ -187,6 +201,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                       </div>
                     );
                   })}
+                  {/* Empty state for search */}
                   {icons.length === 0 && (
                     <div className="col-span-5 py-20 text-center">
                       <div className="text-sm font-bold text-muted-foreground">No icons found</div>
@@ -196,13 +211,14 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                 </div>
               </div>
             ) : view === "categories" ? (
+              // VIEW B: Main Landing Page (Categories)
               <div className="space-y-3">
-                {/* All Categories Section */}
                 <div className="space-y-0.5">
                   <div className="px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                     All Categories
                   </div>
 
+                  {/* List of sub-menus (Code, Catalog, Shapes, Icons, Frames) */}
                   {[
                     {
                       id: "code",
@@ -238,6 +254,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                     <button
                       key={i}
                       onClick={() => {
+                        // Switch menu view based on selection
                         if (item.id === "shape") setView("shape");
                         if (item.id === "icon") setView("icon");
                         if (item.id === "frame") setView("device-frame");
@@ -260,7 +277,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                   ))}
                 </div>
 
-                {/* Bottom Quick Actions */}
+                {/* Grid of bottom-row quick action buttons */}
                 <div className="grid grid-cols-3 gap-3 px-3 pb-3">
                   {[
                     { 
@@ -285,14 +302,15 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                       icon: ImageIcon, 
                       label: "Image",
                       onClick: () => {
+                        // Trigger local file picker
                         const input = document.createElement("input");
                         input.type = "file";
                         input.accept = "image/*";
                         input.onchange = async (e: any) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                             // Optional: could show a local spinner here if we had state for it
                              try {
+                                // Dynamic import for image upload utility
                                 const { uploadFileToCloudinary } = await import("../utils/upload");
                                 const result = await uploadFileToCloudinary(file);
                                 onAddIcon(file.name, result.secureUrl);
@@ -300,7 +318,6 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                                 onClose();
                              } catch (err) {
                                 console.error("Failed to upload image from menu", err);
-                                // Fallback or alert?
                                 alert("Failed to upload image");
                              }
                           }
@@ -323,9 +340,10 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                 </div>
               </div>
             ) : view === "shape" ? (
+              // VIEW C: Geometric Shapes Selection
               <div className="space-y-4">
-                {/* Shape Grid View */}
                 <div className="space-y-1.5">
+                  {/* Breadcrumb Navigation */}
                   <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest">
                     <button
                       onClick={() => setView("categories")}
@@ -338,6 +356,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                   </div>
 
                   <div className="grid grid-cols-5 gap-y-3 px-1.5">
+                    {/* List of shapes with custom visual properties (slant, stretch, trapezoid) */}
                     {[
                       { icon: Square, label: "Rectangle" },
                       { icon: Circle, label: "Ellipse" },
@@ -355,7 +374,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                         key={i}
                         onClick={() => {
                           onAddShape(shape.label);
-                          setActiveTool("PlusAdd");
+                          setActiveTool("PlusAdd"); // Switch to placement pointer
                         }}
                         className="flex flex-col items-center gap-1.5 group p-1"
                       >
@@ -379,6 +398,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                 </div>
               </div>
             ) : view === "icon" ? (
+              // VIEW D: Icon Categories and General Search
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest">
@@ -397,6 +417,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
 
                   {!subView && (
                     <div className="space-y-1.5 px-2">
+                      {/* Deep dive into specific icon sets (Custom, General, Tech, Cloud) */}
                       {[
                         {
                           id: "custom",
@@ -453,6 +474,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                     </div>
                   )}
 
+                  {/* VIEW D.1: General Icons grid (Lucide based) */}
                   {(!subView || subView === "general") && (
                     <div className="grid grid-cols-5 gap-y-3 px-2 pb-4">
                       {GENERAL_ICONS.map((icon, i) => (
@@ -462,6 +484,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                         >
                           <button
                             onClick={() => {
+                              // Render the Lucide icon to a static SVG string for canvas use
                               const svg = ReactDOMServer.renderToStaticMarkup(
                                 <icon.icon color="currentColor" size={48} />
                               );
@@ -485,6 +508,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                 </div>
               </div>
             ) : view === "provider-icons" ? (
+              // VIEW E: Tech/Cloud Icon Search Results
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest flex-wrap">
@@ -517,6 +541,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
 
                   <div className="grid grid-cols-5 gap-y-3 px-2 pb-4">
                     {isLoading ? (
+                      // Loading skeletons for a better UX while fetching SVGs
                       Array.from({ length: 20 }).map((_, i) => (
                         <div
                           key={i}
@@ -555,6 +580,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                 </div>
               </div>
             ) : view === "device-frame" ? (
+              // VIEW F: Hardware Device Frames
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2 px-3 py-2 text-[11px] font-bold tracking-tight">
@@ -595,6 +621,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                 </div>
               </div>
             ) : (
+              // VIEW G: Cloud Provider Category list (Top-level)
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest">
@@ -667,7 +694,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                             <Network className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                           )}
                         </div>
-                        <div className="flex-1 flex flex-col min-w-0">
+                        <div className="flex-1 flex flex-col min-0">
                           <span className="text-[13px] font-bold text-foreground group-hover:text-primary transition-colors">
                             {cloud.name}
                           </span>
@@ -684,11 +711,12 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
             )}
           </div>
 
-          {/* Footer */}
+          {/* MENU FOOTER: Contextual Status and Shortcuts */}
           <div className="flex items-center justify-between px-4 py-3 bg-muted/40 border-t border-border/50">
             <div className="text-[11px] font-bold text-foreground/80 tracking-tight">
-              {view === "device-frame" ? "Phone" : (
+              {view === "device-frame" ? "PHONE" : (
                 pendingAddIcon ? (
+                  // Alert the user that they have an item currently "on their cursor" for placement
                   <span className="text-primary flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
                     READY TO PLACE: {pendingAddIcon.name.toUpperCase()}
                   </span>
@@ -696,9 +724,10 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                   <span className="text-primary flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
                     READY TO PLACE: {pendingAddShapeLabel.toUpperCase()}
                   </span>
-                ) : "All Categories"
+                ) : "ALL CATEGORIES"
               )}
             </div>
+            {/* Keyboard shortcut hints */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground/50">
                 <div className="flex items-center gap-0.5">

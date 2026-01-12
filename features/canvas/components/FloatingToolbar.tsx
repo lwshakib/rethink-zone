@@ -1,4 +1,5 @@
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react"; // Core React hooks
+// Importing a wide array of icons for the various toolbar actions
 import { 
   Copy, Trash2, Palette, Sun, 
   Circle, Square, Triangle, Diamond, Hexagon, Star, 
@@ -7,49 +8,57 @@ import {
   AlignLeft, AlignCenter, AlignRight, MessageSquare, Plus,
   Code as CodeIcon, Type as TypeIcon
 } from "lucide-react";
+// Type definitions for various shapes supportable on the canvas
 import { SelectedShape, RectShape, CircleShape, ImageShape, TextShape, FrameShape, PolyShape, LineShape, ArrowShape, CodeShape, Connector } from "../types";
-import ColorPicker from "./ColorPicker";
+import ColorPicker from "./ColorPicker"; // Custom color selection sub-component
 
+// Props interface defining what state and callbacks the toolbar needs
 interface FloatingToolbarProps {
-  selectedShape: SelectedShape;
-  rectangles: RectShape[];
-  circles: CircleShape[];
-  images: ImageShape[];
-  texts: TextShape[];
-  frames: FrameShape[];
-  polygons: PolyShape[];
-  lines: LineShape[];
-  arrows: ArrowShape[];
-  codes: CodeShape[];
-  connectors: Connector[];
-  canvasToClient: (x: number, y: number) => { x: number; y: number };
-  onUpdateShape: (kind: string, index: number, updates: any) => void;
-  onChangeKind: (kind: string, index: number, newKind: string) => void;
-  onDelete: () => void;
-  onDuplicate: () => void;
-  theme?: string;
+  selectedShape: SelectedShape; // Current selection from the canvas
+  rectangles: RectShape[];      // All rectangle data
+  circles: CircleShape[];        // All circle data
+  images: ImageShape[];          // All image data
+  texts: TextShape[];            // All text data
+  frames: FrameShape[];          // All frame data
+  polygons: PolyShape[];        // All polygon data
+  lines: LineShape[];            // All line data
+  arrows: ArrowShape[];          // All arrow data
+  codes: CodeShape[];            // All code block data
+  connectors: Connector[];      // All connector data
+  canvasToClient: (x: number, y: number) => { x: number; y: number }; // Transform helper
+  onUpdateShape: (kind: string, index: number, updates: any) => void;   // Generic update trigger
+  onChangeKind: (kind: string, index: number, newKind: string) => void; // Shape transformation trigger
+  onDelete: () => void;         // Global delete handler
+  onDuplicate: () => void;      // Global duplicate handler
+  theme?: string;                // Component theme context
 }
 
+// Preset color palette for solid, dark/professional fills
 const SOLID_PALETTE = [
   "#1e1e1e", "#595b27", "#275b39", "#273b5b", "#5b275b",
   "#5b2727", "#5b3b27", "#3e3e3e"
 ];
 
+// Preset color palette for soft, pastel fills
 const PASTEL_PALETTE = [
   "#f9fbfc", "#e9f5e9", "#e9eff5", "#f5e9f5", "#f5eee9",
   "#fca5a5", "#fdba74", "#fef08a"
 ];
 
+/**
+ * ShapeIcon - Helper component to render an SVG icon matching a specific shape kind.
+ */
 const ShapeIcon = ({ kind }: { kind: string }) => {
-  const s = "currentColor";
-  const sw = 2;
-  // Use a common wrapper to ensure alignment
+  const s = "currentColor"; // Use current text color for stroke
+  const sw = 2;              // Standard stroke width
+  // Helper wrapper for SVG boilerplate
   const Wrap = ({ children }: { children: React.ReactNode }) => (
     <svg viewBox="0 0 24 24" fill="none" stroke={s} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 pointer-events-none">
       {children}
     </svg>
   );
 
+  // Return specific SVG paths based on the kind string
   if (kind === "rect") return <Wrap><rect x="3" y="6" width="18" height="12" rx="1"/></Wrap>;
   if (kind === "circle") return <Wrap><circle cx="12" cy="12" r="8"/></Wrap>;
   if (kind.includes("Diamond")) return <Wrap><path d="M12 3L21 12L12 21L3 12L12 3Z"/></Wrap>;
@@ -64,6 +73,7 @@ const ShapeIcon = ({ kind }: { kind: string }) => {
   return <Wrap><rect x="3" y="3" width="18" height="18" rx="2"/></Wrap>;
 };
 
+// Metadata for shape variety supported in the menu
 const SHAPES = [
   { kind: "rect", label: "Rectangle" },
   { kind: "circle", label: "Circle" },
@@ -78,6 +88,7 @@ const SHAPES = [
   { kind: "poly:Star", label: "Star" },
 ];
 
+// Aesthetic presets for quick styling
 const STYLE_PRESETS = [
   { id: "plain", label: "Plain" },
   { id: "outline", label: "Outline" },
@@ -85,6 +96,7 @@ const STYLE_PRESETS = [
   { id: "watercolor", label: "Watercolor" }
 ];
 
+// Stroke width presets for borders
 const STROKE_PRESETS = [
   { id: "S", label: "S", width: 1 },
   { id: "M", label: "M", width: 2 },
@@ -92,11 +104,15 @@ const STROKE_PRESETS = [
   { id: "XL", label: "XL", width: 8 },
 ];
 
+/**
+ * PopoverContainer - A memoized sub-component used for sub-menus (colors, shapes, etc.).
+ */
 const PopoverContainer = React.memo(({ children, active, className = "", style = {}, transparent = false, theme = "dark" }: { children: React.ReactNode, active: boolean, className?: string, style?: React.CSSProperties, transparent?: boolean, theme?: string }) => {
-  if (!active) return null;
+  if (!active) return null; // Only render if active
   const isDark = theme === "dark";
   return (
     <div 
+      // Positioned above the toolbar trigger
       className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-4 flex flex-col gap-2 ${
         transparent 
           ? "p-0" 
@@ -105,9 +121,9 @@ const PopoverContainer = React.memo(({ children, active, className = "", style =
             : "p-3 bg-white rounded-lg border border-black/10 shadow-2xl"
       } animate-in fade-in slide-in-from-bottom-2 duration-200 z-[1001] ${className}`}
       style={style}
-      onPointerDown={e => e.stopPropagation()}
+      onPointerDown={e => e.stopPropagation()} // Prevent canvas from capturing clicks inside popovers
       onWheel={e => {
-        e.stopPropagation();
+        e.stopPropagation(); // Prevent scroll propagation back to canvas
         e.nativeEvent.stopPropagation();
       }}
     >
@@ -118,6 +134,9 @@ const PopoverContainer = React.memo(({ children, active, className = "", style =
 
 PopoverContainer.displayName = "PopoverContainer";
 
+/**
+ * Main FloatingToolbar Component
+ */
 const FloatingToolbar = React.memo(({
   selectedShape,
   rectangles,
@@ -136,6 +155,7 @@ const FloatingToolbar = React.memo(({
   onDuplicate,
   theme = "dark",
 }: FloatingToolbarProps) => {
+  // Theme-derived utility classes
   const isDark = theme === "dark";
   const bgSubtle = isDark ? "bg-white/5" : "bg-black/[0.03]";
   const bgHover = isDark ? "hover:bg-white/5" : "hover:bg-black/[0.04]";
@@ -144,11 +164,13 @@ const FloatingToolbar = React.memo(({
   const separatorColor = isDark ? "bg-white/5" : "bg-black/[0.05]";
   const toggleBg = isDark ? "bg-[#2a2a2a]" : "bg-black/[0.08]";
 
+  // UI interaction state: which sub-menu is open
   const [activePopover, setActivePopover] = useState<string>("none");
-  const [paletteMode, setPaletteMode] = useState<"solid" | "pastel">("solid");
-  const [colorTarget, setColorTarget] = useState<"fill" | "stroke">("fill");
+  const [paletteMode, setPaletteMode] = useState<"solid" | "pastel">("solid"); // Toggle between color sets
+  const [colorTarget, setColorTarget] = useState<"fill" | "stroke">("fill"); // Toggle between fill/border color
   const toolbarRef = useRef<HTMLDivElement>(null);
 
+  // EFFECT: Close any open popovers if the user clicks anywhere outside the toolbar area
   useEffect(() => {
     const handleClickOutside = (e: PointerEvent) => {
       if (toolbarRef.current && !e.composedPath().includes(toolbarRef.current)) {
@@ -159,11 +181,13 @@ const FloatingToolbar = React.memo(({
     return () => document.removeEventListener("pointerdown", handleClickOutside);
   }, []);
 
+  // Compute the full data of the primary selected item
   const shapeData = useMemo(() => {
     if (selectedShape.length === 0) return null;
     const { kind, id } = selectedShape[0];
     const findById = (arr: any[]) => arr.find(s => s.id === id);
     
+    // Switch through collections to find the matching entity
     const source = kind === "rect" ? findById(rectangles) :
                    kind === "circle" ? findById(circles) :
                    kind === "image" ? findById(images) :
@@ -176,33 +200,38 @@ const FloatingToolbar = React.memo(({
                    kind === "connector" ? findById(connectors) : null;
     
     if (!source) return null;
+    // Map internal types to display labels
     const label = kind === "poly" ? (source as PolyShape).type : 
                   kind === "connector" ? "Connection" :
                   kind.charAt(0).toUpperCase() + kind.slice(1);
     return { ...source, kind, label };
   }, [selectedShape, rectangles, circles, images, texts, frames, polygons, lines, arrows, codes, connectors]);
 
-  if (selectedShape.length === 0 || !shapeData) return null;
+  if (selectedShape.length === 0 || !shapeData) return null; // Guard: hide if no selection
 
+  // Helper variables for logic simplification
   const mainKind = selectedShape[0]?.kind;
   const mainIndex = selectedShape[0]?.index;
   const isMulti = selectedShape.length > 1;
 
+  // Normalize properties for current selection
   const currentLanguage = (shapeData && "language" in shapeData) ? (shapeData.language as string || "Auto detect") : "Auto detect";
-  
-  // Extract current shape properties
   const currentFill = (shapeData && "fill" in shapeData) ? (shapeData.fill as string) : "#1e1e1e";
   const currentStroke = (shapeData && "stroke" in shapeData) ? (shapeData.stroke as string) : "#1e1e1e";
-  const currentColor = colorTarget === "fill" ? currentFill : currentStroke;
+  const currentColor = colorTarget === "fill" ? currentFill : currentStroke; // Color shown in the picker
   const currentFontFamily = (shapeData && "fontFamily" in shapeData) ? (shapeData.fontFamily as string) : "Clean";
   const currentFontSize = (shapeData && "fontSize" in shapeData) ? (shapeData.fontSize as number) : 18;
   const currentTextAlign = (shapeData && "textAlign" in shapeData) ? (shapeData.textAlign as string) : "left";
 
+  // Logical flags for conditional tool rendering
   const canChangeShape = ["rect", "circle", "poly"].includes(mainKind);
   const isTextOrCode = ["text", "code"].includes(mainKind);
   const isLineOrArrow = ["line", "arrow"].includes(mainKind);
   const isConnector = mainKind === "connector";
 
+  /**
+   * RENDERS: The grid of shape options for transformation.
+   */
   const renderShapesGrid = () => (
     <div className="grid grid-cols-4 gap-3 p-1 w-fit min-w-[180px]">
       {SHAPES.map((s) => (
@@ -210,6 +239,7 @@ const FloatingToolbar = React.memo(({
           key={s.kind}
           onClick={() => onChangeKind(mainKind, mainIndex, s.kind)}
           className={`h-10 w-10 flex items-center justify-center rounded-lg transition-all flex-shrink-0 ${
+            // Check if current shape matches this button (including poly subtypes)
             mainKind === s.kind || (mainKind === "poly" && s.kind.startsWith("poly") && (shapeData as any).type === s.kind.split(":")[1])
               ? "bg-[#3bc1ff] text-white shadow-lg" 
               : `text-foreground/80 ${bgHover}`
@@ -223,18 +253,22 @@ const FloatingToolbar = React.memo(({
     </div>
   );
 
+  /**
+   * RENDERS: The color selection panel with presets and custom picker link.
+   */
   const renderColorGrid = () => {
     const isCustomActive = activePopover === "custom-color";
     const currentPalette = paletteMode === "solid" ? SOLID_PALETTE : PASTEL_PALETTE;
     
     return (
       <div className="flex flex-col gap-4">
-        {/* Style Presets */}
+        {/* UPPER: Style Presets (Plain, Outline, etc.) */}
         <div className={`flex gap-3 justify-center border-b ${separatorColor} pb-3`}>
           {STYLE_PRESETS.map(preset => (
             <button
               key={preset.id}
               onClick={() => {
+                // Apply specific property bundles for each preset
                 if (preset.id === "outline") onUpdateShape(mainKind, mainIndex, { fill: "transparent", opacity: 1, strokeWidth: 2 });
                 else if (preset.id === "watercolor") onUpdateShape(mainKind, mainIndex, { opacity: 0.4 });
                 else onUpdateShape(mainKind, mainIndex, { opacity: 1 });
@@ -247,7 +281,7 @@ const FloatingToolbar = React.memo(({
           ))}
         </div>
 
-        {/* Target Switcher (Fill vs Border) */}
+        {/* MIDDLE: Target Selector (Switch between editing the center fill or border edge) */}
         {!isLineOrArrow && mainKind !== "text" && (
           <div className={`flex p-0.5 ${bgSubtle} rounded-lg border ${borderSubtle}`}>
             <button 
@@ -265,7 +299,7 @@ const FloatingToolbar = React.memo(({
           </div>
         )}
 
-        {/* Caption for special modes */}
+        {/* Specialized labels for single-color items */}
         {isLineOrArrow && (
            <div className="px-1 text-[10px] font-bold text-foreground/40 uppercase tracking-tighter">Line Color</div>
         )}
@@ -273,7 +307,7 @@ const FloatingToolbar = React.memo(({
            <div className="px-1 text-[10px] font-bold text-foreground/40 uppercase tracking-tighter">Text Color</div>
         )}
 
-        {/* Palette Switcher */}
+        {/* PALETTE TOGGLE: Switch between Solid and Pastel collections */}
         <div className="flex items-center justify-between px-1">
            <span className="text-[10px] font-bold text-foreground/40 uppercase tracking-tighter">Palette</span>
            <div className="flex gap-2">
@@ -292,8 +326,9 @@ const FloatingToolbar = React.memo(({
            </div>
         </div>
 
-        {/* Color Palette */}
+        {/* LOWER: The actual color swatch grid */}
         <div className="flex flex-col gap-2">
+          {/* Top Row Swatches */}
           <div className="flex gap-2">
             {currentPalette.slice(0, 5).map((color) => (
               <button
@@ -304,6 +339,7 @@ const FloatingToolbar = React.memo(({
               />
             ))}
           </div>
+          {/* Bottom Row including Custom Picker and Transparent toggle */}
           <div className="flex gap-2">
             {currentPalette.slice(5, 8).map((color) => (
               <button
@@ -313,11 +349,13 @@ const FloatingToolbar = React.memo(({
                 style={{ backgroundColor: color }}
               />
             ))}
+            {/* Custom Conic Gradient Button to open fine-tuned ColorPicker */}
             <button
               onClick={() => setActivePopover("custom-color")}
               className={`h-8 w-8 rounded-[6px] border ${isDark ? "border-white/20" : "border-black/10"} relative overflow-hidden transition-all ${isCustomActive ? 'ring-[3px] ring-blue-500' : 'hover:scale-105'}`}
               style={{ background: "conic-gradient(from 0deg, red, yellow, green, cyan, blue, magenta, red)" }}
             />
+            {/* Transparent option (dashed cross) */}
             <button
               onClick={() => {
                 if (mainKind === "text" || isLineOrArrow) {
@@ -344,38 +382,48 @@ const FloatingToolbar = React.memo(({
     );
   };
 
+  /**
+   * RENDERS: The stroke selection panel for borders and line widths.
+   */
   const renderStrokePanel = () => (
     <div className="flex flex-col gap-4 min-w-[160px]">
+      {/* SECTION: Stroke Thickness Presets */}
       <div className="flex flex-col gap-1">
         {STROKE_PRESETS.map(preset => (
           <button
             key={preset.id}
             onClick={() => onUpdateShape(mainKind, mainIndex, { strokeWidth: preset.width })}
             className={`flex items-center justify-between px-3 py-2 rounded-md transition-all ${
+              // Highlight the button if it matches the current width
               (shapeData as any).strokeWidth === preset.width ? "bg-[#3bc1ff] text-white" : `${bgHover} text-foreground/80`
             }`}
           >
             <div className="flex items-center gap-3">
               <span className="text-[11px] font-bold w-4">{preset.label}</span>
+              {/* Visual preview of line thickness */}
               <div className={`${isDark ? "bg-white" : "bg-black"} rounded-full`} style={{ height: preset.width, width: 40 }} />
             </div>
           </button>
         ))}
       </div>
       <div className={`h-px ${separatorColor}`} />
+      {/* SECTION: Stroke Dash Styles (Solid vs Dashed) */}
       <div className="flex items-center gap-2 justify-between">
+         {/* Solid Line Option */}
          <button 
            onClick={() => onUpdateShape(mainKind, mainIndex, { strokeDashArray: undefined })}
            className={`flex-1 h-8 flex items-center justify-center rounded-md border ${(shapeData as any).strokeDashArray ? `border-transparent ${isDark ? "text-white/40" : "text-black/40"}` : "border-[#3bc1ff] bg-[#3bc1ff]/10 text-[#3bc1ff]"}`}
          >
            <div className="h-0.5 w-8 bg-current" />
          </button>
+         {/* Dashed Line Option */}
          <button 
            onClick={() => onUpdateShape(mainKind, mainIndex, { strokeDashArray: [5, 5] })}
            className={`flex-1 h-8 flex items-center justify-center rounded-md border ${(shapeData as any).strokeDashArray ? "border-[#3bc1ff] bg-[#3bc1ff]/10 text-[#3bc1ff]" : `border-transparent ${isDark ? "text-white/40" : "text-black/40"}`}`}
          >
            <div className="h-0.5 w-8 border-b border-dashed border-current" />
          </button>
+         {/* Remove Border Option */}
          <button 
            onClick={() => onUpdateShape(mainKind, mainIndex, { strokeWidth: 0 })}
            className={`h-8 w-8 flex items-center justify-center rounded-md border ${(shapeData as any).strokeWidth === 0 ? "border-[#3bc1ff] bg-[#3bc1ff]/10 text-[#3bc1ff]" : `${borderSubtle} ${isDark ? "text-white/40" : "text-black/40"} ${bgHover}`}`}
@@ -389,8 +437,12 @@ const FloatingToolbar = React.memo(({
     </div>
   );
 
+  /**
+   * RENDERS: The typography panel for text alignment, sizing, and fonts.
+   */
   const renderTypographyPanel = () => (
     <div className="flex flex-col gap-4 min-w-[200px]">
+      {/* FONT FAMILY SELECTOR */}
       <div className="flex flex-col gap-1.5">
         <span className="text-[10px] uppercase font-bold text-foreground/40 px-1 opacity-50">Font Family</span>
         <div className={`flex gap-1 p-0.5 ${bgSubtle} rounded-lg`}>
@@ -406,6 +458,7 @@ const FloatingToolbar = React.memo(({
         </div>
       </div>
       
+      {/* FONT SIZE PRESETS (S, M, L, XL) */}
       <div className="flex flex-col gap-1.5">
         <span className="text-[10px] uppercase font-bold text-foreground/40 px-1 opacity-50">Font Size</span>
         <div className={`flex gap-1 p-0.5 ${bgSubtle} rounded-lg`}>
@@ -421,6 +474,7 @@ const FloatingToolbar = React.memo(({
         </div>
       </div>
 
+      {/* TEXT ALIGNMENT BOX (Left, Center, Right) */}
       <div className="flex flex-col gap-1.5">
         <span className="text-[10px] uppercase font-bold text-foreground/40 px-1 opacity-50">Alignment</span>
         <div className="flex gap-1 mt-1 justify-center">
@@ -442,8 +496,12 @@ const FloatingToolbar = React.memo(({
     </div>
   );
 
+  /**
+   * RENDERS: The code-specific settings panel (language selection, font size).
+   */
   const renderCodePanel = () => (
     <div className="flex flex-col gap-4 min-w-[200px]">
+      {/* LANGUAGE SELECTOR GRID */}
       <div className="flex flex-col gap-1.5">
         <span className="text-[10px] uppercase font-bold text-foreground/40 px-1 opacity-50">Language</span>
         <div className="grid grid-cols-2 gap-1 max-h-[160px] overflow-y-auto px-1 scrollbar-hide">
@@ -459,6 +517,7 @@ const FloatingToolbar = React.memo(({
         </div>
       </div>
       <div className={`h-px ${separatorColor}`} />
+      {/* MONOSPACE FONT SIZE SELECTION */}
       <div className="flex flex-col gap-1.5">
         <span className="text-[10px] uppercase font-bold text-foreground/40 px-1 opacity-50">Text Size</span>
         <div className={`flex gap-1 p-0.5 ${bgSubtle} rounded-lg`}>
@@ -481,16 +540,18 @@ const FloatingToolbar = React.memo(({
   return (
     <div
       ref={toolbarRef}
+      // Fixed position at bottom-center of the screen
       className={`fixed bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-1 p-1.5 rounded-xl border shadow-2xl z-[1000] animate-in fade-in slide-in-from-bottom-2 duration-300 ${
         isDark ? "bg-[#121212] border-white/10" : "bg-white border-black/10"
       }`}
-      onPointerDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()} // Stop canvas events when interacting with toolbar
       onWheel={(e) => {
         e.stopPropagation();
         e.nativeEvent.stopPropagation();
       }}
     >
       {isMulti ? (
+        // MULTI-SELECTION UI: Only show global actions (Duplicate, Delete)
         <div className="flex items-center gap-1">
            <div className={`flex items-center gap-2 px-3 border-r ${separatorColor} mr-1`}>
             <Layers className="h-4 w-4 text-primary" />
@@ -504,8 +565,9 @@ const FloatingToolbar = React.memo(({
           </button>
         </div>
       ) : (
+        // SINGLE SELECTION UI: Show specific tools based on shape kind
         <div className="flex items-center gap-1">
-          {/* Text/Code Toggle Switch */}
+          {/* TEXT vs CODE Toggle switch for conversion between textual shapes */}
           {isTextOrCode && (
             <div className={`flex p-0.5 ${bgSubtle} rounded-lg border ${borderSubtle} mr-1`}>
               <button
@@ -523,13 +585,14 @@ const FloatingToolbar = React.memo(({
             </div>
           )}
 
-          {/* Shapes Menu (Only for Rect, Circle, Poly) */}
+          {/* SHAPES MENU: Switch between Rect, Circle, and Polygons */}
           {canChangeShape && (
             <div className="relative">
               <button
                 onClick={() => setActivePopover(activePopover === "shapes" ? "none" : "shapes")}
                 className={`h-9 px-2 flex items-center gap-1 rounded-lg transition-all ${activePopover === "shapes" ? bgActive : bgHover}`}
               >
+                {/* Visual indicator of "Shapes" */}
                 <div className="flex flex-col gap-0.5 items-center justify-center scale-90">
                    <div className="flex gap-0.5"><div className="h-1.5 w-1.5 rounded-full border border-current"/><div className="h-1.5 w-1.5 border border-current rotate-45"/></div>
                    <div className="h-1.5 w-1.5 border border-current"/>
@@ -544,17 +607,19 @@ const FloatingToolbar = React.memo(({
 
           {canChangeShape && <div className={`h-6 w-px ${separatorColor} mx-0.5`} />}
 
-          {/* Color Menu (Shown for everything except Connector and Code) */}
+          {/* COLOR TRIGGER: Dynamics based on shape type (Fill vs Stroke vs Text Color) */}
           {!isConnector && mainKind !== "code" && (
             <div className="relative">
               <button
                 onClick={() => {
+                  // Set appropriate default sub-target when opening the color menu
                   if (mainKind === "text") setColorTarget("fill");
                   else if (isLineOrArrow) setColorTarget("stroke");
                   setActivePopover(activePopover === "color" ? "none" : "color");
                 }}
                 className={`h-9 px-2 flex items-center gap-1 rounded-lg transition-all ${activePopover === "color" ? bgActive : bgHover}`}
               >
+                {/* Visual preview of current colors */}
                 {mainKind === "text" ? (
                   <div className="h-5 w-5 flex items-center justify-center">
                     <div className="h-4 w-4 rounded-sm border border-foreground/20" style={{ backgroundColor: currentFill }} />
@@ -565,10 +630,12 @@ const FloatingToolbar = React.memo(({
                   </div>
                 ) : (
                   <div className="relative h-7 w-10 flex items-center justify-center">
+                    {/* Border Color Indicator */}
                     <div 
                       className={`absolute top-1 right-1.5 h-4.5 w-4.5 rounded-full border ${isDark ? "border-white/40" : "border-black/20"} overflow-hidden shadow-sm z-10`} 
                       style={{ backgroundColor: currentStroke }}
                     />
+                    {/* Fill Color Indicator */}
                     <div 
                       className={`absolute bottom-1 left-1.5 h-4.5 w-4.5 rounded-full border ${isDark ? "border-white/40" : "border-black/20"} overflow-hidden shadow-sm`}
                       style={{ backgroundColor: currentFill === "transparent" ? (isDark ? "#1e1e1e" : "#f5f5f5") : currentFill }}
@@ -582,6 +649,7 @@ const FloatingToolbar = React.memo(({
               <PopoverContainer active={activePopover === "color"} theme={theme}>
                 {renderColorGrid()}
               </PopoverContainer>
+              {/* Secondary popover for the deep color picker */}
               <PopoverContainer active={activePopover === "custom-color"} className="ml-[160px]" theme={theme}>
                 <ColorPicker 
                    color={currentColor === "transparent" ? (isDark ? "#ffffff" : "#000000") : currentColor} 
@@ -592,7 +660,7 @@ const FloatingToolbar = React.memo(({
             </div>
           )}
 
-          {/* Typography for Text */}
+          {/* TYPOGRAPHY TRIGGER: Fonts and styles for text items */}
           {mainKind === "text" && (
              <>
                <div className={`h-6 w-px ${separatorColor} mx-0.5`} />
@@ -611,7 +679,7 @@ const FloatingToolbar = React.memo(({
              </>
           )}
 
-          {/* Code Panel for Code */}
+          {/* CODE OPTIONS TRIGGER: Languages and font sizes for code blocks */}
           {mainKind === "code" && (
              <>
                <div className={`h-6 w-px ${separatorColor} mx-0.5`} />
@@ -630,7 +698,7 @@ const FloatingToolbar = React.memo(({
              </>
           )}
 
-          {/* Stroke/Line Menu (Shown for Shapes and Lines) */}
+          {/* STROKE TRIGGER: Width and dash style for geometric shapes and lines */}
           {(canChangeShape || isLineOrArrow) && (
             <>
               <div className={`h-6 w-px ${separatorColor} mx-0.5`} />
@@ -639,6 +707,7 @@ const FloatingToolbar = React.memo(({
                   onClick={() => setActivePopover(activePopover === "stroke" ? "none" : "stroke")}
                   className={`h-9 px-2 flex items-center gap-1 rounded-lg transition-all ${activePopover === "stroke" ? bgActive : bgHover}`}
                 >
+                  {/* Visual indicator of line thickness stacked */}
                   <div className="flex flex-col gap-1 w-4">
                     <div className={`h-px ${isDark ? "bg-white/80" : "bg-black/80"} w-full`} />
                     <div className={`h-px ${isDark ? "bg-white/50" : "bg-black/50"} w-full`} />
@@ -655,12 +724,12 @@ const FloatingToolbar = React.memo(({
 
           <div className={`h-6 w-px ${separatorColor} mx-0.5`} />
 
-          {/* Chat Icon */}
+          {/* CHAT/MESSAGE placeholder button */}
           <button className={`h-9 w-9 flex items-center justify-center rounded-lg ${bgHover} transition-all`}>
             <MessageSquare className="h-4 w-4 opacity-70" />
           </button>
 
-          {/* More Menu */}
+          {/* MORE MENU (...) : Duplicate and Delete secondary actions */}
           <div className="relative">
             <button
               onClick={() => setActivePopover(activePopover === "more" ? "none" : "more")}
