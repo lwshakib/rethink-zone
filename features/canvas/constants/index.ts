@@ -1,3 +1,7 @@
+/**
+ * This module defines shared constants and static assets used across the canvas feature.
+ */
+
 import {
   Activity,
   Airplay,
@@ -19,13 +23,24 @@ import {
   ArrowUpRight,
   ArrowRight as ArrowRightIcon,
   ArrowLeft as ArrowLeftIcon,
-} from "lucide-react";
-import { IconItem } from "../types";
+} from "lucide-react"; // Import vector icons from Lucide for the Icon library feature.
+import { IconItem } from "../types"; // Type definition for an icon entry in the library.
 
+// --- Navigation & View Constants ---
+
+/** Minimum allowable zoom level (10%) */
 export const MIN_ZOOM = 0.1;
+/** Maximum allowable zoom level (500%) */
 export const MAX_ZOOM = 5;
+/** Default increment/decrement for zoom operations */
 export const ZOOM_STEP = 0.1;
 
+// --- Icon Library Assets ---
+
+/**
+ * A curated list of Lucide icons available to the user in the 'Icons' sidebar.
+ * Each entry maps a human-readable name to its corresponding React component.
+ */
 export const GENERAL_ICONS: IconItem[] = [
   { name: "activity", icon: Activity },
   { name: "airplay", icon: Airplay },
