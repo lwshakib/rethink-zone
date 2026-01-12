@@ -1,8 +1,9 @@
-"use client";
-import "@blocknote/core/fonts/inter.css";
-import { useCreateBlockNote } from "@blocknote/react";
-import { BlockNoteView } from "@blocknote/shadcn";
-import "@blocknote/shadcn/style.css";
+"use client"; // Marks this as a client-side component for Next.js
+import "@blocknote/core/fonts/inter.css"; // Load Default Inter fonts for the editor
+import { useCreateBlockNote } from "@blocknote/react"; // Hook to initialize the BlockNote editor instance
+import { BlockNoteView } from "@blocknote/shadcn"; // The view component that renders the editor UI
+import "@blocknote/shadcn/style.css"; // Core styles for the Shadcn-themed BlockNote components
+// Importing Shadcn UI primitives to be used by the editor's internal components
 import * as Badge from "@/components/ui/badge";
 import * as Button from "@/components/ui/button";
 import * as Card from "@/components/ui/card";
@@ -16,22 +17,30 @@ import * as Tabs from "@/components/ui/tabs";
 import * as Toggle from "@/components/ui/toggle";
 import * as Tooltip from "@/components/ui/tooltip";
 
-import { useTheme } from "next-themes";
+import { useTheme } from "next-themes"; // Hook to manage light/dark mode
 
+/**
+ * BlockNoteEditor - A high-performance, block-based rich text editor.
+ */
 const BlockNoteEditor = ({ initialContent, onChange }: { initialContent?: any, onChange?: (content: any) => void }) => {
-  const { resolvedTheme } = useTheme();
+  const { resolvedTheme } = useTheme(); // Access the current theme (light or dark)
+  
+  // Initialize the editor instance with optional starting content
   const editor = useCreateBlockNote({
     initialContent: initialContent ? (initialContent as any) : undefined,
   });
 
   return (
     <div className="blocknote-premium-container h-full w-full">
+      {/* Renders the editor interface */}
       <BlockNoteView
         editor={editor}
-        theme={resolvedTheme === "dark" ? "dark" : "light"}
+        theme={resolvedTheme === "dark" ? "dark" : "light"} // Sync editor theme with application theme
         onChange={() => {
+          // Fire the onChange callback whenever the document structure changes
           onChange?.(editor.document);
         }}
+        // Injects our application's Shadcn components into the editor for a native feel
         shadCNComponents={{
           Badge,
           Button,
@@ -47,6 +56,7 @@ const BlockNoteEditor = ({ initialContent, onChange }: { initialContent?: any, o
           Tooltip,
         }}
       />
+      {/* Custom CSS overrides to blend the editor perfectly into our branding */}
       <style jsx global>{`
         .blocknote-premium-container .bn-editor {
           padding-left: 0 !important;
@@ -64,7 +74,7 @@ const BlockNoteEditor = ({ initialContent, onChange }: { initialContent?: any, o
         .blocknote-premium-container .bn-block-outer {
            margin-left: 0 !important;
         }
-        /* Make internal UI elements feel more like our theme */
+        /* Enhance the aesthetic of internal menu items and buttons */
         .bn-menu-item, .bn-button {
           border-radius: 8px !important;
         }
