@@ -1,18 +1,27 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
+/**
+ * Generator for the Prisma Client.
+ * Output is redirected to a custom 'generated' folder for better modularity.
+ */
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
 }
 
+/**
+ * Database connection details.
+ * Sourced from the DATABASE_URL environment variable.
+ */
 datasource db {
   provider = "postgresql"
 }
 
+/**
+ * User Profile model.
+ * Stores account metadata and links to authentication components and application content.
+ */
 model User {
   id            String    @id
   name          String
@@ -29,6 +38,10 @@ model User {
   @@map("user")
 }
 
+/**
+ * Session model for Better Auth.
+ * Tracks active browser sessions and maps them back to users.
+ */
 model Session {
   id        String   @id
   expiresAt DateTime
@@ -45,6 +58,10 @@ model Session {
   @@map("session")
 }
 
+/**
+ * Account model for Better Auth.
+ * Handles OAuth links (e.g. Google) and credential-based login storage.
+ */
 model Account {
   id                    String    @id
   accountId             String
@@ -65,6 +82,9 @@ model Account {
   @@map("account")
 }
 
+/**
+ * Verification model for email tokens and password resets.
+ */
 model Verification {
   id         String   @id
   identifier String
@@ -77,20 +97,24 @@ model Verification {
   @@map("verification")
 }
 
-
-
-
+/**
+ * Workspace model.
+ * The core entity of the application. Stores all JSON-blob data for 
+ * Documents, Canvas, and Kanban boards associated with a specific user.
+ */
 model Workspace {
   id String @id @default(uuid())
   userId String
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   name String
+  /** Rich text content stored as JSONB */
   documentData Json?
+  /** Canvas shapes and state stored as JSONB */
   canvasData Json?
+  /** Kanban board list/card structure stored as JSONB */
   kanbanBoard Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
 }
-
