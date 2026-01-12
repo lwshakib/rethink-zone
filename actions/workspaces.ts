@@ -1,3 +1,8 @@
+/**
+ * This module contains Next.js Server Actions for CRUD operations on Workspaces.
+ * It uses Prisma for database interaction and Zod for input validation.
+ */
+
 "use server";
 
 import prisma from "@/lib/prisma";
@@ -11,10 +16,18 @@ import {
 import { getUser } from "@/actions/user";
 import type { Workspace } from "@/generated/prisma/client";
 
+/**
+ * Standard interface for action responses.
+ */
 type ActionResult<T> =
   | { success: true; data: T }
   | { success: false; error: string };
 
+/**
+ * Retrieves all workspaces belonging to the authenticated user.
+ * 
+ * @returns {Promise<ActionResult<Workspace[]>>} - The list of workspaces or an error message.
+ */
 export async function listWorkspacesAction(): Promise<
   ActionResult<Workspace[]>
 > {
@@ -24,6 +37,7 @@ export async function listWorkspacesAction(): Promise<
       return { success: false, error: "Unauthorized." };
     }
 
+    // Fetch workspaces for the current user, sorted by most recently updated.
     const workspaces = await prisma.workspace.findMany({
       where: { userId: user.id },
       orderBy: { updatedAt: "desc" },
@@ -36,6 +50,12 @@ export async function listWorkspacesAction(): Promise<
   }
 }
 
+/**
+ * Retrieves a single workspace by its ID, ensuring it belongs to the authenticated user.
+ * 
+ * @param workspaceId - The unique identifier of the workspace.
+ * @returns {Promise<ActionResult<Workspace>>} - The workspace data or an error.
+ */
 export async function getWorkspaceAction(
   workspaceId: string
 ): Promise<ActionResult<Workspace>> {
@@ -45,10 +65,12 @@ export async function getWorkspaceAction(
       return { success: false, error: "Unauthorized." };
     }
 
+    // Basic validation for the ID parameter
     if (typeof workspaceId !== "string" || workspaceId.trim().length === 0) {
       return { success: false, error: "Invalid workspace id." };
     }
 
+    // Attempt to find the workspace + verify ownership in one query
     const workspace = await prisma.workspace.findFirst({
       where: {
         id: workspaceId,
@@ -67,6 +89,12 @@ export async function getWorkspaceAction(
   }
 }
 
+/**
+ * Creates a new workspace for the authenticated user.
+ * 
+ * @param payload - The data required to create a workspace (name, initial tab data).
+ * @returns {Promise<ActionResult<Workspace>>} - The newly created workspace.
+ */
 export async function createWorkspaceAction(
   payload: WorkspacePayload
 ): Promise<ActionResult<Workspace>> {
@@ -76,24 +104,27 @@ export async function createWorkspaceAction(
       return { success: false, error: "Unauthorized." };
     }
 
+    // Validate incoming data against the Zod schema
     const validated = workspacePayloadSchema.parse(payload);
 
+    // Persist the new workspace in the DB
     const workspace = await prisma.workspace.create({
       data: {
         userId: user.id,
         name: validated.name,
+        // Convert explicit nulls to Prisma.JsonNull for JSONB columns
         documentData:
           validated.documentData === null
             ? Prisma.JsonNull
-            : validated.documentData,
+            : validated.documentData as any,
         canvasData:
           validated.canvasData === null
             ? Prisma.JsonNull
-            : validated.canvasData,
+            : validated.canvasData as any,
         kanbanBoard:
           validated.kanbanBoard === null
             ? Prisma.JsonNull
-            : validated.kanbanBoard,
+            : validated.kanbanBoard as any,
       },
     });
 
@@ -104,6 +135,13 @@ export async function createWorkspaceAction(
   }
 }
 
+/**
+ * Updates an existing workspace's metadata or feature content.
+ * 
+ * @param workspaceId - The unique identifier of the workspace to update.
+ * @param payload - The subset of fields to be updated.
+ * @returns {Promise<ActionResult<Workspace>>} - The updated workspace.
+ */
 export async function updateWorkspaceAction(
   workspaceId: string,
   payload: WorkspaceUpdatePayload
@@ -118,9 +156,10 @@ export async function updateWorkspaceAction(
       return { success: false, error: "Invalid workspace id." };
     }
 
+    // Validate update fields
     const validated = workspaceUpdateSchema.parse(payload);
 
-    // Verify ownership
+    // Verify ownership before performing the update
     const existing = await prisma.workspace.findFirst({
       where: {
         id: workspaceId,
@@ -132,6 +171,7 @@ export async function updateWorkspaceAction(
       return { success: false, error: "Workspace not found." };
     }
 
+    // Construct the update object based on provided fields
     const updateData: Prisma.WorkspaceUpdateInput = {
       ...(validated.name !== undefined ? { name: validated.name } : {}),
       ...(validated.documentData !== undefined
@@ -139,7 +179,7 @@ export async function updateWorkspaceAction(
             documentData:
               validated.documentData === null
                 ? Prisma.JsonNull
-                : validated.documentData,
+                : (validated.documentData as any),
           }
         : {}),
       ...(validated.canvasData !== undefined
@@ -147,7 +187,7 @@ export async function updateWorkspaceAction(
             canvasData:
               validated.canvasData === null
                 ? Prisma.JsonNull
-                : validated.canvasData,
+                : (validated.canvasData as any),
           }
         : {}),
       ...(validated.kanbanBoard !== undefined
@@ -155,11 +195,12 @@ export async function updateWorkspaceAction(
             kanbanBoard:
               validated.kanbanBoard === null
                 ? Prisma.JsonNull
-                : validated.kanbanBoard,
+                : (validated.kanbanBoard as any),
           }
         : {}),
     };
 
+    // Commit changes to the database
     const workspace = await prisma.workspace.update({
       where: { id: workspaceId },
       data: updateData,
@@ -178,6 +219,11 @@ export async function updateWorkspaceAction(
   }
 }
 
+/**
+ * Permanently deletes a workspace.
+ * 
+ * @param workspaceId - The unique identifier of the workspace to delete.
+ */
 export async function deleteWorkspaceAction(
   workspaceId: string
 ): Promise<ActionResult<true>> {
@@ -191,7 +237,7 @@ export async function deleteWorkspaceAction(
       return { success: false, error: "Invalid workspace id." };
     }
 
-    // Verify ownership
+    // Verify ownership before deletion
     const existing = await prisma.workspace.findFirst({
       where: {
         id: workspaceId,
