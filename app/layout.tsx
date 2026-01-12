@@ -1,8 +1,16 @@
-import type { Metadata } from "next";
-import "./globals.css";
-import { ThemeProvider } from "next-themes";
-import { Toaster } from "@/components/ui/sonner";
+/**
+ * This is the root layout for the entire Next.js application.
+ * It provides the basic HTML structure, global styles, and application-wide providers (Theme, Toast).
+ */
 
+import type { Metadata } from "next";
+import "./globals.css"; // Global Tailwind CSS styles
+import { ThemeProvider } from "next-themes"; // library for dark/light mode switching
+import { Toaster } from "@/components/ui/sonner"; // Toast notification component
+
+/**
+ * SEO metadata for the application.
+ */
 export const metadata: Metadata = {
   title: "Rethink Zone – Rethink how you work",
   description:
@@ -36,22 +44,31 @@ export const metadata: Metadata = {
   manifest: "/favicon_io/site.webmanifest",
 };
 
+/**
+ * RootLayout Component
+ * Wraps every page in the app.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-
       <html lang="en">
-        <body className="antialiased">
+        <body className="antialiased font-inter">
+          {/* 
+            ThemeProvider manages 'dark' and 'light' classes on the body based on user preference.
+            It also handles 'system' preference detection automatically.
+          */}
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
             enableSystem
             disableTransitionOnChange
           >
+            {/* The actual page content is injected here */}
             {children}
+            {/* mounting the Toaster globally allows us to trigger notifications from anywhere */}
             <Toaster />
           </ThemeProvider>
         </body>
