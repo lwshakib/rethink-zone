@@ -1,6 +1,7 @@
-"use client";
+"use client"; // Marks this as a client-side React component for Next.js
 
 import { useEffect, useMemo, useState } from "react";
+// Importing UI components from the shared UI library
 import {
   Dialog,
   DialogContent,
@@ -16,75 +17,88 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+/**
+ * TYPE DEFINITIONS
+ */
 type KanbanColumn = {
   title: string;
-  items: string[];
+  items: string[]; // Simple string-based items (fallback/initial format)
 };
 
 type KanbanItem = {
-  id: string;
-  text: string;
-  description: string;
-  status: string;
-  priority: string;
-  eta: string;
+  id: string;        // Unique identifier for the task
+  text: string;      // Main heading/title of the task
+  description: string; // Detailed notes about the task
+  status: string;    // Current lifecycle stage (Ready, In Progress, etc)
+  priority: string;  // Urgency level (Low, Medium, High)
+  eta: string;       // Expected completion time (Today, Morrow, etc)
 };
 
 type KanbanState = {
-  title: string;
-  items: KanbanItem[];
+  title: string;       // Name of the column (e.g., "To Do")
+  items: KanbanItem[]; // List of structured task objects in this column
 };
 
 type DragPayload = {
-  fromCol: number;
-  itemId: string;
+  fromCol: number; // Index of the column the item is being dragged FROM
+  itemId: string;  // ID of the item being dragged
 };
 
+// Represents state for the 'Edit' modal
 type EditingState = {
-  colIdx: number;
-  itemId: string;
-  value: string;
-  description: string;
-  status: string;
-  priority: string;
-  eta: string;
+  colIdx: number;       // Column index of the item being edited
+  itemId: string;      // ID of the item being edited
+  value: string;        // Modified title
+  description: string;  // Modified description
+  status: string;       // Modified status
+  priority: string;     // Modified priority
+  eta: string;          // Modified ETA
 } | null;
 
+// Represents state for the 'New Item' modal
 type NewItemModalState = {
-  colIdx: number;
-  text: string;
-  description: string;
-  status: string;
-  priority: string;
-  eta: string;
+  colIdx: number;       // Index of the column where the new item will be added
+  text: string;         // New item title
+  description: string;  // New item description
+  status: string;       // New item status
+  priority: string;     // New item priority
+  eta: string;          // New item ETA
 } | null;
 
-const newItemLabel = "New item";
+const newItemLabel = "New item"; // Default label for nameless tasks
+// Configuration options for dropdown selections
 const statusOptions = ["Ready", "In Progress", "Review", "Blocked"];
 const priorityOptions = ["Low", "Medium", "High"];
 const etaOptions = ["Today", "Tomorrow", "Next week"];
 
 type KanbanAreaProps = {
-  board?: Array<KanbanColumn | KanbanState>;
-  onChange?: (board: KanbanState[]) => void;
+  board?: Array<KanbanColumn | KanbanState>; // Optional initial board data
+  onChange?: (board: KanbanState[]) => void; // Callback fired when items move or change
 };
 
+// Seed data used if no 'board' prop is provided
 const defaultBoard: KanbanColumn[] = [
   { title: "To Do", items: ["Implement auth", "Design UI"] },
   { title: "In Progress", items: ["Kanban board"] },
   { title: "Done", items: ["Initial setup"] },
 ];
 
+/**
+ * Main KanbanArea Component
+ */
 export default function KanbanArea({
   board,
   onChange,
 }: KanbanAreaProps) {
-  const safeBoard = board || defaultBoard;
+  const safeBoard = board || defaultBoard; // Fallback to seed data
+  
+  // Transform the potentially heterogeneous 'board' input into a strictly typed 'KanbanState[]'
   const initialState = useMemo<KanbanState[]>(
     () =>
       safeBoard.map((col, colIdx) => ({
         title: col.title,
         items: (col.items || []).map((item: any, itemIdx: number) => {
+          // Normalizes item text regardless of whether input was a string or object
           const text =
             typeof item === "string"
               ? item
@@ -95,54 +109,68 @@ export default function KanbanArea({
             id:
               typeof item?.id === "string"
                 ? item.id
-                : `${colIdx}-${itemIdx}-${text}`,
+                : `${colIdx}-${itemIdx}-${text}`, // Fallback ID generation
             text,
             description:
               typeof item?.description === "string" ? item.description : "",
             status:
               typeof item?.status === "string"
                 ? item.status
-                : statusOptions[(colIdx + itemIdx) % statusOptions.length],
+                : statusOptions[(colIdx + itemIdx) % statusOptions.length], // Default status
             priority:
               typeof item?.priority === "string"
                 ? item.priority
-                : priorityOptions[(colIdx + itemIdx) % priorityOptions.length],
+                : priorityOptions[(colIdx + itemIdx) % priorityOptions.length], // Default priority
             eta:
               typeof item?.eta === "string"
                 ? item.eta
-                : etaOptions[itemIdx % etaOptions.length],
+                : etaOptions[itemIdx % etaOptions.length], // Default ETA
           };
         }),
       })),
     [board]
   );
 
+  // Core state for all columns and tasks
   const [columns, setColumns] = useState<KanbanState[]>(initialState);
 
+  // Update internal state if the external 'board' prop changes
   useEffect(() => {
     setColumns(initialState);
   }, [initialState]);
+
+  // Wrapper for updating state that also triggers the 'onChange' callback
   const updateColumns = (updater: (prev: KanbanState[]) => KanbanState[]) => {
     setColumns((prev) => {
       const next = updater(prev);
-      onChange?.(next);
+      onChange?.(next); // Inform parent of the change
       return next;
     });
   };
-  const [dragging, setDragging] = useState<DragPayload | null>(null);
-  const [activeDropCol, setActiveDropCol] = useState<number | null>(null);
-  const [editingModal, setEditingModal] = useState<EditingState>(null);
-  const [createBoardOpen, setCreateBoardOpen] = useState(false);
-  const [newBoardName, setNewBoardName] = useState("");
-  const [newItemModal, setNewItemModal] = useState<NewItemModalState>(null);
 
+  /**
+   * INTERACTION STATE
+   */
+  const [dragging, setDragging] = useState<DragPayload | null>(null);   // Information about the currently dragged item
+  const [activeDropCol, setActiveDropCol] = useState<number | null>(null); // Highlights the target column during drag
+  const [editingModal, setEditingModal] = useState<EditingState>(null);    // Controls the edit task modal
+  const [createBoardOpen, setCreateBoardOpen] = useState(false);           // Controls the 'New Column' modal
+  const [newBoardName, setNewBoardName] = useState("");                    // Buffer for new column title
+  const [newItemModal, setNewItemModal] = useState<NewItemModalState>(null); // Controls the add task modal
+
+  /**
+   * DRAG AND DROP LOGIC
+   */
+
+  // Logic to move an item within or between columns
   const moveItem = (
     fromCol: number,
     itemId: string,
     toCol: number,
-    beforeItemId?: string
+    beforeItemId?: string // Optional target index within the new column
   ) => {
     updateColumns((prev) => {
+      // Deep clone only the necessary parts of the state
       const next = prev.map((col) => ({
         ...col,
         items: [...col.items],
@@ -152,20 +180,24 @@ export default function KanbanArea({
       const target = next[toCol];
       if (!source || !target) return prev;
 
+      // Find and remove the item from its source column
       const sourceIdx = source.items.findIndex((it) => it.id === itemId);
       if (sourceIdx === -1) return prev;
 
       const [item] = source.items.splice(sourceIdx, 1);
+      
+      // Calculate where to insert the item in the target column
       let insertAt = beforeItemId
         ? target.items.findIndex((it) => it.id === beforeItemId)
         : target.items.length;
       if (insertAt < 0) insertAt = target.items.length;
 
-      target.items.splice(insertAt, 0, item);
+      target.items.splice(insertAt, 0, item); // Insert the item
       return next;
     });
   };
 
+  // Helper to extract drag payload from browser drag events
   const parsePayload = (event: React.DragEvent): DragPayload | null => {
     const payload =
       event.dataTransfer.getData("application/json") ||
@@ -178,24 +210,27 @@ export default function KanbanArea({
     }
   };
 
+  // Called when a user starts dragging a task card
   const onDragStart =
     (fromCol: number, itemId: string) => (event: React.DragEvent) => {
       const payload: DragPayload = { fromCol, itemId };
-      event.dataTransfer.setData("application/json", JSON.stringify(payload));
+      event.dataTransfer.setData("application/json", JSON.stringify(payload)); // Attach payload to event
       event.dataTransfer.effectAllowed = "move";
-      setDragging(payload);
+      setDragging(payload); // Update local visual state
     };
 
+  // Called when an item is dropped onto a column (specifically the empty area)
   const onDropColumn = (toCol: number) => (event: React.DragEvent) => {
     event.preventDefault();
     const payload = parsePayload(event);
     if (payload) {
-      moveItem(payload.fromCol, payload.itemId, toCol);
+      moveItem(payload.fromCol, payload.itemId, toCol); // Execute move
     }
-    setDragging(null);
+    setDragging(null);      // Reset drag state
     setActiveDropCol(null);
   };
 
+  // Called when an item is dropped directly onto another item (reordering)
   const onDropItem =
     (toCol: number, beforeItemId: string) => (event: React.DragEvent) => {
       event.preventDefault();
@@ -207,11 +242,17 @@ export default function KanbanArea({
       setActiveDropCol(null);
     };
 
+  // Called continuously while dragging over a column to show highlight
   const onDragOver = (colIdx: number) => (event: React.DragEvent) => {
-    event.preventDefault();
+    event.preventDefault(); // Required to allow dropping
     setActiveDropCol(colIdx);
   };
 
+  /**
+   * TASK CREATION AND EDITING
+   */
+
+  // Opens the modal to create a new task in a specific column
   const openNewItemModal = (colIdx: number) => {
     setNewItemModal({
       colIdx,
@@ -223,6 +264,7 @@ export default function KanbanArea({
     });
   };
 
+  // Opens the modal to edit an existing task card
   const startEditing = (colIdx: number, item: KanbanItem) => {
     setEditingModal({
       colIdx,
@@ -235,17 +277,21 @@ export default function KanbanArea({
     });
   };
 
+  // Finalizes the editing process and updates the task in the state
   const commitEdit = () => {
-    if (!editingModal) return;
+    if (!editingModal) return; // Guard clause if no editing session is active
     updateColumns((prev) => {
+      // Create a fresh copy of the whole board state
       const next = prev.map((col) => ({
         ...col,
         items: [...col.items],
       }));
+      // Locate the target column and item to apply modifications
       const column = next[editingModal.colIdx];
       if (!column) return prev;
       const idx = column.items.findIndex((it) => it.id === editingModal.itemId);
       if (idx === -1) return prev;
+      // Update the item properties with the values from the modal state
       column.items[idx] = {
         ...column.items[idx],
         text: editingModal.value || newItemLabel,
@@ -256,11 +302,13 @@ export default function KanbanArea({
       };
       return next;
     });
-    setEditingModal(null);
+    setEditingModal(null); // Close the modal
   };
 
+  // Discords changes and closes the edit modal
   const cancelEdit = () => setEditingModal(null);
 
+  // Inserts a newly created task into the specified column
   const createItem = () => {
     if (!newItemModal) return;
     updateColumns((prev) => {
@@ -271,6 +319,7 @@ export default function KanbanArea({
       const column = next[newItemModal.colIdx];
       if (!column) return prev;
       const nextIdx = column.items.length;
+      // Generate a new task object with a timestamp-based ID
       column.items.push({
         id: `${newItemModal.colIdx}-${nextIdx}-${Date.now()}`,
         text: newItemModal.text.trim() || newItemLabel,
@@ -281,22 +330,27 @@ export default function KanbanArea({
       });
       return next;
     });
-    setNewItemModal(null);
+    setNewItemModal(null); // Close the modal
   };
 
+  // Closes the new item creation modal without saving
   const cancelNewItem = () => setNewItemModal(null);
 
+  // Utility to check if a specific item is the one currently being dragged
   const isDraggingItem = (itemId: string) => dragging?.itemId === itemId;
 
+  // Adds a completely new (empty) column to the Kanban board
   const createBoard = () => {
     const title = newBoardName.trim() || `Board ${columns.length + 1}`;
     updateColumns((prev) => [...prev, { title, items: [] }]);
-    setNewBoardName("");
-    setCreateBoardOpen(false);
+    setNewBoardName("");      // Clear the input
+    setCreateBoardOpen(false); // Close the dialog
   };
 
+  // Removes a whole column and its contents from the board
   const deleteBoard = (colIdx: number) => {
     updateColumns((prev) => prev.filter((_, idx) => idx !== colIdx));
+    // Cleanup any active modals that might be referencing the deleted column
     setEditingModal((prev) => {
       if (!prev) return prev;
       return prev.colIdx >= colIdx ? null : prev;
@@ -307,8 +361,12 @@ export default function KanbanArea({
     });
   };
 
+  /**
+   * RENDER UI
+   */
   return (
     <div className="w-full h-full flex flex-col p-4 md:p-6 overflow-hidden bg-background">
+      {/* Header section with title and global actions */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-foreground tracking-tight">
@@ -327,6 +385,7 @@ export default function KanbanArea({
         </button>
       </div>
 
+      {/* Main Board Area - Scrollable horizontally */}
       <div className="flex-1 overflow-x-auto pb-4 custom-scrollbar">
         <div className="flex gap-6 h-full min-w-max pr-6">
           {columns.map((column, colIdx) => (
@@ -335,10 +394,11 @@ export default function KanbanArea({
               onDragOver={onDragOver(colIdx)}
               onDrop={onDropColumn(colIdx)}
               className={`flex flex-col w-80 rounded-2xl border transition-all duration-300 ${activeDropCol === colIdx
-                ? "border-primary/40 bg-accent/10"
+                ? "border-primary/40 bg-accent/10" // Highlight column when dragging over
                 : "border-border bg-card/50"
                 }`}
             >
+              {/* Column Header */}
               <div className="p-4 flex items-center justify-between border-b border-white/5">
                 <div className="flex items-center gap-3">
                   <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" />
@@ -349,6 +409,7 @@ export default function KanbanArea({
                     {column.items.length}
                   </span>
                 </div>
+                {/* Column deletion trigger */}
                 <button
                   type="button"
                   onClick={() => deleteBoard(colIdx)}
@@ -372,6 +433,7 @@ export default function KanbanArea({
                 </button>
               </div>
 
+              {/* Task Items List - Scrollable vertically */}
               <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar min-h-25">
                 {column.items.map((item) => (
                   <div
@@ -380,15 +442,16 @@ export default function KanbanArea({
                       }`}
                     draggable
                     onDragStart={onDragStart(colIdx, item.id)}
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={onDropItem(colIdx, item.id)}
-                    onClick={() => startEditing(colIdx, item)}
+                    onDragOver={(event) => event.preventDefault()} // Required for drop target
+                    onDrop={onDropItem(colIdx, item.id)}            // Enable reordering by dropping on items
+                    onClick={() => startEditing(colIdx, item)}      // Open edit modal on click
                   >
                     <div className="space-y-3">
                       <div className="flex justify-between items-start gap-2">
                         <span className="font-semibold text-sm text-foreground leading-tight">
                           {item.text}
                         </span>
+                        {/* Priority indicator dot */}
                         <div
                           className={`h-1.5 w-1.5 rounded-full shrink-0 mt-1 ${item.priority === "High"
                             ? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]"
@@ -399,12 +462,14 @@ export default function KanbanArea({
                         />
                       </div>
 
+                      {/* Optional description snippet */}
                       {item.description && (
                         <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
                           {item.description}
                         </p>
                       )}
 
+                      {/* Status and ETA tags */}
                       <div className="flex flex-wrap gap-2 pt-1">
                         <span className="rounded-lg bg-accent/50 px-2 py-1 text-[10px] font-medium text-muted-foreground border border-border/50">
                           {item.status}
@@ -417,6 +482,7 @@ export default function KanbanArea({
                   </div>
                 ))}
 
+                {/* 'Add Task' button at the bottom of each column */}
                 <button
                   type="button"
                   onClick={() => openNewItemModal(colIdx)}
@@ -444,7 +510,9 @@ export default function KanbanArea({
         </div>
       </div>
 
-      {/* Dialogs */}
+      {/* DIALOGS / MODALS */}
+
+      {/* Modal for creating a new column */}
       <Dialog open={createBoardOpen} onOpenChange={setCreateBoardOpen}>
         <DialogContent className="bg-card border-border text-foreground max-w-sm rounded-2xl shadow-2xl backdrop-blur-xl">
           <DialogHeader>
@@ -491,6 +559,7 @@ export default function KanbanArea({
         </DialogContent>
       </Dialog>
 
+      {/* Modal for creating a new task item */}
       <Dialog
         open={!!newItemModal}
         onOpenChange={(open) => !open && cancelNewItem()}
@@ -500,6 +569,7 @@ export default function KanbanArea({
             <DialogTitle className="text-xl font-bold">Add Task</DialogTitle>
           </DialogHeader>
           <div className="space-y-5 py-4">
+            {/* Title Input */}
             <div className="space-y-2">
               <label
                 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
@@ -520,6 +590,7 @@ export default function KanbanArea({
                 placeholder="Task title"
               />
             </div>
+            {/* Description Textarea */}
             <div className="space-y-2">
               <label
                 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
@@ -540,6 +611,7 @@ export default function KanbanArea({
                 rows={3}
               />
             </div>
+            {/* Dropdown selectors for Status, Priority, and ETA */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -637,7 +709,7 @@ export default function KanbanArea({
             </button>
             <button
               type="button"
-              onClick={createItem}
+               onClick={createItem}
               className="flex-1 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground hover:bg-primary/90 shadow-lg active:scale-[0.98] transition-all"
             >
               Create Task
@@ -646,6 +718,7 @@ export default function KanbanArea({
         </DialogContent>
       </Dialog>
 
+      {/* Modal for editing an existing task item (similar structure to creation modal) */}
       <Dialog
         open={!!editingModal}
         onOpenChange={(open) => !open && cancelEdit()}
@@ -800,23 +873,6 @@ export default function KanbanArea({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: var(--border);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: var(--accent);
-        }
-      `}</style>
     </div>
   );
 }
