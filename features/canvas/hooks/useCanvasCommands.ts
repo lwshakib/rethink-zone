@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useCallback } from "react";
-import { makeId } from "../utils";
+import { useCallback } from "react"; // React hook for memoized callbacks
+import { makeId } from "../utils"; // Utility to generate unique IDs for clones
 import { 
   HistoryEntry, SelectedShape, SelectedShapeInfo,
   RectShape, CircleShape, LineShape, ArrowShape, PathShape, 
   ImageShape, TextShape, FrameShape, PolyShape, Connector, FigureShape, CodeShape
-} from "../types";
+} from "../types"; // Type definitions for all canvas objects
 
+// Interface defining the dependencies required by this hook to manipulate the canvas state
 interface CanvasCommandsProps {
   rectangles: RectShape[];
   setRectangles: React.Dispatch<React.SetStateAction<RectShape[]>>;
@@ -36,9 +37,13 @@ interface CanvasCommandsProps {
   setCodes: React.Dispatch<React.SetStateAction<CodeShape[]>>;
 }
 
+/**
+ * useCanvasCommands - Hook providing core canvas operations that affect multiple shapes,
+ * such as deleting a selection or duplicating items.
+ */
 export const useCanvasCommands = (
   props: CanvasCommandsProps,
-  pushHistory: (overrides?: Partial<HistoryEntry>) => void
+  pushHistory: (overrides?: Partial<HistoryEntry>) => void // Callback to save the new state to the history stack
 ) => {
   const {
     rectangles, setRectangles, circles, setCircles, lines, setLines,
@@ -47,15 +52,21 @@ export const useCanvasCommands = (
     paths, setPaths, figures, setFigures, codes, setCodes
   } = props;
 
+  /**
+   * deleteSelected - Mass deletion of all shapes currently in the selection set.
+   * Also handles cleaning up active connectors attached to deleted shapes.
+   */
   const deleteSelected = useCallback(() => {
-    if (selectedShape.length === 0) return;
+    if (selectedShape.length === 0) return; // Nothing to do
 
+    // Group IDs of items to be removed by their kind
     const idsToDeleteByKind: Record<string, Set<string>> = {
       rect: new Set(), circle: new Set(), image: new Set(), text: new Set(),
       frame: new Set(), line: new Set(), arrow: new Set(), poly: new Set(),
       connector: new Set(), figure: new Set(), code: new Set()
     };
 
+    // Populate the deletion lookup table
     selectedShape.forEach(({ kind, index }: SelectedShapeInfo) => {
       let id: string | null = null;
       if (kind === "rect") id = rectangles[index]?.id;
@@ -75,6 +86,7 @@ export const useCanvasCommands = (
     const allDeletedIds = new Set(Object.values(idsToDeleteByKind).flatMap(s => Array.from(s)));
     if (allDeletedIds.size === 0) return;
 
+    // Filter out deleted items from each shape array
     const nextRects = rectangles.filter(r => !idsToDeleteByKind.rect.has(r.id));
     const nextCircles = circles.filter(c => !idsToDeleteByKind.circle.has(c.id));
     const nextImages = images.filter(i => !idsToDeleteByKind.image.has(i.id));
@@ -83,6 +95,7 @@ export const useCanvasCommands = (
     const nextLines = lines.filter(l => !idsToDeleteByKind.line.has(l.id));
     const nextArrows = arrows.filter(a => !idsToDeleteByKind.arrow.has(a.id));
     const nextPolys = polygons.filter(p => !idsToDeleteByKind.poly.has(p.id));
+    // Specialized logic: and also remove connectors if either of their endpoint shapes were deleted
     const nextConnectors = connectors.filter(c => 
       !idsToDeleteByKind.connector.has(c.id) && 
       !allDeletedIds.has(c.from.shapeId) && 
@@ -91,6 +104,7 @@ export const useCanvasCommands = (
     const nextFigures = figures.filter(f => !idsToDeleteByKind.figure.has(f.id));
     const nextCodes = codes.filter(c => !idsToDeleteByKind.code.has(c.id));
 
+    // Update active UI state
     setRectangles(nextRects);
     setCircles(nextCircles);
     setImages(nextImages);
@@ -103,6 +117,7 @@ export const useCanvasCommands = (
     setFigures(nextFigures);
     setCodes(nextCodes);
 
+    // Persist this major change to history
     pushHistory({
       rectangles: nextRects,
       circles: nextCircles,
@@ -117,9 +132,13 @@ export const useCanvasCommands = (
       codes: nextCodes
     });
 
+    // Clear selection after deletion
     setSelectedShape([]);
   }, [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, connectors, figures, codes, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setConnectors, setFigures, setCodes, pushHistory, setSelectedShape]);
 
+  /**
+   * duplicateSelection - Clones selected objects and shifts them slightly (offset) for visual clarity.
+   */
   const duplicateSelection = useCallback(
     (offset = 20) => {
       if (selectedShape.length === 0) return;
@@ -128,6 +147,7 @@ export const useCanvasCommands = (
       const updates: any = {};
 
       selectedShape.forEach(({ kind, index }) => {
+        // For each selected item, create a shallow copy with a new ID and shifted coordinates
         if (kind === "rect") {
           const src = rectangles[index]; if (!src) return;
           const clone = { ...src, id: makeId(), x: src.x + offset, y: src.y + offset };
@@ -191,6 +211,7 @@ export const useCanvasCommands = (
         }
       });
 
+      // Update state for each shape type that was duplicated
       if (updates.rectangles) setRectangles(updates.rectangles);
       if (updates.circles) setCircles(updates.circles);
       if (updates.images) setImages(updates.images);
@@ -202,8 +223,8 @@ export const useCanvasCommands = (
       if (updates.figures) setFigures(updates.figures);
       if (updates.codes) setCodes(updates.codes);
 
-      pushHistory(updates);
-      setSelectedShape(newSelection);
+      pushHistory(updates); // Save to history
+      setSelectedShape(newSelection); // Switch selection to the new clones
     },
     [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, figures, codes, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setFigures, setCodes, pushHistory, setSelectedShape]
   );
