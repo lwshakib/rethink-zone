@@ -57,36 +57,47 @@ export default function LoginPage() {
   };
 
   return (
-    <section className="flex min-h-screen bg-zinc-50 px-4 py-16 md:py-32 dark:bg-transparent">
-      <form
-        onSubmit={handleEmailSignIn}
-        className="bg-card m-auto h-fit w-full max-w-sm rounded-[calc(var(--radius)+.125rem)] border p-0.5 shadow-md dark:[--color-muted:var(--color-zinc-900)]"
-      >
-        <div className="p-8 pb-6">
-          <div>
+    <div className="flex min-h-screen w-full flex-col lg:flex-row">
+      {/* Left Side: Image Placeholder */}
+      <div className="hidden bg-zinc-100 lg:block lg:w-1/2 dark:bg-zinc-900/50">
+        <div className="flex h-full items-center justify-center border-r border-zinc-200 dark:border-zinc-800">
+          <div className="relative h-full w-full opacity-20 contrast-125 grayscale">
+            {/* Background texture or gradient could go here */}
+            <div className="absolute inset-0 bg-linear-to-br from-zinc-500/20 to-transparent" />
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side: Form */}
+      <div className="flex w-full flex-col justify-center px-4 py-12 lg:w-1/2 lg:px-12 xl:px-24">
+        <div className="mx-auto w-full max-w-xl">
+          <div className="mb-10 flex flex-col items-start">
             <Link href="/" aria-label="go home">
-              <LogoIcon />
+              <LogoIcon className="size-8" />
             </Link>
-            <h1 className="mb-1 mt-4 text-xl font-semibold">
-              Sign In to Rethink Zone
+            <h1 className="mt-8 text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+              Welcome back
             </h1>
-            <p className="text-sm">Welcome back! Sign in to continue</p>
+            <p className="mt-2 text-zinc-500 dark:text-zinc-400">
+              Sign in to your account to continue
+            </p>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Button
               type="button"
               variant="outline"
               onClick={handleGoogleSignIn}
               disabled={isGoogleLoading || isLoading}
+              className="h-11 border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900"
             >
               {isGoogleLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
               ) : (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="0.98em"
-                  height="1em"
+                  width="18"
+                  height="18"
                   viewBox="0 0 256 262"
                 >
                   <path
@@ -107,13 +118,18 @@ export default function LoginPage() {
                   ></path>
                 </svg>
               )}
-              <span>Google</span>
+              <span className="ml-2">Google</span>
             </Button>
-            <Button type="button" variant="outline" disabled>
+            <Button
+              type="button"
+              variant="outline"
+              disabled
+              className="h-11 opacity-50 border-zinc-200 dark:border-zinc-800"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="1em"
-                height="1em"
+                width="18"
+                height="18"
                 viewBox="0 0 256 256"
               >
                 <path fill="#f1511b" d="M121.666 121.666H0V0h121.666z"></path>
@@ -127,79 +143,95 @@ export default function LoginPage() {
                   d="M256 256.002H134.335V134.336H256z"
                 ></path>
               </svg>
-              <span>Microsoft (N/A)</span>
+              <span className="ml-2">Microsoft</span>
             </Button>
           </div>
 
-          <hr className="my-4 border-dashed" />
+          <div className="relative my-10">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-zinc-200 dark:border-zinc-800"></span>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase tracking-wider text-zinc-500">
+              <span className="bg-background px-3 font-medium">Or continue with email</span>
+            </div>
+          </div>
 
-          <div className="space-y-6">
+          <form onSubmit={handleEmailSignIn} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email" className="block text-sm">
-                Email
+              <Label
+                htmlFor="email"
+                className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+              >
+                Email address
               </Label>
               <Input
                 type="email"
                 required
                 name="email"
                 id="email"
+                placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading || isGoogleLoading}
+                className="h-11 border-zinc-200 focus:ring-zinc-900 dark:border-zinc-800 dark:focus:ring-zinc-100"
               />
             </div>
 
-            <div className="space-y-0.5">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="pwd" className="text-sm">
+                <Label
+                  htmlFor="pwd"
+                  className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                >
                   Password
                 </Label>
-                <Button asChild variant="link" size="sm">
-                  <Link
-                    href="#"
-                    className="link intent-info variant-ghost text-sm"
-                  >
-                    Forgot your Password ?
-                  </Link>
-                </Button>
+                <Link
+                  href="/forgot-password"
+                  className="text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                >
+                  Forgot password?
+                </Link>
               </div>
               <Input
                 type="password"
                 required
                 name="pwd"
                 id="pwd"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading || isGoogleLoading}
+                className="h-11 border-zinc-200 focus:ring-zinc-900 dark:border-zinc-800 dark:focus:ring-zinc-100"
               />
             </div>
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full h-11 bg-zinc-900 text-zinc-50 hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
               disabled={isLoading || isGoogleLoading}
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-zinc-400" />
+                  Authenticating...
                 </>
               ) : (
-                "Sign In"
+                "Sign in"
               )}
             </Button>
-          </div>
-        </div>
+          </form>
 
-        <div className="bg-muted rounded-(--radius) border p-3">
-          <p className="text-accent-foreground text-center text-sm">
-            Don't have an account ?
-            <Button asChild variant="link" className="px-2">
-              <Link href="/sign-up">Create account</Link>
-            </Button>
+          <p className="mt-8 text-center text-sm text-zinc-500">
+            Don't have an account?{" "}
+            <Link
+              href="/sign-up"
+              className="font-semibold text-zinc-900 hover:underline dark:text-zinc-100"
+            >
+              Sign up for free
+            </Link>
           </p>
         </div>
-      </form>
-    </section>
+      </div>
+    </div>
   );
 }

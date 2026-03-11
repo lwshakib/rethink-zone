@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
-import { Loader2 } from "lucide-react";
+import { Loader2, MailCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -19,6 +19,7 @@ export default function SignUp() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isVerificationSent, setIsVerificationSent] = useState(false);
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +30,7 @@ export default function SignUp() {
         email,
         password,
         name: `${firstName} ${lastName}`.trim(),
+        callbackURL: "/verify-email",
       });
 
       if (error) {
@@ -36,9 +38,8 @@ export default function SignUp() {
         return;
       }
 
-      toast.success("Account created successfully!");
-      router.push("/workspaces");
-      router.refresh();
+      setIsVerificationSent(true);
+      toast.success("Verification email sent!");
     } catch (error) {
       toast.error("An unexpected error occurred");
     } finally {
@@ -59,37 +60,80 @@ export default function SignUp() {
     }
   };
 
+  if (isVerificationSent) {
+    return (
+      <div className="flex min-h-screen w-full flex-col lg:flex-row">
+        {/* Left Side: Success State */}
+        <div className="flex w-full flex-col justify-center px-4 py-12 lg:w-1/2 lg:px-12 xl:px-24">
+          <div className="mx-auto w-full max-w-xl">
+            <div className="mb-8 flex flex-col items-center text-center">
+              <div className="mb-6 rounded-full bg-zinc-100 p-4 dark:bg-zinc-900">
+                <MailCheck className="h-12 w-12 text-zinc-900 dark:text-zinc-100" />
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+                Check your email
+              </h1>
+              <p className="mt-4 text-zinc-500 dark:text-zinc-400">
+                We've sent a verification link to <strong className="text-zinc-900 dark:text-zinc-100 font-medium">{email}</strong>. 
+                Please verify your email to continue.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Button asChild className="h-11 w-full bg-zinc-900 text-zinc-50 hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200">
+                <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer">
+                  Go to Gmail
+                </a>
+              </Button>
+              <Button asChild variant="outline" className="h-11 w-full border-zinc-200 dark:border-zinc-800">
+                <Link href="/sign-in">Back to login</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+        {/* Right Side: Image Placeholder */}
+        <div className="hidden bg-zinc-100 lg:block lg:w-1/2 dark:bg-zinc-900/50">
+          <div className="flex h-full items-center justify-center border-l border-zinc-200 dark:border-zinc-800">
+            <div className="relative h-full w-full opacity-20 contrast-125 grayscale">
+              <div className="absolute inset-0 bg-linear-to-bl from-zinc-500/20 to-transparent" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <section className="flex min-h-screen bg-zinc-50 px-4 py-16 md:py-32 dark:bg-transparent">
-      <form
-        onSubmit={handleEmailSignUp}
-        className="bg-card m-auto h-fit w-full max-w-sm rounded-[calc(var(--radius)+.125rem)] border p-0.5 shadow-md dark:[--color-muted:var(--color-zinc-900)]"
-      >
-        <div className="p-8 pb-6">
-          <div>
+    <div className="flex min-h-screen w-full flex-col lg:flex-row">
+      {/* Left Side: Form */}
+      <div className="flex w-full flex-col justify-center px-4 py-12 lg:w-1/2 lg:px-12 xl:px-24">
+        <div className="mx-auto w-full max-w-xl">
+          <div className="mb-10 flex flex-col items-start">
             <Link href="/" aria-label="go home">
-              <LogoIcon />
+              <LogoIcon className="size-8" />
             </Link>
-            <h1 className="mb-1 mt-4 text-xl font-semibold">
-              Create a Rethink Zone Account
+            <h1 className="mt-8 text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+              Create Account
             </h1>
-            <p className="text-sm">Welcome! Create an account to get started</p>
+            <p className="mt-2 text-zinc-500 dark:text-zinc-400">
+              Join Rethink to start rethinking your zone
+            </p>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Button
               type="button"
               variant="outline"
               onClick={handleGoogleSignUp}
               disabled={isGoogleLoading || isLoading}
+              className="h-11 border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900"
             >
               {isGoogleLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
               ) : (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="0.98em"
-                  height="1em"
+                  width="18"
+                  height="18"
                   viewBox="0 0 256 262"
                 >
                   <path
@@ -110,13 +154,18 @@ export default function SignUp() {
                   ></path>
                 </svg>
               )}
-              <span>Google</span>
+              <span className="ml-2">Google</span>
             </Button>
-            <Button type="button" variant="outline" disabled>
+            <Button
+              type="button"
+              variant="outline"
+              disabled
+              className="h-11 opacity-50 border-zinc-200 dark:border-zinc-800"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="1em"
-                height="1em"
+                width="18"
+                height="18"
                 viewBox="0 0 256 256"
               >
                 <path fill="#f1511b" d="M121.666 121.666H0V0h121.666z"></path>
@@ -130,16 +179,26 @@ export default function SignUp() {
                   d="M256 256.002H134.335V134.336H256z"
                 ></path>
               </svg>
-              <span>Microsoft (N/A)</span>
+              <span className="ml-2 text-xs">Microsoft</span>
             </Button>
           </div>
 
-          <hr className="my-4 border-dashed" />
+          <div className="relative my-10">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-zinc-200 dark:border-zinc-800"></span>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase tracking-wider text-zinc-500">
+              <span className="bg-background px-3 font-medium">Or continue with email</span>
+            </div>
+          </div>
 
-          <div className="space-y-5">
-            <div className="grid grid-cols-2 gap-3">
+          <form onSubmit={handleEmailSignUp} className="space-y-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="firstname" className="block text-sm">
+                <Label
+                  htmlFor="firstname"
+                  className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                >
                   First Name
                 </Label>
                 <Input
@@ -147,13 +206,18 @@ export default function SignUp() {
                   required
                   name="firstname"
                   id="firstname"
+                  placeholder="John"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   disabled={isLoading || isGoogleLoading}
+                  className="h-11 border-zinc-200 focus:ring-zinc-900 dark:border-zinc-800 dark:focus:ring-zinc-100"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastname" className="block text-sm">
+                <Label
+                  htmlFor="lastname"
+                  className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                >
                   Last Name
                 </Label>
                 <Input
@@ -161,30 +225,40 @@ export default function SignUp() {
                   required
                   name="lastname"
                   id="lastname"
+                  placeholder="Doe"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   disabled={isLoading || isGoogleLoading}
+                  className="h-11 border-zinc-200 focus:ring-zinc-900 dark:border-zinc-800 dark:focus:ring-zinc-100"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="block text-sm">
-                Email
+              <Label
+                htmlFor="email"
+                className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+              >
+                Email address
               </Label>
               <Input
                 type="email"
                 required
                 name="email"
                 id="email"
+                placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading || isGoogleLoading}
+                className="h-11 border-zinc-200 focus:ring-zinc-900 dark:border-zinc-800 dark:focus:ring-zinc-100"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="pwd" className="text-sm">
+              <Label
+                htmlFor="pwd"
+                className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+              >
                 Password
               </Label>
               <Input
@@ -192,38 +266,50 @@ export default function SignUp() {
                 required
                 name="pwd"
                 id="pwd"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading || isGoogleLoading}
+                className="h-11 border-zinc-200 focus:ring-zinc-900 dark:border-zinc-800 dark:focus:ring-zinc-100"
               />
             </div>
 
             <Button
               type="submit"
-              className="w-full"
+              className="mt-2 w-full h-11 bg-zinc-900 text-zinc-50 hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
               disabled={isLoading || isGoogleLoading}
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-zinc-400" />
                   Creating account...
                 </>
               ) : (
-                "Continue"
+                "Create account"
               )}
             </Button>
-          </div>
-        </div>
+          </form>
 
-        <div className="bg-muted rounded-(--radius) border p-3">
-          <p className="text-accent-foreground text-center text-sm">
-            Have an account ?
-            <Button asChild variant="link" className="px-2">
-              <Link href="/sign-in">Sign In</Link>
-            </Button>
+          <p className="mt-8 text-center text-sm text-zinc-500">
+            Already have an account?{" "}
+            <Link
+              href="/sign-in"
+              className="font-semibold text-zinc-900 hover:underline dark:text-zinc-100"
+            >
+              Sign in
+            </Link>
           </p>
         </div>
-      </form>
-    </section>
+      </div>
+
+      {/* Right Side: Image Placeholder */}
+      <div className="hidden bg-zinc-100 lg:block lg:w-1/2 dark:bg-zinc-900/50">
+        <div className="flex h-full items-center justify-center border-l border-zinc-200 dark:border-zinc-800">
+          <div className="relative h-full w-full opacity-20 contrast-125 grayscale">
+            <div className="absolute inset-0 bg-linear-to-bl from-zinc-500/20 to-transparent" />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
