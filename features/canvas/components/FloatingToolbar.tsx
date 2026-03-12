@@ -262,7 +262,7 @@ const FloatingToolbar = React.memo(({
     return (
       <div className="flex flex-col gap-4">
         {/* UPPER: Style Presets (Plain, Outline, etc.) */}
-        <div className={`flex gap-3 justify-center border-b ${separatorColor} pb-3`}>
+        <div className="flex gap-3 justify-center border-b border-border/40 pb-3">
           {STYLE_PRESETS.map(preset => (
             <button
               key={preset.id}
@@ -308,7 +308,7 @@ const FloatingToolbar = React.memo(({
 
         {/* PALETTE TOGGLE: Switch between Solid and Pastel collections */}
         <div className="flex items-center justify-between px-1">
-           <span className="text-[10px] font-bold text-foreground/40 uppercase tracking-tighter">Palette</span>
+           <span className="text-[10px] font-bold text-foreground/40 tracking-tighter">Palette</span>
            <div className="flex gap-2">
               <button 
                 onClick={() => setPaletteMode("solid")}
