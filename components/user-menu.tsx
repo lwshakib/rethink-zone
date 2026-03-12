@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Settings, LogOut, User } from "lucide-react";
+import { Settings, LogOut, User, LayoutGrid } from "lucide-react";
 
 export function UserMenu() {
   const router = useRouter();
@@ -57,6 +57,13 @@ export function UserMenu() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-border/50" />
+        <DropdownMenuItem
+          className="cursor-pointer gap-2 py-2.5 text-xs focus:bg-accent focus:text-accent-foreground"
+          onClick={() => router.push("/workspaces")}
+        >
+          <LayoutGrid className="h-3.5 w-3.5" />
+          Workspaces
+        </DropdownMenuItem>
         <DropdownMenuItem
           className="cursor-pointer gap-2 py-2.5 text-xs focus:bg-accent focus:text-accent-foreground"
           onClick={() => router.push("/account")}

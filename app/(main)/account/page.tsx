@@ -194,7 +194,7 @@ export default function AccountPage() {
         <section className="space-y-4">
           <div className="flex flex-col gap-1">
             <h2 className="text-lg font-semibold flex items-center gap-2">
-              <User className="h-4 w-4 text-blue-500" />
+              <User className="h-4 w-4 text-primary" />
               Public Profile
             </h2>
             <p className="text-xs text-muted-foreground">Manage how others see you on Rethink.</p>
@@ -218,7 +218,7 @@ export default function AccountPage() {
                     <div className="flex items-center h-10 px-3 rounded-md bg-accent/20 border border-border/30 text-sm text-muted-foreground cursor-not-allowed">
                        <Mail className="h-3.5 w-3.5 mr-2 opacity-50" />
                        {session.user.email}
-                       <Badge variant="outline" className="ml-auto text-[9px] h-4 bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Verified</Badge>
+                       <Badge variant="outline" className="ml-auto text-[9px] h-4 bg-primary/10 text-primary border-primary/20">Verified</Badge>
                     </div>
                   </div>
                 </div>
@@ -241,7 +241,7 @@ export default function AccountPage() {
         <section className="space-y-4">
           <div className="flex flex-col gap-1">
             <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Lock className="h-4 w-4 text-pink-500" />
+              <Lock className="h-4 w-4 text-primary" />
               Security
             </h2>
             <p className="text-xs text-muted-foreground">Update your password to keep your account secure.</p>
@@ -301,7 +301,7 @@ export default function AccountPage() {
         <section className="space-y-4">
           <div className="flex flex-col gap-1">
             <h2 className="text-lg font-semibold flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-emerald-500" />
+              <ShieldCheck className="h-4 w-4 text-primary" />
               Active Sessions
             </h2>
             <p className="text-xs text-muted-foreground">Devices currently logged into your Rethink account.</p>
@@ -333,7 +333,7 @@ export default function AccountPage() {
                             <div className="flex items-center gap-2">
                                 <span className="text-xs font-semibold">{s.userAgent?.split(')')[0]?.split('(')[1] || "Unknown Browser"}</span>
                                 {s.id === session.session.id && (
-                                    <Badge className="text-[8px] h-3.5 bg-blue-500/10 text-blue-500 border-blue-500/20 px-1 py-0">Current</Badge>
+                                    <Badge className="text-[8px] h-3.5 bg-primary/10 text-primary border-primary/20 px-1 py-0 shadow-none font-bold">Current</Badge>
                                 )}
                             </div>
                             <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
@@ -367,7 +367,7 @@ export default function AccountPage() {
         <section className="space-y-4">
           <div className="flex flex-col gap-1">
             <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Key className="h-4 w-4 text-amber-500" />
+              <Key className="h-4 w-4 text-primary" />
               Connected Accounts
             </h2>
             <p className="text-xs text-muted-foreground">Manage third-party login providers.</p>
@@ -389,7 +389,7 @@ export default function AccountPage() {
                     </div>
                     <div>
                         {accounts.find(a => a.providerId === 'google') ? (
-                            <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[9px] px-2 py-0">Connected</Badge>
+                            <Badge className="bg-primary/10 text-primary border-primary/20 text-[9px] px-2 py-0 font-bold">Connected</Badge>
                         ) : (
                           <Button 
                             variant="outline" 
@@ -431,7 +431,7 @@ export default function AccountPage() {
                       </div>
                     </div>
                     <div>
-                        <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[9px] px-2 py-0">Active</Badge>
+                        <Badge className="bg-primary/10 text-primary border-primary/20 text-[9px] px-2 py-0">Active</Badge>
                     </div>
                   </div>
                </div>
@@ -460,10 +460,6 @@ export default function AccountPage() {
       
       {/* Footer */}
       <footer className="py-10 text-center border-t border-border/30">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <Logo className="size-5" />
-          <span className="text-xs font-bold tracking-tight opacity-40">RETHINK ZONE</span>
-        </div>
         <p className="text-[10px] text-muted-foreground">© 2026 Rethink. All rights reserved.</p>
       </footer>
     </div>
