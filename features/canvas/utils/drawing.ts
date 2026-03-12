@@ -794,7 +794,7 @@ export const drawFigure = (
   themeBg: string,
   zoom: number,
   isSelected = false,
-  options?: { hideTitle?: boolean }
+  options?: { hideTitleText?: boolean }
 ) => {
   ctx.save();
   ctx.globalAlpha = f.opacity ?? 1;
@@ -827,40 +827,40 @@ export const drawFigure = (
   const iconGap = 8 / zoom; // More gap
   const hWidth = textWidth + iconSize + iconGap + hPadding * 2;
 
-  if (!options?.hideTitle) {
-    // Draw Rounded Header Background (Solid Black with white outline)
-    const radius = 3 / zoom; // Sharper radius as requested
-    ctx.fillStyle = "black";
-    ctx.beginPath();
-    if (ctx.roundRect) {
-      ctx.roundRect(hX, hY, hWidth, headerHeight, radius);
-    } else {
-      ctx.rect(hX, hY, hWidth, headerHeight);
-    }
-    ctx.fill();
-    
-    // Thin white outline for the pill
-    ctx.strokeStyle = "rgba(255,255,255,0.4)";
-    ctx.lineWidth = 0.5 / zoom;
-    ctx.stroke();
+  // Draw Rounded Header Background (Solid Black with white outline)
+  const radius = 3 / zoom; // Sharper radius as requested
+  ctx.fillStyle = "black";
+  ctx.beginPath();
+  if (ctx.roundRect) {
+    ctx.roundRect(hX, hY, hWidth, headerHeight, radius);
+  } else {
+    ctx.rect(hX, hY, hWidth, headerHeight);
+  }
+  ctx.fill();
+  
+  // Thin white outline for the pill
+  ctx.strokeStyle = "rgba(255,255,255,0.4)";
+  ctx.lineWidth = 0.5 / zoom;
+  ctx.stroke();
 
-    // Draw "Frame/Corners" Icon
-    const iX = hX + hPadding;
-    const iY = hY + (headerHeight - iconSize) / 2;
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 1.0 / zoom;
-    const cs = 2.5 / zoom;
-    ctx.beginPath();
-    // Top-left
-    ctx.moveTo(iX, iY + cs); ctx.lineTo(iX, iY); ctx.lineTo(iX + cs, iY);
-    // Top-right
-    ctx.moveTo(iX + iconSize - cs, iY); ctx.lineTo(iX + iconSize, iY); ctx.lineTo(iX + iconSize, iY + cs);
-    // Bottom-left
-    ctx.moveTo(iX, iY + iconSize - cs); ctx.lineTo(iX, iY + iconSize); ctx.lineTo(iX + cs, iY + iconSize);
-    // Bottom-right
-    ctx.moveTo(iX + iconSize - cs, iY + iconSize); ctx.lineTo(iX + iconSize, iY + iconSize); ctx.lineTo(iX + iconSize, iY + iconSize - cs);
-    ctx.stroke();
+  // Draw "Frame/Corners" Icon
+  const iX = hX + hPadding;
+  const iY = hY + (headerHeight - iconSize) / 2;
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 1.0 / zoom;
+  const cs = 2.5 / zoom;
+  ctx.beginPath();
+  // Top-left
+  ctx.moveTo(iX, iY + cs); ctx.lineTo(iX, iY); ctx.lineTo(iX + cs, iY);
+  // Top-right
+  ctx.moveTo(iX + iconSize - cs, iY); ctx.lineTo(iX + iconSize, iY); ctx.lineTo(iX + iconSize, iY + cs);
+  // Bottom-left
+  ctx.moveTo(iX, iY + iconSize - cs); ctx.lineTo(iX, iY + iconSize); ctx.lineTo(iX + cs, iY + iconSize);
+  // Bottom-right
+  ctx.moveTo(iX + iconSize - cs, iY + iconSize); ctx.lineTo(iX + iconSize, iY + iconSize); ctx.lineTo(iX + iconSize, iY + iconSize - cs);
+  ctx.stroke();
 
+  if (!options?.hideTitleText) {
     // Draw Text (White)
     ctx.fillStyle = "white";
     ctx.textBaseline = "middle";

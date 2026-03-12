@@ -1093,7 +1093,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
         !isMulti &&
           selectedShape.some((s) => s.kind === "figure" && s.index === idx),
         {
-          hideTitle: textEditor?.kind === "figure" && textEditor?.index === idx,
+          hideTitleText: textEditor?.kind === "figure" && textEditor?.index === idx,
         }
       )
     );

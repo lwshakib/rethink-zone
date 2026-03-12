@@ -3813,7 +3813,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
       if (tool === "Select" || tool === "Hand") {
         const hitFigIndex = figures.findIndex((f) => {
           const hH = 26 / zoom;
-          const hG = 4 / zoom;
+          const hG = 8 / zoom;
           return (
             point.x >= f.x &&
             point.x <= f.x + f.width &&
@@ -3833,7 +3833,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
           setTextEditor({
             canvasX: f.x + hP + iS + iG,
-            canvasY: f.y - hH - hG + hH / 2,
+            canvasY: f.y - hH - hG + (hH - measured.height) / 2,
             value: initialText,
             fontSize: 12 / zoom,
             fill: "white",
@@ -3841,6 +3841,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             boxHeight: measured.height,
             index: hitFigIndex,
             kind: "figure",
+            pad: 0,
           } as any);
           return;
         }

@@ -127,7 +127,10 @@ const TextEditor: React.FC<TextEditorProps> = ({
         }px`,
         background: "transparent",
         color: color,
-        border: "1.6px solid rgba(63,193,255,0.95)", // Blue outline indicating active edit mode
+        border:
+          textEditor.kind === "figure"
+            ? "1.6px solid transparent"
+            : "1.6px solid rgba(63,193,255,0.95)", // Blue outline for regular text
         outline: "none",
         borderRadius: 0,
         padding: `${(textEditor.pad ?? 4 / zoom) * zoom}px`,
