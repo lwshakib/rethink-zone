@@ -1486,9 +1486,15 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
             figures={figures}
             canvasToClient={canvasToClient}
             zoom={zoom}
+            editingFigureId={editingFigureId}
             onOpenEditor={(id: string) => {
-              setEditingFigureId(id);
-              setIsFigureEditorOpen(true);
+              if (editingFigureId === id) {
+                setEditingFigureId(null);
+                setIsFigureEditorOpen(false);
+              } else {
+                setEditingFigureId(id);
+                setIsFigureEditorOpen(true);
+              }
             }}
           />
 
@@ -1703,7 +1709,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
               setRectangles(prev => prev.filter(r => r.groupId !== editingFigureId));
               setImages(prev => prev.filter(im => im.groupId !== editingFigureId));
               setTexts(prev => prev.filter(t => t.groupId !== editingFigureId));
-              setFigures(prev => prev.filter(f => f.groupId !== editingFigureId && f.id !== editingFigureId));
+              setFigures(prev => prev.filter(f => f.id === editingFigureId || f.groupId !== editingFigureId));
               setConnectors(prev => prev.filter(c => {
                 // Connectors are tricky because they link shapes. 
                 // We'll just clear all connectors for now or filter them if we can track their linked shapes.
@@ -1711,10 +1717,20 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
               }));
 
               // 2. Parse and generate new shapes
-              const generated = parseDSL(fig.code);
+              const generated = parseDSL(fig.code) as any;
               
-              const offsetX = fig.x + 40;
-              const offsetY = fig.y + 60;
+              // Auto-size the editing figure
+              const newWidth = generated.width + 100;
+              const newHeight = generated.height + 120;
+              
+              setFigures(prev => prev.map(f => 
+                f.id === editingFigureId 
+                ? { ...f, width: newWidth, height: newHeight } 
+                : f
+              ));
+
+              const offsetX = fig.x + 50;
+              const offsetY = fig.y + 70;
 
               const applyMeta = (shapes: any[] | undefined) => 
                 shapes?.map(s => ({ ...s, x: s.x + offsetX, y: s.y + offsetY, groupId: editingFigureId }));

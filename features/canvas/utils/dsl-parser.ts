@@ -66,6 +66,13 @@ export function parseDSL(code: string): ShapeCollection {
       if (service === 'elemental-mediaconvert') return `${base}/Arch_Media-Services/48/Arch_AWS-Elemental-MediaConvert_48.svg`;
       if (service === 'eventbridge') return `${base}/Arch_App-Integration/48/Arch_Amazon-EventBridge_48.svg`;
       if (service === 'simple-notification-service') return `${base}/Arch_App-Integration/48/Arch_Amazon-Simple-Notification-Service_48.svg`;
+      if (service === 'route-53') return `${base}/Arch_Networking-Content-Delivery/48/Arch_Amazon-Route-53_48.svg`;
+      if (service === 'waf') return `${base}/Arch_Security-Identity-Compliance/48/Arch_AWS-WAF_48.svg`;
+      if (service === 'alb') return `${base}/Arch_Networking-Content-Delivery/48/Arch_Elastic-Load-Balancing_48.svg`;
+      if (service === 'ec2') return `${base}/Arch_Compute/48/Arch_Amazon-EC2_48.svg`;
+      if (service === 'rds') return `${base}/Arch_Database/48/Arch_Amazon-RDS_48.svg`;
+      if (service === 'msk') return `${base}/Arch_Analytics/48/Arch_Amazon-Managed-Streaming-for-Apache-Kafka_48.svg`;
+      if (service === 'emr') return `${base}/Arch_Analytics/48/Arch_Amazon-EMR_48.svg`;
       
       return `${base}/Arch_Compute/48/Arch_AWS-Lambda_48.svg`; // Fallback
     }
@@ -183,39 +190,64 @@ export function parseDSL(code: string): ShapeCollection {
   const GRID_GAP = 60;
 
   function layoutNode(node: DSLNode, startX: number, startY: number): { width: number, height: number } {
-    if (node.id === 'root') {
-      let currentY = 0;
-      node.children.forEach(child => {
-        const size = layoutNode(child, 0, currentY);
-        currentY += size.height + GRID_GAP;
-      });
-      return { width: 0, height: currentY };
-    }
+    const isRoot = node.id === 'root';
+    
+    if (node.isGroup || isRoot) {
+      const COLS = isRoot ? 2 : (node.children.length > 4 ? 3 : 2);
+      const m = isRoot ? 0 : MARGIN;
+      const gh = isRoot ? 0 : HEADER_HEIGHT;
+      
+      let maxW = isRoot ? 0 : 240;
+      let currentY = gh;
+      let rowMaxH = 0;
+      let currentXInRow = m;
 
-    if (node.isGroup) {
-      // Recursive layout for children
-      let maxW = 200;
-      let currentY = HEADER_HEIGHT;
-      node.children.forEach(child => {
-        const size = layoutNode(child, startX + MARGIN, startY + currentY);
-        maxW = Math.max(maxW, size.width + MARGIN * 2);
-        currentY += size.height + GRID_GAP;
+      node.children.forEach((child, index) => {
+        const size = layoutNode(child, startX + currentXInRow, startY + currentY);
+        rowMaxH = Math.max(rowMaxH, size.height);
+        currentXInRow += size.width + GRID_GAP;
+
+        if ((index + 1) % COLS === 0 || index === node.children.length - 1) {
+          maxW = Math.max(maxW, currentXInRow - GRID_GAP + m);
+          currentY += rowMaxH + GRID_GAP;
+          currentXInRow = m;
+          rowMaxH = 0;
+        }
       });
 
-      const totalH = Math.max(120, currentY);
-      const groupFig: FigureShape = {
-        id: node.id,
-        x: startX,
-        y: startY,
-        width: maxW,
-        height: totalH,
-        figureNumber: 0,
-        title: node.label || node.name,
-        stroke: node.color || 'gray'
-      };
-      result.figures!.push(groupFig);
-      (node as any).bounds = { x: startX, y: startY, width: maxW, height: totalH };
-      return { width: maxW, height: totalH };
+      const totalH = Math.max(isRoot ? 0 : 120, currentY + m - GRID_GAP);
+      const totalW = maxW;
+
+      if (!isRoot) {
+        const groupRect: RectShape = {
+          id: node.id,
+          x: startX,
+          y: startY,
+          width: totalW,
+          height: totalH,
+          fill: "rgba(150, 150, 150, 0.03)",
+          stroke: node.color || "rgba(150, 150, 150, 0.2)",
+          strokeDashArray: [5, 5],
+        };
+        result.rectangles!.push(groupRect);
+
+        // Add a title text for the group container
+        result.texts!.push({
+          id: makeId(),
+          x: startX + 20,
+          y: startY + 15,
+          width: totalW - 40,
+          height: 24,
+          text: (node.label || node.name).toUpperCase(),
+          fontSize: 10,
+          textAlign: "left",
+          fontFamily: "Mono",
+          fill: node.color || "rgba(255, 255, 255, 0.5)",
+        });
+      }
+
+      (node as any).bounds = { x: startX, y: startY, width: totalW, height: totalH };
+      return { width: totalW, height: totalH };
     } else {
       // Individual Node
       const rect: RectShape = {
@@ -256,30 +288,49 @@ export function parseDSL(code: string): ShapeCollection {
     }
   }
 
-  layoutNode(root, 0, 0);
+  const layoutSize = layoutNode(root, 0, 0);
 
-  // 3. Connection Resolution
+  // 3. Smart Connection Resolution
   connections.forEach(conn => {
     const fromNode = nodeMap.get(conn.from);
     const toNode = nodeMap.get(conn.to);
 
     if (fromNode && toNode) {
+      const fb = (fromNode as any).bounds;
+      const tb = (toNode as any).bounds;
+      
+      let fromAnchor: AnchorSide = 'right';
+      let toAnchor: AnchorSide = 'left';
+      
+      if (fb && tb) {
+        const dx = (tb.x + tb.width/2) - (fb.x + fb.width/2);
+        const dy = (tb.y + tb.height/2) - (fb.y + fb.height/2);
+        
+        if (Math.abs(dx) > Math.abs(dy)) {
+          fromAnchor = dx > 0 ? 'right' : 'left';
+          toAnchor = dx > 0 ? 'left' : 'right';
+        } else {
+          fromAnchor = dy > 0 ? 'bottom' : 'top';
+          toAnchor = dy > 0 ? 'top' : 'bottom';
+        }
+      }
+
       const connector: Connector = {
         id: makeId(),
         from: {
           kind: fromNode.isGroup ? 'figure' : 'rect',
           shapeId: fromNode.id,
-          anchor: 'right' as AnchorSide
+          anchor: fromAnchor
         },
         to: {
           kind: toNode.isGroup ? 'figure' : 'rect',
           shapeId: toNode.id,
-          anchor: 'left' as AnchorSide
+          anchor: toAnchor
         }
       };
       result.connectors!.push(connector);
     }
   });
 
-  return result;
+  return { ...result, ...layoutSize };
 }

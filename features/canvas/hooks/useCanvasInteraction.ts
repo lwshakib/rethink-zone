@@ -40,6 +40,7 @@ import {
 } from "../utils/geometry";
 import { measureText } from "../utils/canvas-helpers";
 import { uploadFileToCloudinary } from "../utils/upload";
+import { parseDSL } from "../utils/dsl-parser";
 
 type InteractionProps = {
   activeTool: Tool;
@@ -649,17 +650,68 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
   const addDiagramToCanvas = useCallback(
     (template: DiagramTemplate, centerX: number, centerY: number) => {
+      // Create a shallow copy of the shapes to avoid mutating the original template catalog
+      const shapes = { ...template.shapes };
+      
+      // Parse DSL for any figures that contain code
+      (shapes.figures || []).forEach(f => {
+        if (f.code) {
+          const dslShapes = parseDSL(f.code) as any;
+          
+          // Auto-size the parent figure to fit its children
+          f.width = dslShapes.width + 100;
+          f.height = dslShapes.height + 120;
+
+          // Incorporate the parsed shapes into our working set
+          // We offset the internal content so it's neatly padded inside the figure
+          const offsetX = (f.x || 0) + 50;
+          const offsetY = (f.y || 0) + 70;
+          const groupId = f.id;
+
+          const offsetShape = (s: any) => ({ ...s, x: (s.x || 0) + offsetX, y: (s.y || 0) + offsetY, groupId });
+          const offsetLine = (l: any) => ({ 
+            ...l, 
+            x1: (l.x1 || 0) + offsetX, y1: (l.y1 || 0) + offsetY,
+            x2: (l.x2 || 0) + offsetX, y2: (l.y2 || 0) + offsetY,
+            groupId
+          });
+
+          if (dslShapes.rectangles) {
+            shapes.rectangles = [...(shapes.rectangles || []), ...dslShapes.rectangles.map(offsetShape)];
+          }
+          if (dslShapes.images) {
+            shapes.images = [...(shapes.images || []), ...dslShapes.images.map(offsetShape)];
+          }
+          if (dslShapes.texts) {
+            shapes.texts = [...(shapes.texts || []), ...dslShapes.texts.map(offsetShape)];
+          }
+          if (dslShapes.figures) {
+            shapes.figures = [...(shapes.figures || []), ...dslShapes.figures.map(offsetShape)];
+          }
+          if (dslShapes.lines) {
+            shapes.lines = [...(shapes.lines || []), ...dslShapes.lines.map(offsetLine)];
+          }
+          if (dslShapes.arrows) {
+            shapes.arrows = [...(shapes.arrows || []), ...dslShapes.arrows.map(offsetLine)];
+          }
+          if (dslShapes.connectors) {
+            // Connectors shapeIds are already localized within the DSL parse
+            shapes.connectors = [...(shapes.connectors || []), ...dslShapes.connectors];
+          }
+        }
+      });
+
       const allShapes = [
-        ...(template.shapes.rectangles || []),
-        ...(template.shapes.circles || []),
-        ...(template.shapes.polygons || []),
-        ...(template.shapes.images || []),
-        ...(template.shapes.texts || []),
-        ...(template.shapes.frames || []),
-        ...(template.shapes.lines || []),
-        ...(template.shapes.arrows || []),
-        ...(template.shapes.figures || []),
-        ...(template.shapes.codes || []),
+        ...(shapes.rectangles || []),
+        ...(shapes.circles || []),
+        ...(shapes.polygons || []),
+        ...(shapes.images || []),
+        ...(shapes.texts || []),
+        ...(shapes.frames || []),
+        ...(shapes.lines || []),
+        ...(shapes.arrows || []),
+        ...(shapes.figures || []),
+        ...(shapes.codes || []),
       ];
 
       if (allShapes.length === 0) return;
@@ -717,22 +769,52 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         };
       };
 
-      const newRects = (template.shapes.rectangles || []).map(processShape);
-      const newCircles = (template.shapes.circles || []).map((s) => {
+      const newFigures = (shapes.figures || []).map(processShape);
+      const newCodes = (shapes.codes || []).map(processShape);
+      const newRects = (shapes.rectangles || []).map(s => {
+        const res = processShape(s);
+        if (res.groupId) res.groupId = idMap.get(res.groupId) || res.groupId;
+        return res;
+      });
+      const newCircles = (shapes.circles || []).map((s) => {
         const newId = makeId();
         idMap.set(s.id, newId);
-        return { ...s, id: newId, x: s.x + offsetX, y: s.y + offsetY };
+        const res = { ...s, id: newId, x: s.x + offsetX, y: s.y + offsetY };
+        if (res.groupId) res.groupId = idMap.get(res.groupId) || res.groupId;
+        return res;
       });
-      const newPolys = (template.shapes.polygons || []).map(processShape);
-      const newImages = (template.shapes.images || []).map(processShape);
-      const newTexts = (template.shapes.texts || []).map(processShape);
-      const newFrames = (template.shapes.frames || []).map(processShape);
-      const newLines = (template.shapes.lines || []).map(processLine);
-      const newArrows = (template.shapes.arrows || []).map(processLine);
-      const newFigures = (template.shapes.figures || []).map(processShape);
-      const newCodes = (template.shapes.codes || []).map(processShape);
+      const newPolys = (shapes.polygons || []).map(s => {
+        const res = processShape(s);
+        if (res.groupId) res.groupId = idMap.get(res.groupId) || res.groupId;
+        return res;
+      });
+      const newImages = (shapes.images || []).map(s => {
+        const res = processShape(s);
+        if (res.groupId) res.groupId = idMap.get(res.groupId) || res.groupId;
+        return res;
+      });
+      const newTexts = (shapes.texts || []).map(s => {
+        const res = processShape(s);
+        if (res.groupId) res.groupId = idMap.get(res.groupId) || res.groupId;
+        return res;
+      });
+      const newFrames = (shapes.frames || []).map(s => {
+        const res = processShape(s);
+        if (res.groupId) res.groupId = idMap.get(res.groupId) || res.groupId;
+        return res;
+      });
+      const newLines = (shapes.lines || []).map(s => {
+        const res = processLine(s);
+        if (res.groupId) res.groupId = idMap.get(res.groupId) || res.groupId;
+        return res;
+      });
+      const newArrows = (shapes.arrows || []).map(s => {
+        const res = processLine(s);
+        if (res.groupId) res.groupId = idMap.get(res.groupId) || res.groupId;
+        return res;
+      });
 
-      const newConnectors = (template.shapes.connectors || []).map((c) => ({
+      const newConnectors = (shapes.connectors || []).map((c) => ({
         ...c,
         id: makeId(),
         from: {
