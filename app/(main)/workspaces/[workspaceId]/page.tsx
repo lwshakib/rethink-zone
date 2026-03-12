@@ -256,7 +256,6 @@ export default function WorkspaceDetailPage() {
                 </Link>
                 <div className="h-4 w-px bg-border" />
                 <div className="flex items-center gap-2">
-                  <Layers className="h-4 w-4 text-blue-400" />
                   {editingName ? (
                     <input
                       autoFocus
@@ -264,17 +263,16 @@ export default function WorkspaceDetailPage() {
                       onChange={(e) => setNameDraft(e.target.value)}
                       onBlur={commitName}
                       onKeyDown={(e) => e.key === "Enter" && commitName()}
-                      className="bg-transparent text-sm font-semibold text-foreground outline-none ring-0 border-b border-primary/50"
+                      className="bg-transparent text-sm font-semibold text-foreground outline-none ring-0 focus:ring-0"
                     />
                   ) : (
                     <div
-                      className="flex items-center gap-2 group cursor-pointer"
-                      onClick={() => setEditingName(true)}
+                      className="flex items-center gap-2 group cursor-pointer select-none"
+                      onDoubleClick={() => setEditingName(true)}
                     >
                       <span className="text-sm font-semibold text-foreground">
                         {workspace?.name}
                       </span>
-                      <Edit2 className="h-3 w-3 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100" />
                     </div>
                   )}
                 </div>
