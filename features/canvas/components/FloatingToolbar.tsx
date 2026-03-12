@@ -111,16 +111,13 @@ const STROKE_PRESETS = [
  */
 const PopoverContainer = React.memo(({ children, active, className = "", style = {}, transparent = false, theme = "dark" }: { children: React.ReactNode, active: boolean, className?: string, style?: React.CSSProperties, transparent?: boolean, theme?: string }) => {
   if (!active) return null; // Only render if active
-  const isDark = theme === "dark";
   return (
     <div 
       // Positioned above the toolbar trigger
       className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-4 flex flex-col gap-2 ${
         transparent 
           ? "p-0" 
-          : isDark
-            ? "p-3 bg-[#121212] rounded-lg border border-white/10 shadow-2xl"
-            : "p-3 bg-white rounded-lg border border-black/10 shadow-2xl"
+          : "p-3 bg-background/95 backdrop-blur-xl rounded-sm border border-border/40 shadow-2xl"
       } animate-in fade-in slide-in-from-bottom-2 duration-200 z-[1001] ${className}`}
       style={style}
       onPointerDown={e => e.stopPropagation()} // Prevent canvas from capturing clicks inside popovers
@@ -159,12 +156,12 @@ const FloatingToolbar = React.memo(({
 }: FloatingToolbarProps) => {
   // Theme-derived utility classes
   const isDark = theme === "dark";
-  const bgSubtle = isDark ? "bg-white/5" : "bg-black/[0.03]";
-  const bgHover = isDark ? "hover:bg-white/5" : "hover:bg-black/[0.04]";
-  const bgActive = isDark ? "bg-white/10" : "bg-black/[0.08]";
-  const borderSubtle = isDark ? "border-white/10" : "border-black/[0.08]";
-  const separatorColor = isDark ? "bg-white/5" : "bg-black/[0.05]";
-  const toggleBg = isDark ? "bg-[#2a2a2a]" : "bg-black/[0.08]";
+  const bgSubtle = "bg-muted/30";
+  const bgHover = "text-muted-foreground hover:bg-muted hover:text-foreground";
+  const bgActive = "bg-muted text-foreground shadow-sm";
+  const borderSubtle = "border-border/40";
+  const separatorColor = "bg-border/40";
+  const toggleBg = "bg-background shadow-sm";
 
   // UI interaction state: which sub-menu is open
   const [activePopover, setActivePopover] = useState<string>("none");
@@ -543,9 +540,7 @@ const FloatingToolbar = React.memo(({
     <div
       ref={toolbarRef}
       // Fixed position at bottom-center of the screen
-      className={`fixed bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-1 p-1.5 rounded-xl border shadow-2xl z-[1000] animate-in fade-in slide-in-from-bottom-2 duration-300 ${
-        isDark ? "bg-[#121212] border-white/10" : "bg-white border-black/10"
-      }`}
+      className={`fixed bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-sm bg-background/80 backdrop-blur-xl px-2 py-1.5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-border/40 z-[1000] animate-in fade-in slide-in-from-bottom-2 duration-300`}
       onPointerDown={(e) => e.stopPropagation()} // Stop canvas events when interacting with toolbar
       onWheel={(e) => {
         e.stopPropagation();
@@ -571,16 +566,16 @@ const FloatingToolbar = React.memo(({
         <div className="flex items-center gap-1">
           {/* TEXT vs CODE Toggle switch for conversion between textual shapes */}
           {isTextOrCode && (
-            <div className={`flex p-0.5 ${bgSubtle} rounded-lg border ${borderSubtle} mr-1`}>
+            <div className={`flex p-0.5 ${bgSubtle} rounded-sm border ${borderSubtle} mr-1`}>
               <button
                 onClick={() => onChangeKind(mainKind, mainIndex, "text")}
-                className={`h-7 px-3 flex items-center gap-1 rounded-md text-[10px] font-bold transition-all ${mainKind === "text" ? `${toggleBg} text-foreground shadow-sm` : "text-foreground/40 hover:text-foreground/60"}`}
+                className={`h-7 px-3 flex items-center gap-1 rounded-sm text-[10px] font-bold transition-all ${mainKind === "text" ? `${toggleBg} text-foreground shadow-sm` : "text-muted-foreground/60 hover:text-foreground"}`}
               >
                 Text
               </button>
               <button
                 onClick={() => onChangeKind(mainKind, mainIndex, "code")}
-                className={`h-7 px-3 flex items-center gap-1 rounded-md text-[10px] font-bold transition-all ${mainKind === "code" ? `${toggleBg} text-foreground shadow-sm` : "text-foreground/40 hover:text-foreground/60"}`}
+                className={`h-7 px-3 flex items-center gap-1 rounded-sm text-[10px] font-bold transition-all ${mainKind === "code" ? `${toggleBg} text-foreground shadow-sm` : "text-muted-foreground/60 hover:text-foreground"}`}
               >
                 Code
               </button>
@@ -592,7 +587,7 @@ const FloatingToolbar = React.memo(({
             <div className="relative">
               <button
                 onClick={() => setActivePopover(activePopover === "shapes" ? "none" : "shapes")}
-                className={`h-9 px-2 flex items-center gap-1 rounded-lg transition-all ${activePopover === "shapes" ? bgActive : bgHover}`}
+                className={`h-9 px-2 flex items-center gap-1 rounded-sm transition-all duration-200 ${activePopover === "shapes" ? bgActive : bgHover}`}
               >
                 {/* Visual indicator of "Shapes" */}
                 <div className="flex flex-col gap-0.5 items-center justify-center scale-90">
@@ -619,7 +614,7 @@ const FloatingToolbar = React.memo(({
                   else if (isLineOrArrow) setColorTarget("stroke");
                   setActivePopover(activePopover === "color" ? "none" : "color");
                 }}
-                className={`h-9 px-2 flex items-center gap-1 rounded-lg transition-all ${activePopover === "color" ? bgActive : bgHover}`}
+                className={`h-9 px-2 flex items-center gap-1 rounded-sm transition-all duration-200 ${activePopover === "color" ? bgActive : bgHover}`}
               >
                 {/* Visual preview of current colors */}
                 {mainKind === "text" ? (
@@ -669,7 +664,7 @@ const FloatingToolbar = React.memo(({
                <div className="relative">
                  <button
                    onClick={() => setActivePopover(activePopover === "typo" ? "none" : "typo")}
-                   className={`h-9 px-2 flex items-center gap-1 rounded-lg transition-all ${activePopover === "typo" ? `${bgActive} text-[#3bc1ff]` : `${bgHover} text-foreground/60`}`}
+                   className={`h-9 px-2 flex items-center gap-1 rounded-sm transition-all duration-200 ${activePopover === "typo" ? bgActive : bgHover}`}
                  >
                    <TypeIcon className="h-4 w-4" />
                    <ChevronDown className="h-3 w-3 opacity-40 ml-0.5" />
@@ -688,7 +683,7 @@ const FloatingToolbar = React.memo(({
                <div className="relative">
                  <button
                    onClick={() => setActivePopover(activePopover === "code-panel" ? "none" : "code-panel")}
-                   className={`h-9 px-2 flex items-center gap-1 rounded-lg transition-all ${activePopover === "code-panel" ? `${bgActive} text-[#3bc1ff]` : `${bgHover} text-foreground/60`}`}
+                   className={`h-9 px-2 flex items-center gap-1 rounded-sm transition-all duration-200 ${activePopover === "code-panel" ? bgActive : bgHover}`}
                  >
                    <CodeIcon className="h-4 w-4" />
                    <ChevronDown className="h-3 w-3 opacity-40 ml-0.5" />
@@ -707,7 +702,7 @@ const FloatingToolbar = React.memo(({
               <div className="relative">
                 <button
                   onClick={() => setActivePopover(activePopover === "stroke" ? "none" : "stroke")}
-                  className={`h-9 px-2 flex items-center gap-1 rounded-lg transition-all ${activePopover === "stroke" ? bgActive : bgHover}`}
+                  className={`h-9 px-2 flex items-center gap-1 rounded-sm transition-all duration-200 ${activePopover === "stroke" ? bgActive : bgHover}`}
                 >
                   {/* Visual indicator of line thickness stacked */}
                   <div className="flex flex-col gap-1 w-4">
@@ -727,7 +722,7 @@ const FloatingToolbar = React.memo(({
           <div className={`h-6 w-px ${separatorColor} mx-0.5`} />
 
           {/* CHAT/MESSAGE placeholder button */}
-          <button className={`h-9 w-9 flex items-center justify-center rounded-lg ${bgHover} transition-all`}>
+          <button className={`h-9 w-9 flex items-center justify-center rounded-sm ${bgHover} transition-all duration-200`}>
             <MessageSquare className="h-4 w-4 opacity-70" />
           </button>
 
@@ -735,7 +730,7 @@ const FloatingToolbar = React.memo(({
           <div className="relative">
             <button
               onClick={() => setActivePopover(activePopover === "more" ? "none" : "more")}
-              className={`h-9 w-9 flex items-center justify-center rounded-lg transition-all ${activePopover === "more" ? bgActive : bgHover}`}
+              className={`h-9 w-9 flex items-center justify-center rounded-sm transition-all duration-200 ${activePopover === "more" ? bgActive : bgHover}`}
             >
               <MoreVertical className="h-4 w-4 opacity-70" />
             </button>
