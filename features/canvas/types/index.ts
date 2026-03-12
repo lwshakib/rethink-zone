@@ -159,6 +159,7 @@ export type FigureShape = {
   height: number;
   figureNumber: number;
   title?: string;
+  code?: string;
   fill?: string;
   stroke?: string;
   opacity?: number;

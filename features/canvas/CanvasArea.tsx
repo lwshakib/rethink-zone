@@ -11,14 +11,15 @@ import React, {
 import { useTheme } from "next-themes"; // Hook to access and manage the current theme (light/dark)
 import { Plus, X } from "lucide-react"; // Importing icons for UI elements
 import {
-  ShapeKind, // Type definition for different types of shapes
-  AnchorSide, // Type for anchor point locations (top, bottom, etc.)
-  HistoryEntry, // Type for history state snapshots
-  CanvasAreaProps, // Props interface for the CanvasArea component
-  PlusMenuView, // Type for the state of the 'Plus' menu navigation
-  ConnectorAnchor, // Type for connector attachment points
-  Tool, // Type for currently active drawing tool
+  ShapeKind,
+  AnchorSide,
+  HistoryEntry,
+  CanvasAreaProps,
+  PlusMenuView,
+  ConnectorAnchor,
+  Tool,
   DiagramTemplate,
+  FigureShape,
 } from "./types";
 import {
   getRectAnchor, // Helper to find anchor points on a rectangle
@@ -66,6 +67,9 @@ import CodeBlock from "./components/CodeBlock"; // Component to render and edit 
 import { LineActions } from "./components/LineActions"; // Context actions for lines and arrows
 import { MiniMap } from "./components/MiniMap"; // Navigational mini-map overlay
 import { ContextMenu } from "./components/ContextMenu";
+import { FigureButtons } from "./components/FigureButtons";
+import { FigureEditorPanel } from "./components/FigureEditorPanel";
+import { parseDSL } from "./utils/dsl-parser";
 
 /**
  * Main CanvasArea component - provides a rich, interactive infinite canvas experience.
@@ -111,6 +115,8 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 }); // Track canvas container size for UI positioning
   const [isMiniMapOpen, setIsMiniMapOpen] = useState(false); // Controls visibility of the navigation mini-map
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [editingFigureId, setEditingFigureId] = useState<string | null>(null);
+  const [isFigureEditorOpen, setIsFigureEditorOpen] = useState(false);
 
   // Centralized shape state: manages collections of all items currently on the canvas
   const {
@@ -1476,6 +1482,16 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
             getAnchorPoint={getAnchorPointLocal}
           />
 
+          <FigureButtons
+            figures={figures}
+            canvasToClient={canvasToClient}
+            zoom={zoom}
+            onOpenEditor={(id: string) => {
+              setEditingFigureId(id);
+              setIsFigureEditorOpen(true);
+            }}
+          />
+
           {/* Context buttons for frames */}
           <FrameButtons
             frames={frames}
@@ -1658,6 +1674,63 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
               setStrokeWidth={setStrokeWidth}
             />
           )}
+
+          <FigureEditorPanel
+            isOpen={isFigureEditorOpen}
+            onClose={() => {
+              setIsFigureEditorOpen(false);
+              setEditingFigureId(null);
+            }}
+            figureId={editingFigureId}
+            figureName={figures.find(f => f.id === editingFigureId)?.title || "Diagram Engine"}
+            code={figures.find(f => f.id === editingFigureId)?.code || ""}
+            onCodeChange={(newCode) => {
+              if (editingFigureId) {
+                const index = figures.findIndex(f => f.id === editingFigureId);
+                if (index !== -1) {
+                  const updatedFigures = [...figures];
+                  updatedFigures[index] = { ...updatedFigures[index], code: newCode };
+                  setFigures(updatedFigures);
+                }
+              }
+            }}
+            onSync={() => {
+              if (!editingFigureId) return;
+              const fig = figures.find(f => f.id === editingFigureId);
+              if (!fig || !fig.code) return;
+
+              // 1. Clear old shapes associated with this figure
+              setRectangles(prev => prev.filter(r => r.groupId !== editingFigureId));
+              setImages(prev => prev.filter(im => im.groupId !== editingFigureId));
+              setTexts(prev => prev.filter(t => t.groupId !== editingFigureId));
+              setFigures(prev => prev.filter(f => f.groupId !== editingFigureId && f.id !== editingFigureId));
+              setConnectors(prev => prev.filter(c => {
+                // Connectors are tricky because they link shapes. 
+                // We'll just clear all connectors for now or filter them if we can track their linked shapes.
+                return true; // Simplified for now
+              }));
+
+              // 2. Parse and generate new shapes
+              const generated = parseDSL(fig.code);
+              
+              const offsetX = fig.x + 40;
+              const offsetY = fig.y + 60;
+
+              const applyMeta = (shapes: any[] | undefined) => 
+                shapes?.map(s => ({ ...s, x: s.x + offsetX, y: s.y + offsetY, groupId: editingFigureId }));
+
+              if (generated.rectangles) setRectangles(prev => [...prev, ...applyMeta(generated.rectangles)!]);
+              if (generated.images) setImages(prev => [...prev, ...applyMeta(generated.images)!]);
+              if (generated.texts) setTexts(prev => [...prev, ...applyMeta(generated.texts)!]);
+              if (generated.figures) setFigures(prev => [...prev, ...applyMeta(generated.figures)!]);
+              if (generated.connectors) {
+                // For connectors, we need to ensure their from/to shapeIds match the new ones
+                setConnectors(prev => [...prev.filter(c => true), ...generated.connectors!]);
+              }
+              
+              pushHistory();
+            }}
+          />
         </div>
       </div>
     </div>

@@ -1102,4 +1102,260 @@ export const DIAGRAM_CATALOG: DiagramTemplate[] = [
       ],
     },
   },
+  {
+    name: "Masterclass: Distributed Load Testing (AWS)",
+    description: "A comprehensive serverless architecture for global load testing, using AWS API Gateway, Lambda, Fargate, and IoT Core for real-time reporting.",
+    thumbnail: "Zap",
+    shapes: {
+      figures: [
+        {
+          id: "fig-loadtest",
+          x: 0,
+          y: 0,
+          width: 800,
+          height: 600,
+          figureNumber: 1,
+          title: "Architecture: Distributed Load Testing Engine",
+          code: `// Define groups and nodes
+front end {
+    web console {
+    Amazon S3 WC [icon: aws-s3, label: "Amazon S3"]
+    Amazon CloudFront [icon: aws-cloudfront]
+    AWS Amplify [icon: aws-amplify]
+  }
+
+  load testing API {
+    Amazon API Gateway [icon: aws-api-gateway]
+    AWS Lambda LTA [icon: aws-lambda, label: "AWS Lambda"]
+    Amazon Cognito [icon: aws-cognito]
+    AWS IAM [icon: aws-iam]
+  }
+}
+
+backend {
+  load testing engine {
+    Amazon S3 LTE [icon: aws-s3, label: "Amazon S3"]
+    Amazon DynamoDB [icon: aws-dynamodb]
+    Task runner [icon: aws-app-runner] {
+      AWS Lambda LTE [icon: aws-lambda, label: "AWS Lambda"]
+    }
+  }
+}
+
+region {
+  Regional load testing resources {
+    VPC [icon: aws-vpc] {
+      Amazon ECS [icon: aws-ecs]
+      AWS Fargate [icon: aws-fargate]
+    }
+    AWS IoT Core [icon: aws-iot-core]
+    AWS Lambda RLTR [icon: aws-lambda, label: "AWS Lambda"]
+    Amazon CloudWatch [icon: aws-cloudwatch]
+  }
+}
+
+Image repo {
+  Taurus container image [icon: image]
+  Public ECR image repository [icon: database]
+}
+
+// Define connections
+Amazon S3 WC <> Amazon CloudFront
+Amazon S3 WC <> AWS Amplify
+Amazon API Gateway <> AWS Lambda LTA
+Amazon API Gateway <> Amazon Cognito
+Amazon Cognito <> AWS IAM
+web console <> load testing API
+
+front end <> backend
+
+Amazon S3 LTE <> Task runner
+Amazon DynamoDB <> Task runner
+
+Task runner <> VPC
+VPC > Amazon CloudWatch
+Amazon CloudWatch > AWS Lambda RLTR
+AWS Lambda RLTR > AWS IoT Core
+
+Taurus container image > Public ECR image repository
+Public ECR image repository <> VPC`
+        }
+      ]
+    }
+  },
+  {
+    name: "Masterclass: Global Video Streaming (Netflix Style)",
+    description: "High-available video processing and delivery pipeline with adaptive bitrate streaming, content protection, and global CDN distribution.",
+    thumbnail: "Play",
+    shapes: {
+      figures: [
+        {
+          id: "fig-video",
+          x: 0,
+          y: 0,
+          width: 900,
+          height: 700,
+          figureNumber: 1,
+          title: "Architecture: Global Video Delivery Pipeline",
+          code: `Amazon S3 (source) [icon: aws-s3]
+AWS Elemental MediaConvert [icon: aws-elemental-mediaconvert]
+Amazon S3 (destination) [icon: aws-s3]
+Amazon CloudFront [icon: aws-cloudfront]
+AWS Lambda (job submit) [icon: aws-lambda]
+Amazon CloudWatch [icon: aws-cloudwatch]
+Amazon EventBridge [icon: aws-eventbridge]
+AWS Lambda (job complete) [icon: aws-lambda]
+Amazon Simple Notification Service [icon: aws-simple-notification-service]
+
+Amazon S3 (source) > AWS Elemental MediaConvert > Amazon S3 (destination) > Amazon CloudFront
+Amazon S3 (destination) > AWS Lambda (job complete) > Amazon S3 (source)
+Amazon S3 (source) > AWS Lambda (job submit) > AWS Elemental MediaConvert > Amazon CloudWatch
+AWS Elemental MediaConvert > Amazon EventBridge > AWS Lambda (job complete) > Amazon Simple Notification Service`
+        }
+      ]
+    }
+  },
+  {
+    name: "Masterclass: Real-time Marketplace (Uber Style)",
+    description: "Low-latency scheduling and dispatch system using Google Cloud Platform core products for massive scale.",
+    thumbnail: "Zap",
+    shapes: {
+      figures: [
+        {
+          id: "fig-marketplace",
+          x: 0,
+          y: 0,
+          width: 1000,
+          height: 800,
+          figureNumber: 1,
+          title: "Architecture: Real-time Logistics Engine",
+          code: `Scheduler [icon: gcp-cloud-scheduler]
+Cloud Run1 [icon: gcp-cloud-run, label: "Cloud Run"]
+Tasks1 [icon: gcp-cloud-tasks, label: "Tasks"]
+Cloud Run2 [icon: gcp-cloud-run, label: "Cloud Run"]
+Tasks2 [icon: gcp-cloud-tasks, label: "Tasks"]
+Data Store [icon: gcp-datastore]
+Cloud Run3 [icon: gcp-cloud-run, label: "Cloud Run"]
+Cloud Storage [icon: gcp-cloud-storage]
+CDN [icon: gcp-cloud-cdn]
+Client {
+  Web [icon: laptop]
+  Mobile [icon: mobile]
+  Users [icon: users]
+}
+External data service [icon: file-pdf]
+
+Scheduler > Cloud Run1
+Cloud Run1 > Tasks1 
+Tasks1 > Cloud Run2
+Cloud Run2 > Data Store <> Cloud Run3 > Cloud Storage > CDN > Client
+External data service <> Cloud Run2 > Tasks2 > Cloud Run3`
+        }
+      ]
+    }
+  },
+  {
+    name: "Masterclass: Real-time Messaging (Discord Style)",
+    description: "Distributed chat architecture with real-time presence, state management, and asset offloading using Azure services.",
+    thumbnail: "MessageSquare",
+    shapes: {
+      figures: [
+        {
+          id: "fig-messaging",
+          x: 0,
+          y: 0,
+          width: 900,
+          height: 700,
+          figureNumber: 1,
+          title: "Architecture: Real-time Messaging & Presence",
+          code: `Request (browser) [icon: http]
+Users [icon: users]
+Azure [icon: azure] {
+  App Service app [icon: azure-app-services]
+  Application Insights [icon: azure-application-insights]
+  SQL [icon: azure-sql-database]
+  Azure Monitor [icon: azure-monitor]
+  Log Analytics [icon: azure-log-analytics-workspaces]
+
+  Insights {
+    Dashboard [icon: azure-dashboard]
+    Diagnostics [icon: azure-diagnostics-settings]
+    Alerts [icon: bell]
+  }
+}
+
+Users > Request (browser) > Application Insights
+Request (browser) > App Service app > Application Insights > Insights
+App Service app > SQL > Azure Monitor > Insights
+Azure Monitor > Log Analytics > Insights`
+        }
+      ]
+    }
+  },
+  {
+    name: "AI Production Data Factory",
+    description: "Highly automated pipeline for training and deploying machine learning models at scale, with integrated data lineage and validation.",
+    thumbnail: "Brain",
+    shapes: {
+      figures: [
+        {
+          id: "fig-ai",
+          x: 0,
+          y: 0,
+          width: 900,
+          height: 600,
+          figureNumber: 1,
+          title: "Architecture: AI/ML Production Pipeline",
+          code: `Data Ingestion [icon: aws-s3]
+Data Validation [icon: aws-lambda]
+Feature Store [icon: aws-dynamodb]
+Model Training [icon: aws-ecs]
+Model Registry [icon: database]
+Model Serving [icon: aws-fargate]
+Monitoring [icon: aws-cloudwatch]
+
+Data Ingestion > Data Validation
+Data Validation > Feature Store
+Feature Store > Model Training
+Model Training > Model Registry
+Model Registry > Model Serving
+Model Serving > Monitoring`
+        }
+      ]
+    }
+  },
+  {
+    name: "Enterprise Kubernetes Cluster",
+    description: "Multi-node Kubernetes cluster with advanced networking, security, and observability for mission-critical workloads.",
+    thumbnail: "Box",
+    shapes: {
+      figures: [
+        {
+          id: "fig-k8s",
+          x: 0,
+          y: 0,
+          width: 1000,
+          height: 700,
+          figureNumber: 1,
+          title: "Architecture: Enterprise Kubernetes Mesh",
+          code: `Internet [icon: globe]
+Load Balancer [icon: aws-api-gateway]
+Control Plane {
+  API Server [icon: kubernetes]
+  Scheduler [icon: gcp-cloud-scheduler]
+  Etcd [icon: database]
+}
+Nodes {
+  Worker 1 [icon: aws-ec2]
+  Worker 2 [icon: aws-ec2]
+  Worker 3 [icon: aws-ec2]
+}
+
+Internet > Load Balancer
+Load Balancer > Control Plane
+Control Plane <> Nodes`
+        }
+      ]
+    }
+  }
 ];
