@@ -363,7 +363,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                       { icon: Diamond, label: "Diamond" },
                       { icon: Triangle, label: "Triangle" },
                       { icon: Circle, label: "Oval", stretch: true },
-                      { icon: Square, label: "Parallelo...", slant: true },
+                      { icon: Square, label: "Parallelogram", slant: true },
                       { icon: Square, label: "Trapezoid", trapezoid: true },
                       { icon: Cylinder, label: "Cylinder" },
                       { icon: FileText, label: "Document" },

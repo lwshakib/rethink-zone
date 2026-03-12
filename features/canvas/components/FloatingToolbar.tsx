@@ -70,6 +70,7 @@ const ShapeIcon = ({ kind }: { kind: string }) => {
   if (kind.includes("Database")) return <Wrap><path d="M4 6h16v10c0 1-2 2-8 2s-8-1-8-2V6z"/><path d="M4 6c0 1.5 3 3 8 3s8-1.5 8-3"/></Wrap>;
   if (kind.includes("Hexagon")) return <Wrap><path d="M12 2L21 7.2V16.8L12 22L3 16.8V7.2L12 2Z"/></Wrap>;
   if (kind.includes("Star")) return <Wrap><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2z"/></Wrap>;
+  if (kind.includes("Document")) return <Wrap><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></Wrap>;
   return <Wrap><rect x="3" y="3" width="18" height="18" rx="2"/></Wrap>;
 };
 
@@ -86,6 +87,7 @@ const SHAPES = [
   { kind: "poly:Database", label: "Database" },
   { kind: "poly:Hexagon", label: "Hexagon" },
   { kind: "poly:Star", label: "Star" },
+  { kind: "poly:Document", label: "Document" },
 ];
 
 // Aesthetic presets for quick styling

@@ -424,6 +424,19 @@ export const drawPoly = (
     }
   } else if (p.type === "Oval") {
     ctx.ellipse(p.x + p.width / 2, p.y + p.height / 2, p.width / 2, p.height / 2, 0, 0, Math.PI * 2);
+  } else if (p.type === "Document") {
+    const fold = Math.min(p.width, p.height) * 0.2;
+    // Outer boundary
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(p.x + p.width - fold, p.y);
+    ctx.lineTo(p.x + p.width, p.y + fold);
+    ctx.lineTo(p.x + p.width, p.y + p.height);
+    ctx.lineTo(p.x, p.y + p.height);
+    ctx.closePath();
+    // Fold line
+    ctx.moveTo(p.x + p.width - fold, p.y);
+    ctx.lineTo(p.x + p.width - fold, p.y + fold);
+    ctx.lineTo(p.x + p.width, p.y + fold);
   } else if (p.type === "Parallelogram") {
     ctx.moveTo(p.x + p.width * 0.2, p.y);
     ctx.lineTo(p.x + p.width, p.y);
