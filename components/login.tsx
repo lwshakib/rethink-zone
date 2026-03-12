@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 import { Loader2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -59,13 +60,15 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen w-full flex-col lg:flex-row">
       {/* Left Side: Image Placeholder */}
-      <div className="hidden bg-zinc-100 lg:block lg:w-1/2 dark:bg-zinc-900/50">
-        <div className="flex h-full items-center justify-center border-r border-zinc-200 dark:border-zinc-800">
-          <div className="relative h-full w-full opacity-20 contrast-125 grayscale">
-            {/* Background texture or gradient could go here */}
-            <div className="absolute inset-0 bg-linear-to-br from-zinc-500/20 to-transparent" />
-          </div>
-        </div>
+      <div className="hidden lg:block lg:w-1/2 relative">
+        <Image
+          src="/auth/sign-in.png"
+          alt="Focus and Access"
+          fill
+          className="object-cover contrast-110"
+          priority
+        />
+        <div className="absolute inset-0 bg-linear-to-br from-zinc-900/10 to-transparent" />
       </div>
 
       {/* Right Side: Form */}

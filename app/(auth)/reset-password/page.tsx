@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogoIcon } from "@/components/logo";
 import { Loader2, CheckCircle2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -79,13 +80,16 @@ function ResetPasswordContent() {
             </div>
           </div>
         </div>
-        {/* Right Side: Image Placeholder */}
-        <div className="hidden bg-zinc-100 lg:block lg:w-1/2 dark:bg-zinc-900/50">
-          <div className="flex h-full items-center justify-center border-l border-zinc-200 dark:border-zinc-800">
-            <div className="relative h-full w-full opacity-20 contrast-125 grayscale">
-              <div className="absolute inset-0 bg-linear-to-bl from-zinc-500/20 to-transparent" />
-            </div>
-          </div>
+        {/* Right Side: Image */}
+        <div className="hidden lg:block lg:w-1/2 relative">
+          <Image
+            src="/auth/reset-password.png"
+            alt="Reset Password"
+            fill
+            className="object-cover contrast-110"
+            priority
+          />
+          <div className="absolute inset-0 bg-linear-to-bl from-zinc-900/10 to-transparent" />
         </div>
       </div>
     );
@@ -111,12 +115,14 @@ function ResetPasswordContent() {
             </div>
           </div>
         </div>
-        <div className="hidden bg-zinc-100 lg:block lg:w-1/2 dark:bg-zinc-900/50">
-          <div className="flex h-full items-center justify-center border-l border-zinc-200 dark:border-zinc-800">
-            <div className="relative h-full w-full opacity-20 contrast-125 grayscale">
-              <div className="absolute inset-0 bg-linear-to-bl from-zinc-500/20 to-transparent" />
-            </div>
-          </div>
+        <div className="hidden lg:block lg:w-1/2 relative">
+          <Image
+            src="/auth/reset-password.png"
+            alt="Reset Password"
+            fill
+            className="object-cover contrast-110"
+          />
+          <div className="absolute inset-0 bg-linear-to-bl from-zinc-900/10 to-transparent" />
         </div>
       </div>
     );
@@ -188,13 +194,15 @@ function ResetPasswordContent() {
         </div>
       </div>
 
-      {/* Right Side: Image Placeholder */}
-      <div className="hidden bg-zinc-100 lg:block lg:w-1/2 dark:bg-zinc-900/50">
-        <div className="flex h-full items-center justify-center border-l border-zinc-200 dark:border-zinc-800">
-          <div className="relative h-full w-full opacity-20 contrast-125 grayscale">
-            <div className="absolute inset-0 bg-linear-to-bl from-zinc-500/20 to-transparent" />
-          </div>
-        </div>
+      {/* Right Side: Image */}
+      <div className="hidden lg:block lg:w-1/2 relative">
+        <Image
+          src="/auth/reset-password.png"
+          alt="Reset Password"
+          fill
+          className="object-cover contrast-110"
+        />
+        <div className="absolute inset-0 bg-linear-to-bl from-zinc-900/10 to-transparent" />
       </div>
     </div>
   );

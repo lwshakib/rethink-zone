@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 import { Loader2, MailCheck } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -90,13 +91,16 @@ export default function SignUp() {
             </div>
           </div>
         </div>
-        {/* Right Side: Image Placeholder */}
-        <div className="hidden bg-zinc-100 lg:block lg:w-1/2 dark:bg-zinc-900/50">
-          <div className="flex h-full items-center justify-center border-l border-zinc-200 dark:border-zinc-800">
-            <div className="relative h-full w-full opacity-20 contrast-125 grayscale">
-              <div className="absolute inset-0 bg-linear-to-bl from-zinc-500/20 to-transparent" />
-            </div>
-          </div>
+        {/* Right Side: Image */}
+        <div className="hidden lg:block lg:w-1/2 relative">
+          <Image
+            src="/auth/verify-email.png"
+            alt="Precision and Verification"
+            fill
+            className="object-cover contrast-110"
+            priority
+          />
+          <div className="absolute inset-0 bg-linear-to-bl from-zinc-900/10 to-transparent" />
         </div>
       </div>
     );
@@ -302,13 +306,15 @@ export default function SignUp() {
         </div>
       </div>
 
-      {/* Right Side: Image Placeholder */}
-      <div className="hidden bg-zinc-100 lg:block lg:w-1/2 dark:bg-zinc-900/50">
-        <div className="flex h-full items-center justify-center border-l border-zinc-200 dark:border-zinc-800">
-          <div className="relative h-full w-full opacity-20 contrast-125 grayscale">
-            <div className="absolute inset-0 bg-linear-to-bl from-zinc-500/20 to-transparent" />
-          </div>
-        </div>
+      {/* Right Side: Image */}
+      <div className="hidden lg:block lg:w-1/2 relative">
+        <Image
+          src="/auth/sign-up.png"
+          alt="Growth and Foundation"
+          fill
+          className="object-cover contrast-110"
+        />
+        <div className="absolute inset-0 bg-linear-to-bl from-zinc-900/10 to-transparent" />
       </div>
     </div>
   );
