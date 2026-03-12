@@ -139,8 +139,9 @@ export default function HeroSection() {
                   className="mt-6 max-w-2xl text-pretty text-lg text-muted-foreground leading-relaxed"
                 >
                   Rethink Zone combines premium document editing, an intelligent
-                  infinite canvas, and a synchronized kanban board so product teams
-                  can align decisions and ship work without losing context.
+                  infinite canvas, and a synchronized kanban board so product
+                  teams can align decisions and ship work without losing
+                  context.
                 </TextEffect>
 
                 <AnimatedGroup
@@ -243,7 +244,8 @@ export default function HeroSection() {
                   Why teams pick Rethink Zone
                 </p>
                 <p className="text-muted-foreground mt-1 text-sm">
-                  A unified experience where docs, canvas, and kanban share the same DNA.
+                  A unified experience where docs, canvas, and kanban share the
+                  same DNA.
                 </p>
               </div>
               <Link
@@ -335,19 +337,23 @@ export default function HeroSection() {
                 <ul className="space-y-3 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <span className="mt-1-5 size-1.5 rounded-full bg-emerald-500 shrink-0" />
-                    Dedicated Document workspace with a premium paper-like layout for focused writing.
+                    Dedicated Document workspace with a premium paper-like
+                    layout for focused writing.
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="mt-1-5 size-1.5 rounded-full bg-sky-500 shrink-0" />
-                    Intelligent Canvas that supports theme-aware drawing, sticky notes, and icons.
+                    Intelligent Canvas that supports theme-aware drawing, sticky
+                    notes, and icons.
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="mt-1-5 size-1.5 rounded-full bg-indigo-500 shrink-0" />
-                    Synchronized Kanban that automatically persists status across your team.
+                    Synchronized Kanban that automatically persists status
+                    across your team.
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="mt-1-5 size-1.5 rounded-full bg-amber-500 shrink-0" />
-                    Split view mode to keep your project narrative tied directly to its visual flows.
+                    Split view mode to keep your project narrative tied directly
+                    to its visual flows.
                   </li>
                 </ul>
                 <Button asChild size="lg" className="mt-auto rounded-xl">
@@ -366,7 +372,8 @@ export default function HeroSection() {
                   Adaptive workspace
                 </p>
                 <p className="text-muted-foreground mt-1 text-sm">
-                  Seamlessly toggle between specialized views while your data stays in sync.
+                  Seamlessly toggle between specialized views while your data
+                  stays in sync.
                 </p>
               </div>
               <Button
@@ -438,19 +445,23 @@ export default function HeroSection() {
                 <ul className="space-y-3 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="mt-0.5 size-4 text-emerald-500 shrink-0" />
-                    Next-themes support ensures a beautiful experience in both light and dark modes.
+                    Next-themes support ensures a beautiful experience in both
+                    light and dark modes.
                   </li>
                   <li className="flex items-start gap-2">
                     <Database className="mt-0.5 size-4 text-sky-500 shrink-0" />
-                    Database-backed persistence for documents, canvas data, and task boards.
+                    Database-backed persistence for documents, canvas data, and
+                    task boards.
                   </li>
                   <li className="flex items-start gap-2">
                     <Zap className="mt-0.5 size-4 text-amber-500 shrink-0" />
-                    Optimistic UI updates for a lag-free experience even on slower connections.
+                    Optimistic UI updates for a lag-free experience even on
+                    slower connections.
                   </li>
                   <li className="flex items-start gap-2">
                     <UsersRound className="mt-0.5 size-4 text-indigo-500 shrink-0" />
-                    Modern workspace management with intuitive multi-tab navigation.
+                    Modern workspace management with intuitive multi-tab
+                    navigation.
                   </li>
                 </ul>
                 <div className="flex flex-wrap gap-3">

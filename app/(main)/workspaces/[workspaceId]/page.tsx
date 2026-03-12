@@ -1,6 +1,6 @@
 /**
  * This page represents the detailed view of a specific workspace.
- * It manages the multi-tab interface (Document, Canvas, Kanban) and orchestrates 
+ * It manages the multi-tab interface (Document, Canvas, Kanban) and orchestrates
  * persistence (fetching and saving) of the workspace state.
  */
 
@@ -393,10 +393,7 @@ export default function WorkspaceDetailPage() {
             value="canvas"
             className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
           >
-            <CanvasTab
-              initialData={canvasData}
-              onChange={handleCanvasChange}
-            />
+            <CanvasTab initialData={canvasData} onChange={handleCanvasChange} />
           </TabsContent>
 
           {/* Kanban Tab View */}
@@ -404,10 +401,7 @@ export default function WorkspaceDetailPage() {
             value="kanban"
             className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
           >
-            <KanbanTab
-              board={kanbanBoard}
-              onChange={handleKanbanChange}
-            />
+            <KanbanTab board={kanbanBoard} onChange={handleKanbanChange} />
           </TabsContent>
         </main>
       </Tabs>

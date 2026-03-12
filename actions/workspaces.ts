@@ -25,7 +25,7 @@ type ActionResult<T> =
 
 /**
  * Retrieves all workspaces belonging to the authenticated user.
- * 
+ *
  * @returns {Promise<ActionResult<Workspace[]>>} - The list of workspaces or an error message.
  */
 export async function listWorkspacesAction(): Promise<
@@ -52,7 +52,7 @@ export async function listWorkspacesAction(): Promise<
 
 /**
  * Retrieves a single workspace by its ID, ensuring it belongs to the authenticated user.
- * 
+ *
  * @param workspaceId - The unique identifier of the workspace.
  * @returns {Promise<ActionResult<Workspace>>} - The workspace data or an error.
  */
@@ -91,7 +91,7 @@ export async function getWorkspaceAction(
 
 /**
  * Creates a new workspace for the authenticated user.
- * 
+ *
  * @param payload - The data required to create a workspace (name, initial tab data).
  * @returns {Promise<ActionResult<Workspace>>} - The newly created workspace.
  */
@@ -116,15 +116,15 @@ export async function createWorkspaceAction(
         documentData:
           validated.documentData === null
             ? Prisma.JsonNull
-            : validated.documentData as any,
+            : (validated.documentData as any),
         canvasData:
           validated.canvasData === null
             ? Prisma.JsonNull
-            : validated.canvasData as any,
+            : (validated.canvasData as any),
         kanbanBoard:
           validated.kanbanBoard === null
             ? Prisma.JsonNull
-            : validated.kanbanBoard as any,
+            : (validated.kanbanBoard as any),
       },
     });
 
@@ -137,7 +137,7 @@ export async function createWorkspaceAction(
 
 /**
  * Updates an existing workspace's metadata or feature content.
- * 
+ *
  * @param workspaceId - The unique identifier of the workspace to update.
  * @param payload - The subset of fields to be updated.
  * @returns {Promise<ActionResult<Workspace>>} - The updated workspace.
@@ -221,7 +221,7 @@ export async function updateWorkspaceAction(
 
 /**
  * Permanently deletes a workspace.
- * 
+ *
  * @param workspaceId - The unique identifier of the workspace to delete.
  */
 export async function deleteWorkspaceAction(

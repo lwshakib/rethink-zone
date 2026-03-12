@@ -25,14 +25,14 @@ interface ToolbarProps {
 const Toolbar: React.FC<ToolbarProps> = ({ activeTool, setActiveTool }) => {
   // Configuration for each tool in the bar
   const tools: { icon: LucideIcon; label: Tool }[] = [
-    { icon: Hand, label: "Hand" },          // For panning the canvas
+    { icon: Hand, label: "Hand" }, // For panning the canvas
     { icon: MousePointer2, label: "Select" }, // For selecting and moving shapes
-    { icon: Square, label: "Rectangle" },   // Draw tool
-    { icon: Circle, label: "Circle" },      // Draw tool
-    { icon: Minus, label: "Line" },         // Draw tool
-    { icon: ArrowRight, label: "Arrow" },   // Draw tool
-    { icon: Type, label: "Text" },          // Rich text tool
-    { icon: PenLine, label: "Pencil" },     // Freehand drawing tool
+    { icon: Square, label: "Rectangle" }, // Draw tool
+    { icon: Circle, label: "Circle" }, // Draw tool
+    { icon: Minus, label: "Line" }, // Draw tool
+    { icon: ArrowRight, label: "Arrow" }, // Draw tool
+    { icon: Type, label: "Text" }, // Rich text tool
+    { icon: PenLine, label: "Pencil" }, // Freehand drawing tool
   ];
 
   return (

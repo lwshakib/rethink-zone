@@ -33,7 +33,10 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full border border-border/50 hover:bg-accent/50 transition-colors">
+        <Button
+          variant="ghost"
+          className="relative h-8 w-8 rounded-full border border-border/50 hover:bg-accent/50 transition-colors"
+        >
           <Avatar className="h-8 w-8 border border-border">
             <AvatarImage
               src={session.user.image || ""}
@@ -45,7 +48,11 @@ export function UserMenu() {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56 bg-card/80 border-border/50 text-foreground backdrop-blur-xl" align="end" forceMount>
+      <DropdownMenuContent
+        className="w-56 bg-card/80 border-border/50 text-foreground backdrop-blur-xl"
+        align="end"
+        forceMount
+      >
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-semibold leading-none text-foreground">

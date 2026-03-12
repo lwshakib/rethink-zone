@@ -12,4 +12,6 @@ import dynamic from "next/dynamic";
  * A client-safe version of the BlockNoteEditor.
  * It is loaded asynchronously and will only be executed in the browser environment.
  */
-export const BlockNoteEditorView = dynamic(() => import("./blocknote-editor"), { ssr: false });
+export const BlockNoteEditorView = dynamic(() => import("./blocknote-editor"), {
+  ssr: false,
+});

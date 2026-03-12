@@ -14,20 +14,24 @@ import {
 /**
  * Calculates the bounding box (width and height) of a given text string based on font properties.
  * It handles multi-line text by splitting by newline characters and finding the maximum line width.
- * 
+ *
  * @param text - The string content to measure.
  * @param fontSize - Vertical size of the font in pixels.
  * @param fontFamily - Optional font style name.
  * @returns Object containing the calculated width and total height.
  */
-export const measureText = (text: string, fontSize: number, fontFamily?: string) => {
+export const measureText = (
+  text: string,
+  fontSize: number,
+  fontFamily?: string
+) => {
   // Create a hidden off-screen canvas element for measurement
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
-  
+
   // Define a standard line height ratio (1.2x font size)
   const lineHeight = fontSize * 1.2;
-  
+
   // Split the input text into an array of individual lines
   const lines = text.split("\n");
 
@@ -44,17 +48,22 @@ export const measureText = (text: string, fontSize: number, fontFamily?: string)
   }
 
   // Map our internal font labels to standard CSS font-family categories
-  const font = fontFamily === "Rough" ? "cursive" : fontFamily === "Mono" ? "monospace" : "sans-serif";
-  
+  const font =
+    fontFamily === "Rough"
+      ? "cursive"
+      : fontFamily === "Mono"
+        ? "monospace"
+        : "sans-serif";
+
   // Apply the font settings to the context before measuring
   ctx.font = `${fontSize}px ${font}`;
-  
+
   // Use the native measureText method to get precise pixel widths for each line
   const widths = lines.map((l) => ctx.measureText(l).width);
-  
+
   // The final width is the widest single line in the group
   const width = widths.length ? Math.max(...widths) : 0;
-  
+
   // Total height accounts for at least one line height even if the text is empty
   return { width, height: lineHeight * Math.max(lines.length, 1) };
 };

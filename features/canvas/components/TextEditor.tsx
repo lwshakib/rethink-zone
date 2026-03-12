@@ -3,17 +3,17 @@ import React, { RefObject } from "react"; // React core
 // Interface for the active text editing state
 interface TextEditorProps {
   textEditor: {
-    value: string;      // Current text string
-    fontSize: number;   // Raw canvas font size
-    fontFamily?: string; 
+    value: string; // Current text string
+    fontSize: number; // Raw canvas font size
+    fontFamily?: string;
     textAlign?: "left" | "center" | "right";
-    fill?: string;       // Text color
-    boxWidth?: number;   // Calculated width of the text block in canvas units
-    boxHeight?: number;  // Calculated height of the text block in canvas units
-    canvasX: number;     // Absolute canvas X position
-    canvasY: number;     // Absolute canvas Y position
-    pad?: number;        // Optional padding scaling
-    kind?: string;       // Shape type (e.g., "text", "figure")
+    fill?: string; // Text color
+    boxWidth?: number; // Calculated width of the text block in canvas units
+    boxHeight?: number; // Calculated height of the text block in canvas units
+    canvasX: number; // Absolute canvas X position
+    canvasY: number; // Absolute canvas Y position
+    pad?: number; // Optional padding scaling
+    kind?: string; // Shape type (e.g., "text", "figure")
     index: number | null; // Index of the shape being edited
   } | null;
   setTextEditor: React.Dispatch<
@@ -22,7 +22,11 @@ interface TextEditorProps {
   textAreaRef: RefObject<HTMLTextAreaElement | null>; // Ref for focus management and DOM measurements
   canvasToClient: (x: number, y: number) => { x: number; y: number }; // Transform helper
   zoom: number; // Current zoom level for visual scaling of the textarea
-  measureText: (text: string, fontSize: number, fontFamily?: string) => { width: number; height: number }; // Helper to live-update box bounds
+  measureText: (
+    text: string,
+    fontSize: number,
+    fontFamily?: string
+  ) => { width: number; height: number }; // Helper to live-update box bounds
   commitTextEditor: () => void; // Triggered on Enter/Blur to save changes to state
   cancelTextEditor: () => void; // Triggered on Esc to discard changes
   theme?: string; // App theme (light/dark)
@@ -47,7 +51,12 @@ const TextEditor: React.FC<TextEditorProps> = ({
   if (!textEditor) return null;
 
   // Resolve font fallback based on the app's internal font tokens
-  const font = textEditor.fontFamily === "Rough" ? "cursive" : textEditor.fontFamily === "Mono" ? "monospace" : "sans-serif";
+  const font =
+    textEditor.fontFamily === "Rough"
+      ? "cursive"
+      : textEditor.fontFamily === "Mono"
+        ? "monospace"
+        : "sans-serif";
   const isDark = theme === "dark";
   const color = textEditor.fill || (isDark ? "white" : "black");
 
@@ -58,7 +67,11 @@ const TextEditor: React.FC<TextEditorProps> = ({
       onChange={(e) => {
         const val = e.target.value;
         // Re-measure bounds as the user types to expand/contract the box
-        const measured = measureText(val, textEditor.fontSize, textEditor.fontFamily);
+        const measured = measureText(
+          val,
+          textEditor.fontSize,
+          textEditor.fontFamily
+        );
         setTextEditor((prev) =>
           prev
             ? {

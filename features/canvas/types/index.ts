@@ -1,29 +1,29 @@
 import { LucideIcon } from "lucide-react";
 
-/** 
+/**
  * RectShape - Properties for a rectangular element on the canvas
  */
 export type RectShape = {
-  id: string;      // Unique identifier
-  x: number;       // Left coordinate in canvas space
-  y: number;       // Top coordinate in canvas space
-  width: number; 
+  id: string; // Unique identifier
+  x: number; // Left coordinate in canvas space
+  y: number; // Top coordinate in canvas space
+  width: number;
   height: number;
-  fill?: string;   // Optional fill color (Hex or transparent)
+  fill?: string; // Optional fill color (Hex or transparent)
   stroke?: string; // Optional border color
-  opacity?: number; 
+  opacity?: number;
   strokeDashArray?: number[]; // Used for dashed or dotted borders
   strokeWidth?: number;
   groupId?: string;
 };
 
-/** 
+/**
  * CircleShape - Properties for elliptical/circular elements
  */
-export type CircleShape = { 
-  id: string; 
-  x: number;  // Center X
-  y: number;  // Center Y
+export type CircleShape = {
+  id: string;
+  x: number; // Center X
+  y: number; // Center Y
   rx: number; // Radius X
   ry: number; // Radius Y
   fill?: string;
@@ -34,14 +34,14 @@ export type CircleShape = {
   groupId?: string;
 };
 
-/** 
+/**
  * LineShape - Simple straight vector line between two points
  */
-export type LineShape = { 
-  id: string; 
-  x1: number; 
-  y1: number; 
-  x2: number; 
+export type LineShape = {
+  id: string;
+  x1: number;
+  y1: number;
+  x2: number;
   y2: number;
   stroke?: string;
   opacity?: number;
@@ -50,7 +50,7 @@ export type LineShape = {
   groupId?: string;
 };
 
-/** 
+/**
  * ArrowShape - Vector line with a directional head at the end point (x2, y2)
  */
 export type ArrowShape = {
@@ -66,11 +66,11 @@ export type ArrowShape = {
   groupId?: string;
 };
 
-/** 
+/**
  * PathShape - Freehand drawing data (Pencil tool)
  */
-export type PathShape = { 
-  id: string; 
+export type PathShape = {
+  id: string;
   points: { x: number; y: number }[]; // Array of points defining the path
   stroke?: string;
   opacity?: number;
@@ -79,7 +79,7 @@ export type PathShape = {
   groupId?: string;
 };
 
-/** 
+/**
  * ImageShape - Properties for hosted images or library icons placed on canvas
  */
 export type ImageShape = {
@@ -93,7 +93,7 @@ export type ImageShape = {
   groupId?: string;
 };
 
-/** 
+/**
  * TextShape - Rich-formatted text block
  */
 export type TextShape = {
@@ -111,7 +111,7 @@ export type TextShape = {
   groupId?: string;
 };
 
-/** 
+/**
  * FrameShape - Containers that group other elements or represent viewport bounds (Browser, Phone, etc)
  */
 export type FrameShape = {
@@ -130,7 +130,7 @@ export type FrameShape = {
   groupId?: string;
 };
 
-/** 
+/**
  * PolyShape - Multi-sided geometric shapes (Triangle, Diamond, Hexagon)
  */
 export type PolyShape = {
@@ -148,7 +148,7 @@ export type PolyShape = {
   groupId?: string;
 };
 
-/** 
+/**
  * FigureShape - Specialized schematic elements
  */
 export type FigureShape = {
@@ -166,7 +166,7 @@ export type FigureShape = {
   groupId?: string;
 };
 
-/** 
+/**
  * CodeShape - Syntax-highlighted code blocks on the canvas
  */
 export type CodeShape = {
@@ -175,7 +175,7 @@ export type CodeShape = {
   y: number;
   width: number;
   height: number;
-  code: string;     // The raw source code
+  code: string; // The raw source code
   language: string; // "javascript", "python", etc.
   fill?: string;
   stroke?: string;
@@ -187,12 +187,20 @@ export type CodeShape = {
 };
 
 // Kind identifiers for categorizing different shape types
-export type ShapeKind = "rect" | "circle" | "image" | "text" | "frame" | "poly" | "figure" | "code";
+export type ShapeKind =
+  | "rect"
+  | "circle"
+  | "image"
+  | "text"
+  | "frame"
+  | "poly"
+  | "figure"
+  | "code";
 
 // Anchor sides for smart connectors (arrows that snap to shapes)
 export type AnchorSide = "top" | "bottom" | "left" | "right";
 
-/** 
+/**
  * ConnectorAnchor - Defines where one end of a connector line is attached
  */
 export type ConnectorAnchor = {
@@ -203,7 +211,7 @@ export type ConnectorAnchor = {
   point?: { x: number; y: number }; // Relative coordinate if kind is "point"
 };
 
-/** 
+/**
  * Connector - A semantic link (line/arrow) between two shapes or points
  */
 export type Connector = {
@@ -212,7 +220,7 @@ export type Connector = {
   to: ConnectorAnchor;
 };
 
-/** 
+/**
  * HistoryEntry - A complete snapshot of all shapes at a specific point in time
  */
 export type HistoryEntry = {
@@ -244,13 +252,13 @@ export interface ShapeCollection {
   codes?: CodeShape[];
 }
 
-/** 
+/**
  * CanvasData - The full state required to persist or restore a canvas session
  */
 export type CanvasData = {
   pan: { x: number; y: number }; // Current camera position
-  zoom: number;                  // Current camera zoom
-  snapshot: HistoryEntry;        // All current elements
+  zoom: number; // Current camera zoom
+  snapshot: HistoryEntry; // All current elements
 };
 
 // Props for the main Canvas component
@@ -283,7 +291,7 @@ export type PlusMenuView =
   | "provider-icons"
   | "device-frame";
 
-/** 
+/**
  * SelectedShapeInfo - Metadata about a shape currently targeted by the selection tool
  */
 export type SelectedShapeInfo = {
@@ -300,7 +308,7 @@ export type SelectedShapeInfo = {
     | "figure"
     | "code";
   index: number; // Position in relevant collection array
-  id: string;    // Raw individual ID
+  id: string; // Raw individual ID
 };
 
 export type SelectedShape = SelectedShapeInfo[]; // Array to support multi-selection

@@ -20,7 +20,7 @@ export interface User {
 /**
  * server-side helper to retrieve the currently authenticated user.
  * It reads user data from a custom 'x-user' header typically set by middleware during verification.
- * 
+ *
  * @returns {Promise<User | null>} - The current user object or null if not authenticated.
  */
 export async function getUser(): Promise<User | null> {
@@ -28,9 +28,9 @@ export async function getUser(): Promise<User | null> {
   const headerList = await headers();
   // 'x-user' contains stringified JSON of the user record
   const userData = headerList.get("x-user");
-  
+
   if (!userData) return null;
-  
+
   try {
     // Parse the JSON string into a structured object
     const user = JSON.parse(userData);

@@ -22,9 +22,15 @@ import { useTheme } from "next-themes"; // Hook to manage light/dark mode
 /**
  * BlockNoteEditor - A high-performance, block-based rich text editor.
  */
-const BlockNoteEditor = ({ initialContent, onChange }: { initialContent?: any, onChange?: (content: any) => void }) => {
+const BlockNoteEditor = ({
+  initialContent,
+  onChange,
+}: {
+  initialContent?: any;
+  onChange?: (content: any) => void;
+}) => {
   const { resolvedTheme } = useTheme(); // Access the current theme (light or dark)
-  
+
   // Initialize the editor instance with optional starting content
   const editor = useCreateBlockNote({
     initialContent: initialContent ? (initialContent as any) : undefined,
@@ -72,10 +78,11 @@ const BlockNoteEditor = ({ initialContent, onChange }: { initialContent?: any, o
           min-height: 200px;
         }
         .blocknote-premium-container .bn-block-outer {
-           margin-left: 0 !important;
+          margin-left: 0 !important;
         }
         /* Enhance the aesthetic of internal menu items and buttons */
-        .bn-menu-item, .bn-button {
+        .bn-menu-item,
+        .bn-button {
           border-radius: 8px !important;
         }
       `}</style>

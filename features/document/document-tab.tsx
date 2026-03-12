@@ -10,11 +10,17 @@ import { BlockNoteEditorView } from "./dynamic-import";
 
 /**
  * DocumentTab Component
- * 
+ *
  * @param initialContent - The optional starting state of the document (passed to BlockNote).
  * @param onChange - An optional callback triggered whenever the editor content changes.
  */
-export default function DocumentTab({ initialContent, onChange }: { initialContent?: any, onChange?: (content: any) => void }) {
+export default function DocumentTab({
+  initialContent,
+  onChange,
+}: {
+  initialContent?: any;
+  onChange?: (content: any) => void;
+}) {
   return (
     // Outer container: fills the available space, handles background, and custom scrolling styles.
     <div className="flex-1 w-full h-full overflow-y-auto bg-background custom-scrollbar">
@@ -22,7 +28,10 @@ export default function DocumentTab({ initialContent, onChange }: { initialConte
       <div className="max-w-5xl mx-auto min-h-full flex flex-col">
         {/* Content area: provides responsive padding and mounts the actual editor component. */}
         <div className="flex-1 px-4 sm:px-12 py-10">
-          <BlockNoteEditorView initialContent={initialContent} onChange={onChange} />
+          <BlockNoteEditorView
+            initialContent={initialContent}
+            onChange={onChange}
+          />
         </div>
       </div>
     </div>

@@ -54,24 +54,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-      <html lang="en">
-        <body className="antialiased font-inter">
-          {/* 
+    <html lang="en">
+      <body className="antialiased font-inter">
+        {/* 
             ThemeProvider manages 'dark' and 'light' classes on the body based on user preference.
             It also handles 'system' preference detection automatically.
           */}
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {/* The actual page content is injected here */}
-            {children}
-            {/* mounting the Toaster globally allows us to trigger notifications from anywhere */}
-            <Toaster />
-          </ThemeProvider>
-        </body>
-      </html>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {/* The actual page content is injected here */}
+          {children}
+          {/* mounting the Toaster globally allows us to trigger notifications from anywhere */}
+          <Toaster />
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }

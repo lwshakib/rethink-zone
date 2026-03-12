@@ -1,5 +1,11 @@
 import React from "react"; // Importing React
-import { AnchorSide, ShapeKind, Connector, ConnectorAnchor, SelectedShape } from "../types"; // Importing required type definitions
+import {
+  AnchorSide,
+  ShapeKind,
+  Connector,
+  ConnectorAnchor,
+  SelectedShape,
+} from "../types"; // Importing required type definitions
 
 // Internal interface for a single anchor handle point on a shape
 interface AnchorHandle {
@@ -21,7 +27,7 @@ interface ConnectorHandlesProps {
 }
 
 /**
- * ConnectorHandles - Component that renders the interactive dots (anchors) used to 
+ * ConnectorHandles - Component that renders the interactive dots (anchors) used to
  * connect shapes with arrows or lines.
  */
 const ConnectorHandles: React.FC<ConnectorHandlesProps> = ({
@@ -34,13 +40,13 @@ const ConnectorHandles: React.FC<ConnectorHandlesProps> = ({
   getAnchorPoint,
 }) => {
   // Filter out connectors that are part of the current user selection
-  const selectedConnectors = connectors.filter(c => 
-    selectedShape.some(s => s.kind === "connector" && s.id === c.id)
+  const selectedConnectors = connectors.filter((c) =>
+    selectedShape.some((s) => s.kind === "connector" && s.id === c.id)
   );
 
   // Initialize the list of handles to render with the static ones
   const handlesToRender = [...anchorHandles];
-  
+
   // Logic for drawing mode: ensure the currently hovered anchor is visible even if not in 'anchorHandles'
   if (activeTool === "Arrow") {
     if (
@@ -50,7 +56,10 @@ const ConnectorHandles: React.FC<ConnectorHandlesProps> = ({
           h.shapeId === hoverAnchor.shapeId &&
           h.anchor === hoverAnchor.anchor &&
           // Use distance check to handle floating point precision
-          Math.hypot(h.point.x - hoverAnchor.point.x, h.point.y - hoverAnchor.point.y) < 1
+          Math.hypot(
+            h.point.x - hoverAnchor.point.x,
+            h.point.y - hoverAnchor.point.y
+          ) < 1
       )
     ) {
       handlesToRender.push(hoverAnchor);
@@ -58,8 +67,11 @@ const ConnectorHandles: React.FC<ConnectorHandlesProps> = ({
   }
 
   // Calculate visual handles for the endpoints of selected connectors
-  const selectionHandles: { point: { x: number; y: number }; isSelected: boolean }[] = [];
-  selectedConnectors.forEach(c => {
+  const selectionHandles: {
+    point: { x: number; y: number };
+    isSelected: boolean;
+  }[] = [];
+  selectedConnectors.forEach((c) => {
     const fromPt = getAnchorPoint(c.from);
     const toPt = getAnchorPoint(c.to);
     if (fromPt) selectionHandles.push({ point: fromPt, isSelected: true });
@@ -77,7 +89,10 @@ const ConnectorHandles: React.FC<ConnectorHandlesProps> = ({
           hoverAnchor.shapeId === h.shapeId &&
           hoverAnchor.kind === h.kind &&
           hoverAnchor.anchor === h.anchor &&
-          Math.hypot(hoverAnchor.point.x - h.point.x, hoverAnchor.point.y - h.point.y) < 2;
+          Math.hypot(
+            hoverAnchor.point.x - h.point.x,
+            hoverAnchor.point.y - h.point.y
+          ) < 2;
 
         return (
           <div
@@ -95,7 +110,7 @@ const ConnectorHandles: React.FC<ConnectorHandlesProps> = ({
               className={`rounded-full shadow-sm transition-all duration-150 ${
                 isHover
                   ? "bg-white border-[2px] border-[#53b6ff] scale-125" // Highlighted state
-                  : "bg-white/40 border border-white/80"             // Subtle/Inert state
+                  : "bg-white/40 border border-white/80" // Subtle/Inert state
               }`}
               style={{
                 width: `${8}px`,

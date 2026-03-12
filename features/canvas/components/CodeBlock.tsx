@@ -1,14 +1,14 @@
 import React, { useEffect, useRef } from "react"; // Importing React hooks for component logic
-import Editor from 'react-simple-code-editor'; // A lightweight code editor component
-import Prism from 'prismjs'; // Library for syntax highlighting
+import Editor from "react-simple-code-editor"; // A lightweight code editor component
+import Prism from "prismjs"; // Library for syntax highlighting
 // Load specific Prism languages for syntax support
-import 'prismjs/components/prism-clike';
-import 'prismjs/components/prism-javascript';
-import 'prismjs/components/prism-typescript';
-import 'prismjs/components/prism-python';
-import 'prismjs/components/prism-markdown';
-import 'prismjs/components/prism-bash';
-import 'prismjs/components/prism-json';
+import "prismjs/components/prism-clike";
+import "prismjs/components/prism-javascript";
+import "prismjs/components/prism-typescript";
+import "prismjs/components/prism-python";
+import "prismjs/components/prism-markdown";
+import "prismjs/components/prism-bash";
+import "prismjs/components/prism-json";
 import { CodeShape } from "../types"; // Type definition for the code shape object
 
 // Prism tomorrow theme definitions for dark mode (CSS string)
@@ -93,7 +93,12 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
     const fontSizeChanged = fontSize !== prevFontSizeRef.current;
 
     // Guard: Only auto-resize if we are editing, initializing, or content changed
-    if (!isEditing && prevDimensionsRef.current.width !== 0 && !codeChanged && !fontSizeChanged) {
+    if (
+      !isEditing &&
+      prevDimensionsRef.current.width !== 0 &&
+      !codeChanged &&
+      !fontSizeChanged
+    ) {
       return;
     }
 
@@ -105,31 +110,31 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
     // Debounce the resizing logic to ensure smoothness during typing
     updateTimeoutRef.current = setTimeout(() => {
       if (!editorParentRef.current) return;
-      
-      const textarea = editorParentRef.current.querySelector('textarea');
-      const pre = editorParentRef.current.querySelector('pre');
-      
+
+      const textarea = editorParentRef.current.querySelector("textarea");
+      const pre = editorParentRef.current.querySelector("pre");
+
       if (textarea && pre) {
-        const lines = code.split('\n');
-        
+        const lines = code.split("\n");
+
         // Temporarily reset height to 'auto' to let the content expand for measurement
         const originalHeight = editorParentRef.current.style.height;
-        editorParentRef.current.style.height = 'auto';
-        
+        editorParentRef.current.style.height = "auto";
+
         // Measure real content height
         const scrollHeight = pre.scrollHeight;
         const newHeight = Math.round(scrollHeight / (zoom || 1));
-        
+
         // Revert height to keep layout stable until state propagates
         editorParentRef.current.style.height = originalHeight;
-        
+
         // Create an off-screen canvas to measure the width of the longest line
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
         let maxW = 0;
         if (ctx) {
-          ctx.font = `${(fontSize || 13)}px "Fira Mono", "Courier New", monospace`;
-          lines.forEach(line => {
+          ctx.font = `${fontSize || 13}px "Fira Mono", "Courier New", monospace`;
+          lines.forEach((line) => {
             maxW = Math.max(maxW, ctx.measureText(line).width);
           });
         }
@@ -141,8 +146,11 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
         const wDiff = Math.abs(newWidth - width);
 
         // Only commit updates to state if coordinates or size changed meaningfully
-        if ((hDiff > 2 || wDiff > 2) && 
-            (newHeight !== prevDimensionsRef.current.height || newWidth !== prevDimensionsRef.current.width)) {
+        if (
+          (hDiff > 2 || wDiff > 2) &&
+          (newHeight !== prevDimensionsRef.current.height ||
+            newWidth !== prevDimensionsRef.current.width)
+        ) {
           prevDimensionsRef.current = { width: newWidth, height: newHeight };
           onUpdate({ height: newHeight, width: newWidth });
         }
@@ -164,14 +172,14 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
   // EFFECT: Automatically focus the hidden textarea when the user enters 'Edit' mode
   useEffect(() => {
     if (isEditing && editorParentRef.current) {
-      const textarea = editorParentRef.current.querySelector('textarea');
+      const textarea = editorParentRef.current.querySelector("textarea");
       if (textarea) textarea.focus();
     }
   }, [isEditing]);
 
   // Transform function to apply syntax highlighting using Prism
   const highlightWithLineNumbers = (input: string) => {
-    const lang = language?.toLowerCase() || 'javascript';
+    const lang = language?.toLowerCase() || "javascript";
     const grammar = Prism.languages[lang] || Prism.languages.javascript;
     return Prism.highlight(input, grammar, lang);
   };
@@ -180,7 +188,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
     <div
       ref={containerRef}
       // Position the block absolutely on the background layer
-      className={`absolute flex flex-col group ${isEditing ? 'z-[100]' : 'z-10'}`}
+      className={`absolute flex flex-col group ${isEditing ? "z-[100]" : "z-10"}`}
       onPointerDown={(e) => {
         // Prevent canvas interaction when clicking inside an active editor
         if (isEditing) e.stopPropagation();
@@ -198,12 +206,12 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
         ${isDark ? PRISM_DARK : PRISM_LIGHT}
         .prism-editor__textarea:focus { outline: none; }
       `}</style>
-      <div 
+      <div
         ref={editorParentRef}
         // Aesthetic styling for the editor container (Glassmorphism + Shadows)
         className={`flex flex-col w-full h-full backdrop-blur-xl shadow-2xl overflow-hidden ${
-          isEditing 
-            ? "ring-[2px] ring-[rgba(83,182,255,1)] scale-[1.01] border-transparent" 
+          isEditing
+            ? "ring-[2px] ring-[rgba(83,182,255,1)] scale-[1.01] border-transparent"
             : isSelected
               ? "ring-[1.5px] ring-[rgba(63,193,255,0.7)] border-transparent"
               : isDark
@@ -212,9 +220,13 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
         }`}
         style={{
           borderRadius: 8 / zoom,
-          backgroundColor: isDark 
-            ? (isEditing ? "rgba(25,25,25,0.98)" : "rgba(13,13,13,0.85)")
-            : (isEditing ? "rgba(252,252,252,0.98)" : "rgba(255,255,255,0.85)"),
+          backgroundColor: isDark
+            ? isEditing
+              ? "rgba(25,25,25,0.98)"
+              : "rgba(13,13,13,0.85)"
+            : isEditing
+              ? "rgba(252,252,252,0.98)"
+              : "rgba(255,255,255,0.85)",
           color: isDark ? "#eee" : "#333",
         }}
       >
@@ -231,12 +243,12 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
             style={{
               fontFamily: '"Fira Mono", "Courier New", monospace',
               fontSize: (fontSize || 13) * zoom, // Visual font size scaled by zoom
-              minHeight: '100%',
-              minWidth: '100%',
-              outline: 'none',
-              backgroundColor: 'transparent',
-              caretColor: '#3bc1ff',
-              color: 'inherit',
+              minHeight: "100%",
+              minWidth: "100%",
+              outline: "none",
+              backgroundColor: "transparent",
+              caretColor: "#3bc1ff",
+              color: "inherit",
               lineHeight: 1.5,
             }}
           />
@@ -247,4 +259,3 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
 };
 
 export default CodeBlock;
-

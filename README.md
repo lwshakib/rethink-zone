@@ -16,11 +16,12 @@
   
   <br/>
 
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  [![Next.js](https://img.shields.io/badge/Next.js-16.1.1-black)](https://nextjs.org/)
-  [![React](https://img.shields.io/badge/React-19.2.3-blue)](https://react.dev/)
-  [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38bdf8)](https://tailwindcss.com/)
-  [![Better-Auth](https://img.shields.io/badge/Better--Auth-1.4.7-6c47ff)](https://www.better-auth.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Next.js](https://img.shields.io/badge/Next.js-16.1.1-black)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.2.3-blue)](https://react.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38bdf8)](https://tailwindcss.com/)
+[![Better-Auth](https://img.shields.io/badge/Better--Auth-1.4.7-6c47ff)](https://www.better-auth.com/)
+
 </div>
 
 ---
@@ -51,21 +52,25 @@ Rethink Zone is a modern, full-stack workspace application designed for product 
 ## ✨ Key Features
 
 ### 📝 Premium Document Editor
+
 - **Paper-like Experience**: A focused, distraction-free writing environment.
 - **Block-based Editing**: Powered by BlockNote with support for slash commands and rich media.
 - **Theme Awareness**: Intelligent dark/light mode switching for optimal readability.
 
 ### 🎨 Intelligent Infinite Canvas
+
 - **Custom Native Engine**: Built with a high-performance native canvas engine for smooth interactions.
 - **Theme-aware Drawing**: Strokes, fills, and grids automatically adapt to your workspace theme.
 - **Rich Elements**: Integrated support for connectors, sticky notes, icons, and cloud architecture components.
 
 ### 📋 Synchronized Kanban Board
+
 - **Integrated Lifecycle**: Move tasks from backlog to done without leaving your project context.
 - **Premium UI**: Fully themed task cards with priority tracking and ETA management.
 - **Drag-and-Drop**: Smooth, intuitive task organization.
 
 ### 🔐 Robust Infrastructure
+
 - **Secure Auth**: Powered by Better-Auth with secure session management.
 - **Optimistic Persistence**: Real-time autosave with conflict resolution.
 - **Split-View Mode**: Simultaneous document and canvas viewing for maximum productivity.
@@ -73,6 +78,7 @@ Rethink Zone is a modern, full-stack workspace application designed for product 
 ## 🛠 Tech Stack
 
 ### Frontend
+
 - **Framework**: [Next.js 16.1.1](https://nextjs.org/) (App Router)
 - **UI Library**: [React 19.2.3](https://react.dev/)
 - **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
@@ -81,6 +87,7 @@ Rethink Zone is a modern, full-stack workspace application designed for product 
 - **Animations**: [Motion 12.2](https://www.framer.com/motion/)
 
 ### Backend
+
 - **ORM**: [Prisma 7.2.0](https://www.prisma.io/)
 - **Database**: [PostgreSQL](https://www.postgresql.org/)
 - **Auth**: [Better-Auth 1.4.7](https://www.better-auth.com/)
@@ -89,6 +96,7 @@ Rethink Zone is a modern, full-stack workspace application designed for product 
 ## 🏗 Architecture
 
 ### System Flow
+
 ```mermaid
 flowchart TD
     User[Client Browser] --> NextApp[Next.js App Router]
@@ -97,16 +105,17 @@ flowchart TD
     UI --> Canvas[Native Canvas Engine]
     UI --> Editor[BlockNote Editor]
     UI --> Kanban[Kanban Feature]
-    
+
     Canvas --> Actions[Server Actions / API]
     Editor --> Actions
     Kanban --> Actions
-    
+
     Actions --> Prisma[Prisma ORM]
     Prisma --> DB[(PostgreSQL)]
 ```
 
 ### Data Synergy
+
 1. **Interaction**: User performs an action (edits a block, moves a task, draws a line).
 2. **Optimistic Update**: Zustand updates the local state immediately for zero-latency UI.
 3. **Synchronized Persistence**: Debounced calls to Next.js API routes persist changes to PostgreSQL via Prisma.
@@ -115,6 +124,7 @@ flowchart TD
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - **Node.js**: 18.0 or higher
 - **Bun** (Recommended) or npm
 - **PostgreSQL**: Local instance or managed service (Supabase, Neon)
@@ -122,12 +132,14 @@ flowchart TD
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/lwshakib/rethink-zone.git
    cd rethink-zone
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    # or
@@ -136,6 +148,7 @@ flowchart TD
 
 3. **Environment Setup**
    Create a `.env` file:
+
    ```env
    DATABASE_URL="postgresql://user:password@localhost:5432/rethink"
    BETTER_AUTH_SECRET="your-secret-here"
@@ -143,6 +156,7 @@ flowchart TD
    ```
 
 4. **Initialize Database**
+
    ```bash
    npm run db:migrate
    ```
@@ -169,13 +183,13 @@ rethink-zone/
 
 ## 📜 Scripts
 
-| Command | Description |
-| :--- | :--- |
-| `npm run dev` | Starts the development server |
-| `npm run build` | Builds the application for production |
+| Command              | Description                                 |
+| :------------------- | :------------------------------------------ |
+| `npm run dev`        | Starts the development server               |
+| `npm run build`      | Builds the application for production       |
 | `npm run db:migrate` | Runs migrations and generates Prisma client |
-| `npm run db:studio` | Opens the Prisma database GUI |
-| `npm run lint` | Runs ESLint for code quality checks |
+| `npm run db:studio`  | Opens the Prisma database GUI               |
+| `npm run lint`       | Runs ESLint for code quality checks         |
 
 ## 🤝 Contributing
 

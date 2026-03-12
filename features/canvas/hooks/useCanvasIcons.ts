@@ -7,9 +7,9 @@ import { PlusMenuView } from "../types"; // Type definition for the Plus Menu vi
  * and filtering it based on the user's current category selection and search query.
  */
 export const useCanvasIcons = (
-  plusMenuView: PlusMenuView,         // The current top-level view (Categories, Cloud Icons, etc)
-  plusMenuSubView: string | null,     // The current sub-category (e.g., "AWS", "Tech Logo")
-  iconSearchQuery: string             // The text filter entered by the user
+  plusMenuView: PlusMenuView, // The current top-level view (Categories, Cloud Icons, etc)
+  plusMenuSubView: string | null, // The current sub-category (e.g., "AWS", "Tech Logo")
+  iconSearchQuery: string // The text filter entered by the user
 ) => {
   // allIconsLibrary stores the raw list of relative file paths for all available SVG icons
   const [allIconsLibrary, setAllIconsLibrary] = useState<string[]>([]);
@@ -37,16 +37,21 @@ export const useCanvasIcons = (
    */
   const filteredLibraryIcons = useMemo(() => {
     const isSearching = iconSearchQuery.trim().length > 0;
-    
+
     // If we're not inside a specific provider view or searching, we don't need to show everything
-    if (!plusMenuSubView && plusMenuView !== "provider-icons" && !isSearching) return [];
+    if (!plusMenuSubView && plusMenuView !== "provider-icons" && !isSearching)
+      return [];
 
     return allIconsLibrary.filter((path) => {
       const matchLower = path.toLowerCase();
-      
+
       // OPTION 1: Global Search
       // If the user is typing but hasn't picked a category, we search across the whole library.
-      if (isSearching && !plusMenuSubView && plusMenuView !== "provider-icons") {
+      if (
+        isSearching &&
+        !plusMenuSubView &&
+        plusMenuView !== "provider-icons"
+      ) {
         const name = path.split("/").pop()?.toLowerCase() || "";
         return name.includes(iconSearchQuery.toLowerCase());
       }

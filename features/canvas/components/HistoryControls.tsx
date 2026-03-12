@@ -3,8 +3,8 @@ import { Undo2, Redo2 } from "lucide-react"; // Undo/Redo icons
 
 // Props required to drive the History UI and logic
 interface HistoryControlsProps {
-  canUndo: boolean;   // Whether there are previous snapshots to return to
-  canRedo: boolean;   // Whether the user has undone something and can go forward again
+  canUndo: boolean; // Whether there are previous snapshots to return to
+  canRedo: boolean; // Whether the user has undone something and can go forward again
   onUndo: () => void; // Trigger for the undo operation
   onRedo: () => void; // Trigger for the redo operation
 }

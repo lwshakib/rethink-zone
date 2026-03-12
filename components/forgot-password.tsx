@@ -5,7 +5,14 @@ import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { LogoIcon } from "@/components/logo";
 import { Loader2, MailCheck } from "lucide-react";
 import Image from "next/image";
@@ -66,17 +73,32 @@ export default function ForgotPassword() {
                 Check your email
               </h1>
               <p className="mt-4 text-zinc-500 dark:text-zinc-400">
-                We&apos;ve sent a password reset link to <strong className="text-zinc-900 dark:text-zinc-100 font-medium">{email}</strong>.
+                We&apos;ve sent a password reset link to{" "}
+                <strong className="text-zinc-900 dark:text-zinc-100 font-medium">
+                  {email}
+                </strong>
+                .
               </p>
             </div>
 
             <div className="flex flex-col gap-3">
-              <Button asChild className="h-11 w-full bg-zinc-900 text-zinc-50 hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200">
-                <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer">
+              <Button
+                asChild
+                className="h-11 w-full bg-zinc-900 text-zinc-50 hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              >
+                <a
+                  href="https://mail.google.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   Go to Gmail
                 </a>
               </Button>
-              <Button asChild variant="outline" className="h-11 w-full border-zinc-200 dark:border-zinc-800">
+              <Button
+                asChild
+                variant="outline"
+                className="h-11 w-full border-zinc-200 dark:border-zinc-800"
+              >
                 <Link href="/sign-in">Back to login</Link>
               </Button>
             </div>
@@ -110,13 +132,17 @@ export default function ForgotPassword() {
               Forgot password?
             </h1>
             <p className="mt-2 text-zinc-500 dark:text-zinc-400">
-              Enter your email address and we&apos;ll send you a link to reset your password.
+              Enter your email address and we&apos;ll send you a link to reset
+              your password.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <Label
+                htmlFor="email"
+                className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+              >
                 Email address
               </Label>
               <Input

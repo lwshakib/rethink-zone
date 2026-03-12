@@ -11,7 +11,7 @@ export const useCanvasView = (
   const [zoom, setZoom] = useState(1); // Default zoom level (100%)
   const [pan, setPan] = useState({ x: 0, y: 0 }); // Offset from the top-left origin
 
-  /** 
+  /**
    * Utility to keep zoom within defined bounds (e.g. 10% to 500%)
    */
   const clampZoom = useCallback(

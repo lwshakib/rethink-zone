@@ -39,25 +39,25 @@ import { GENERAL_ICONS } from "../constants"; // Pre-defined list of general pur
 
 // Interface defining the state and callbacks needed by the Plus Menu overlay
 interface PlusMenuProps {
-  isOpen: boolean;           // Visibility toggle
-  onClose: () => void;       // Function to trigger closing
+  isOpen: boolean; // Visibility toggle
+  onClose: () => void; // Function to trigger closing
   setIsOpen: (open: boolean) => void;
-  view: PlusMenuView;        // Current page within the menu (Categories vs Shapes vs Icons)
+  view: PlusMenuView; // Current page within the menu (Categories vs Shapes vs Icons)
   setView: (view: PlusMenuView) => void;
-  subView: string | null;    // Current sub-category selection
+  subView: string | null; // Current sub-category selection
   setSubView: (subView: string | null) => void;
-  searchQuery: string;       // Current text filter
+  searchQuery: string; // Current text filter
   setSearchQuery: (query: string) => void;
   visibleIconsLimit: number; // Pagination limit for icon results
   setVisibleIconsLimit: (limit: number | ((prev: number) => number)) => void;
-  isLoading: boolean;        // Loading state for external icon fetching
+  isLoading: boolean; // Loading state for external icon fetching
   setIsLoading: (loading: boolean) => void;
   onAddIcon: (name: string, src: string) => void; // Callback to place an icon on canvas
-  onAddShape: (label: string) => void;            // Callback to place a shape on canvas
-  icons: string[];           // List of icon file paths/URLs
-  setActiveTool: (tool: Tool) => void;            // Update canvas interaction mode
+  onAddShape: (label: string) => void; // Callback to place a shape on canvas
+  icons: string[]; // List of icon file paths/URLs
+  setActiveTool: (tool: Tool) => void; // Update canvas interaction mode
   pendingAddIcon?: { name: string; src: string } | null; // Preview of icon about to be placed
-  pendingAddShapeLabel?: string | null;                  // Preview of shape about to be placed
+  pendingAddShapeLabel?: string | null; // Preview of shape about to be placed
 }
 
 /**
@@ -124,7 +124,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
           className="fixed left-20 top-27 flex flex-col rounded-sm bg-background shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-border w-80 max-h-[85vh] overflow-hidden z-[1001] animate-in fade-in slide-in-from-left-2 duration-300"
         >
           {/* TOP SECTION: Integrated Search Bar */}
-          <div 
+          <div
             className="flex items-center gap-2 px-3.5 py-3 border-b border-border/50 bg-muted/30"
             onWheel={(e) => {
               e.stopPropagation();
@@ -169,7 +169,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                   <div className="text-[10px] font-bold text-muted-foreground tracking-widest">
                     Search Results
                   </div>
-                  <button 
+                  <button
                     onClick={() => setSearchQuery("")}
                     className="text-[10px] text-primary hover:underline font-bold"
                   >
@@ -179,9 +179,17 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                 {/* Grid of icons filtered by the search query */}
                 <div className="grid grid-cols-5 gap-y-3 px-2 pb-4">
                   {icons.slice(0, visibleIconsLimit).map((path, i) => {
-                    const name = path.split("/").pop()?.replace(".svg", "").replace(/_/g, " ") || "icon";
+                    const name =
+                      path
+                        .split("/")
+                        .pop()
+                        ?.replace(".svg", "")
+                        .replace(/_/g, " ") || "icon";
                     return (
-                      <div key={i} className="flex flex-col items-center gap-1.5 group">
+                      <div
+                        key={i}
+                        className="flex flex-col items-center gap-1.5 group"
+                      >
                         <button
                           onClick={() => {
                             onAddIcon(name, path);
@@ -204,8 +212,12 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                   {/* Empty state for search */}
                   {icons.length === 0 && (
                     <div className="col-span-5 py-20 text-center">
-                      <div className="text-sm font-bold text-muted-foreground">No icons found</div>
-                      <div className="text-[11px] text-muted-foreground/60">Try a different search term</div>
+                      <div className="text-sm font-bold text-muted-foreground">
+                        No icons found
+                      </div>
+                      <div className="text-[11px] text-muted-foreground/60">
+                        Try a different search term
+                      </div>
                     </div>
                   )}
                 </div>
@@ -280,26 +292,26 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                 {/* Grid of bottom-row quick action buttons */}
                 <div className="grid grid-cols-3 gap-3 px-3 pb-3">
                   {[
-                    { 
-                      icon: Maximize, 
-                      label: "Figure", 
-                      onClick: () => { 
-                        onAddShape("Figure"); 
+                    {
+                      icon: Maximize,
+                      label: "Figure",
+                      onClick: () => {
+                        onAddShape("Figure");
                         setActiveTool("PlusAdd");
                         onClose();
-                      } 
+                      },
                     },
-                    { 
-                      icon: Code, 
-                      label: "Code", 
-                      onClick: () => { 
-                        onAddShape("Code"); 
+                    {
+                      icon: Code,
+                      label: "Code",
+                      onClick: () => {
+                        onAddShape("Code");
                         setActiveTool("PlusAdd");
                         onClose();
-                      } 
+                      },
                     },
-                    { 
-                      icon: ImageIcon, 
+                    {
+                      icon: ImageIcon,
                       label: "Image",
                       onClick: () => {
                         // Trigger local file picker
@@ -309,21 +321,25 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                         input.onchange = async (e: any) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                             try {
-                                // Dynamic import for image upload utility
-                                const { uploadFileToCloudinary } = await import("../utils/upload");
-                                const result = await uploadFileToCloudinary(file);
-                                onAddIcon(file.name, result.secureUrl);
-                                setActiveTool("IconAdd");
-                                onClose();
-                             } catch (err) {
-                                console.error("Failed to upload image from menu", err);
-                                alert("Failed to upload image");
-                             }
+                            try {
+                              // Dynamic import for image upload utility
+                              const { uploadFileToCloudinary } =
+                                await import("../utils/upload");
+                              const result = await uploadFileToCloudinary(file);
+                              onAddIcon(file.name, result.secureUrl);
+                              setActiveTool("IconAdd");
+                              onClose();
+                            } catch (err) {
+                              console.error(
+                                "Failed to upload image from menu",
+                                err
+                              );
+                              alert("Failed to upload image");
+                            }
                           }
                         };
                         input.click();
-                      }
+                      },
                     },
                   ].map((action, i) => (
                     <button
@@ -540,42 +556,48 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                   </div>
 
                   <div className="grid grid-cols-5 gap-y-3 px-2 pb-4">
-                    {isLoading ? (
-                      // Loading skeletons for a better UX while fetching SVGs
-                      Array.from({ length: 20 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="flex flex-col items-center gap-1.5 animate-pulse p-1"
-                        >
-                          <div className="h-10 w-10 rounded-sm bg-accent/50 border border-border" />
-                          <div className="h-2 w-8 bg-accent/30 rounded" />
-                        </div>
-                      ))
-                    ) : (
-                      icons.slice(0, visibleIconsLimit).map((path, i) => {
-                        const name = path.split("/").pop()?.replace(".svg", "").replace(/_/g, " ") || "icon";
-                        return (
-                          <div key={i} className="flex flex-col items-center gap-1.5 group">
-                            <button
-                              onClick={() => {
-                                onAddIcon(name, path);
-                                setActiveTool("IconAdd");
-                              }}
-                              className="h-10 w-10 flex items-center justify-center rounded-sm transition-all shadow-none overflow-hidden group active:scale-90"
-                            >
-                              <img
-                                src={path}
-                                alt={name}
-                                className="h-6 w-6 transition-opacity"
-                              />
-                            </button>
-                            <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground text-center truncate w-full px-1 transition-colors">
-                              {name}
-                            </span>
+                    {isLoading
+                      ? // Loading skeletons for a better UX while fetching SVGs
+                        Array.from({ length: 20 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="flex flex-col items-center gap-1.5 animate-pulse p-1"
+                          >
+                            <div className="h-10 w-10 rounded-sm bg-accent/50 border border-border" />
+                            <div className="h-2 w-8 bg-accent/30 rounded" />
                           </div>
-                        );
-                      })
-                    )}
+                        ))
+                      : icons.slice(0, visibleIconsLimit).map((path, i) => {
+                          const name =
+                            path
+                              .split("/")
+                              .pop()
+                              ?.replace(".svg", "")
+                              .replace(/_/g, " ") || "icon";
+                          return (
+                            <div
+                              key={i}
+                              className="flex flex-col items-center gap-1.5 group"
+                            >
+                              <button
+                                onClick={() => {
+                                  onAddIcon(name, path);
+                                  setActiveTool("IconAdd");
+                                }}
+                                className="h-10 w-10 flex items-center justify-center rounded-sm transition-all shadow-none overflow-hidden group active:scale-90"
+                              >
+                                <img
+                                  src={path}
+                                  alt={name}
+                                  className="h-6 w-6 transition-opacity"
+                                />
+                              </button>
+                              <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground text-center truncate w-full px-1 transition-colors">
+                                {name}
+                              </span>
+                            </div>
+                          );
+                        })}
                   </div>
                 </div>
               </div>
@@ -590,7 +612,9 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                     >
                       All Categories
                     </button>
-                    <span className="text-muted-foreground/30 font-normal">/</span>
+                    <span className="text-muted-foreground/30 font-normal">
+                      /
+                    </span>
                     <span className="text-foreground">Device Frame</span>
                   </div>
 
@@ -714,17 +738,19 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
           {/* MENU FOOTER: Contextual Status and Shortcuts */}
           <div className="flex items-center justify-between px-4 py-3 bg-muted/40 border-t border-border/50">
             <div className="text-[11px] font-bold text-foreground/80 tracking-tight">
-              {view === "device-frame" ? "Phone" : (
-                pendingAddIcon ? (
-                  // Alert the user that they have an item currently "on their cursor" for placement
-                  <span className="text-primary flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
-                    Ready to place: {pendingAddIcon.name}
-                  </span>
-                ) : pendingAddShapeLabel ? (
-                  <span className="text-primary flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
-                    Ready to place: {pendingAddShapeLabel}
-                  </span>
-                ) : "All Categories"
+              {view === "device-frame" ? (
+                "Phone"
+              ) : pendingAddIcon ? (
+                // Alert the user that they have an item currently "on their cursor" for placement
+                <span className="text-primary flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
+                  Ready to place: {pendingAddIcon.name}
+                </span>
+              ) : pendingAddShapeLabel ? (
+                <span className="text-primary flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
+                  Ready to place: {pendingAddShapeLabel}
+                </span>
+              ) : (
+                "All Categories"
               )}
             </div>
             {/* Keyboard shortcut hints */}

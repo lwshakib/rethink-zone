@@ -2,11 +2,11 @@
  * Better-Auth server-side configuration.
  * Handles database integration via Prisma and configures authentication providers.
  */
-import { betterAuth } from 'better-auth'; // Core library function to initialize the Better-Auth service
-import { prismaAdapter } from 'better-auth/adapters/prisma'; // Prisma database adapter tailored for Better-Auth
-import prisma from './prisma'; // The project's singleton Prisma database client instance
-import { Resend } from 'resend'; // Resend SDK for sending transactional emails
-import { AuthEmailTemplate } from '@/components/emails/auth-email-template'; // React component acting as template for auth emails
+import { betterAuth } from "better-auth"; // Core library function to initialize the Better-Auth service
+import { prismaAdapter } from "better-auth/adapters/prisma"; // Prisma database adapter tailored for Better-Auth
+import prisma from "./prisma"; // The project's singleton Prisma database client instance
+import { Resend } from "resend"; // Resend SDK for sending transactional emails
+import { AuthEmailTemplate } from "@/components/emails/auth-email-template"; // React component acting as template for auth emails
 
 // Initialize the Resend mail client using the secret API key from environment variables.
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -15,7 +15,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export const auth = betterAuth({
   // Use Prisma as the database adapter to persist user accounts, sessions, and social connections directly into our PostgreSQL database.
   database: prismaAdapter(prisma, {
-    provider: 'postgresql', // Matches the Prisma provider type defined in schema.prisma.
+    provider: "postgresql", // Matches the Prisma provider type defined in schema.prisma.
   }),
 
   // Enable standard email and password authentication methods.
@@ -28,20 +28,20 @@ export const auth = betterAuth({
       try {
         // Attempt to dispatch the password reset email via Resend's API.
         const { error } = await resend.emails.send({
-          from: 'Rethink <noreply@lwshakib.site>', // The verified sender identity
+          from: "Rethink <noreply@lwshakib.site>", // The verified sender identity
           to: user.email, // Recipient's email address passed by Better-Auth
-          subject: 'Reset your password', // Description for the email subject line
-          react: AuthEmailTemplate({ type: 'forgot-password', url }), // Renders the specialized React Email template into HTML
+          subject: "Reset your password", // Description for the email subject line
+          react: AuthEmailTemplate({ type: "forgot-password", url }), // Renders the specialized React Email template into HTML
         });
 
         // Log and handle explicit errors returned by the Resend API (e.g., rate-limits, unverified domains)
         if (error) {
-          console.error('Failed to send email via Resend:', error);
-          throw new Error('Failed to send authentication email.');
+          console.error("Failed to send email via Resend:", error);
+          throw new Error("Failed to send authentication email.");
         }
       } catch (err) {
         // Catch network errors or unexpected exceptions during the email sending process
-        console.error('Resend error:', err);
+        console.error("Resend error:", err);
         throw err;
       }
     },
@@ -66,14 +66,14 @@ export const auth = betterAuth({
       try {
         // Dispatch the account verification email via Resend's API.
         await resend.emails.send({
-          from: 'Rethink <noreply@lwshakib.site>',
+          from: "Rethink <noreply@lwshakib.site>",
           to: user.email,
-          subject: 'Verify your email address',
-          react: AuthEmailTemplate({ type: 'email-verification', url }), // Renders the specialized React Email verification template
+          subject: "Verify your email address",
+          react: AuthEmailTemplate({ type: "email-verification", url }), // Renders the specialized React Email verification template
         });
       } catch (err) {
         // Log errors to the server console if the verification email fails to send (fails silently for the end user)
-        console.error('Verification email error:', err);
+        console.error("Verification email error:", err);
       }
     },
   },

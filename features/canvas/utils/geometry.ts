@@ -1,4 +1,19 @@
-import { AnchorSide, CircleShape, RectShape, ImageShape, TextShape, FrameShape, PolyShape, LineShape, ArrowShape, PathShape, ConnectorAnchor, FigureShape, CodeShape, ShapeCollection } from "../types"; // Import all shape types for consistent geometry math
+import {
+  AnchorSide,
+  CircleShape,
+  RectShape,
+  ImageShape,
+  TextShape,
+  FrameShape,
+  PolyShape,
+  LineShape,
+  ArrowShape,
+  PathShape,
+  ConnectorAnchor,
+  FigureShape,
+  CodeShape,
+  ShapeCollection,
+} from "../types"; // Import all shape types for consistent geometry math
 
 /**
  * Translates an AnchorSide enum into a 2D unit vector representing the exit/entry direction.
@@ -28,14 +43,14 @@ export const getConnectorPoints = (
 ) => {
   const fromDir = getAnchorDir(fromAnchor);
   const toDir = getAnchorDir(toAnchor);
-  
+
   // Define initial protrusion distance from the shape boundary
   const offset = 24 / zoom;
-  
+
   const p0 = from; // start
   // p1 is the point slightly outside the source shape
   const p1 = { x: from.x + fromDir.x * offset, y: from.y + fromDir.y * offset };
-  
+
   const p4 = to; // end
   // p3 is the point slightly outside the target shape
   const p3 = { x: to.x + toDir.x * offset, y: to.y + toDir.y * offset };
@@ -43,17 +58,33 @@ export const getConnectorPoints = (
   /**
    * Internal helper to check if a point is inside a shape's bounding box.
    */
-  const isInternal = (p: { x: number; y: number }, b?: { x: number; y: number; width: number; height: number }) => {
+  const isInternal = (
+    p: { x: number; y: number },
+    b?: { x: number; y: number; width: number; height: number }
+  ) => {
     if (!b) return false;
     const pad = 2 / zoom; // Small tolerance
-    return p.x > b.x - pad && p.x < b.x + b.width + pad && p.y > b.y - pad && p.y < b.y + b.height + pad;
+    return (
+      p.x > b.x - pad &&
+      p.x < b.x + b.width + pad &&
+      p.y > b.y - pad &&
+      p.y < b.y + b.height + pad
+    );
   };
 
   /**
    * Checks if a line segment between points 'a' and 'b' intersects either the source or destination shape.
    */
-  const isBlocked = (a: { x: number; y: number }, b: { x: number; y: number }) => {
-    const check = (box?: { x: number; y: number; width: number; height: number }) => {
+  const isBlocked = (
+    a: { x: number; y: number },
+    b: { x: number; y: number }
+  ) => {
+    const check = (box?: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }) => {
       if (!box) return false;
       const epsilon = 1 / zoom;
       const bx1 = box.x + epsilon;
@@ -67,11 +98,13 @@ export const getConnectorPoints = (
       const maxY = Math.max(a.y, b.y);
 
       // Simple intersection logic for horizontal/vertical segments
-      if (Math.abs(a.x - b.x) < 0.1) { // Vertical segment
+      if (Math.abs(a.x - b.x) < 0.1) {
+        // Vertical segment
         if (a.x > bx1 && a.x < bx2) {
           return minY < by2 && maxY > by1;
         }
-      } else { // Horizontal segment
+      } else {
+        // Horizontal segment
         if (a.y > by1 && a.y < by2) {
           return minX < bx2 && maxX > bx1;
         }
@@ -84,13 +117,13 @@ export const getConnectorPoints = (
 
   // Center-point between the two padded exit/entry points
   const pMid = { x: (p1.x + p3.x) / 2, y: (p1.y + p3.y) / 2 };
-  
+
   // List of potential routing paths to be scored
   const candidates: { x: number; y: number }[][] = [];
 
   // 0. Straight line (if points are naturally aligned)
   if (Math.abs(p1.x - p3.x) < 0.5 || Math.abs(p1.y - p3.y) < 0.5) {
-     candidates.push([]);
+    candidates.push([]);
   }
 
   // 1. L-Shapes: 1 elbow joint
@@ -98,52 +131,97 @@ export const getConnectorPoints = (
   candidates.push([{ x: p1.x, y: p3.y }]);
 
   // 2. Z-Shapes: 2 elbow joints, centered between shapes
-  const z1 = [{ x: pMid.x, y: p1.y }, { x: pMid.x, y: p3.y }];
-  const z2 = [{ x: p1.x, y: pMid.y }, { x: p3.x, y: pMid.y }];
+  const z1 = [
+    { x: pMid.x, y: p1.y },
+    { x: pMid.x, y: p3.y },
+  ];
+  const z2 = [
+    { x: p1.x, y: pMid.y },
+    { x: p3.x, y: pMid.y },
+  ];
   candidates.push(z1, z2);
 
   // 3. Gap-Midpoint Z-Shapes: Routing through the exact middle of the gap between shapes
   if (fromBounds && toBounds) {
-    const b1 = fromBounds; const b2 = toBounds;
+    const b1 = fromBounds;
+    const b2 = toBounds;
     // Horizontal gap checking
     if (b1.x + b1.width < b2.x || b2.x + b2.width < b1.x) {
-       const gapMidX = b1.x + b1.width < b2.x ? (b1.x + b1.width + b2.x) / 2 : (b2.x + b2.width + b1.x) / 2;
-       candidates.push([{ x: gapMidX, y: p1.y }, { x: gapMidX, y: p3.y }]);
+      const gapMidX =
+        b1.x + b1.width < b2.x
+          ? (b1.x + b1.width + b2.x) / 2
+          : (b2.x + b2.width + b1.x) / 2;
+      candidates.push([
+        { x: gapMidX, y: p1.y },
+        { x: gapMidX, y: p3.y },
+      ]);
     }
     // Vertical gap checking
     if (b1.y + b1.height < b2.y || b2.y + b2.height < b1.y) {
-       const gapMidY = b1.y + b1.height < b2.y ? (b1.y + b1.height + b2.y) / 2 : (b2.y + b2.height + b1.y) / 2;
-       candidates.push([{ x: p1.x, y: gapMidY }, { x: p3.x, y: gapMidY }]);
+      const gapMidY =
+        b1.y + b1.height < b2.y
+          ? (b1.y + b1.height + b2.y) / 2
+          : (b2.y + b2.height + b1.y) / 2;
+      candidates.push([
+        { x: p1.x, y: gapMidY },
+        { x: p3.x, y: gapMidY },
+      ]);
     }
   }
 
   // 4. Around-Shapes: Routes that intentionally circle around both bounding boxes
   if (fromBounds && toBounds) {
     const margin = 40 / zoom;
-    const b1 = fromBounds; const b2 = toBounds;
+    const b1 = fromBounds;
+    const b2 = toBounds;
     const minX = Math.min(b1.x, b2.x) - margin;
     const maxX = Math.max(b1.x + b1.width, b2.x + b2.width) + margin;
     const minY = Math.min(b1.y, b2.y) - margin;
     const maxY = Math.max(b1.y + b1.height, b2.y + b2.height) + margin;
 
-    candidates.push([{ x: maxX, y: p1.y }, { x: maxX, y: p3.y }]); // Around Right
-    candidates.push([{ x: minX, y: p1.y }, { x: minX, y: p3.y }]); // Around Left
-    candidates.push([{ x: p1.x, y: maxY }, { x: p3.x, y: maxY }]); // Around Bottom
-    candidates.push([{ x: p1.x, y: minY }, { x: p3.x, y: minY }]); // Around Top
+    candidates.push([
+      { x: maxX, y: p1.y },
+      { x: maxX, y: p3.y },
+    ]); // Around Right
+    candidates.push([
+      { x: minX, y: p1.y },
+      { x: minX, y: p3.y },
+    ]); // Around Left
+    candidates.push([
+      { x: p1.x, y: maxY },
+      { x: p3.x, y: maxY },
+    ]); // Around Bottom
+    candidates.push([
+      { x: p1.x, y: minY },
+      { x: p3.x, y: minY },
+    ]); // Around Top
   }
 
   // Extra Z-Shapes (using gap midpoints if boxes are provided)
   if (fromBounds && toBounds) {
-    const b1 = fromBounds; const b2 = toBounds;
+    const b1 = fromBounds;
+    const b2 = toBounds;
     // Horizontal gap
     if (b1.x + b1.width < b2.x || b2.x + b2.width < b1.x) {
-       const gapMidX = b1.x + b1.width < b2.x ? (b1.x + b1.width + b2.x) / 2 : (b2.x + b2.width + b1.x) / 2;
-       candidates.push([{ x: gapMidX, y: p1.y }, { x: gapMidX, y: p3.y }]);
+      const gapMidX =
+        b1.x + b1.width < b2.x
+          ? (b1.x + b1.width + b2.x) / 2
+          : (b2.x + b2.width + b1.x) / 2;
+      candidates.push([
+        { x: gapMidX, y: p1.y },
+        { x: gapMidX, y: p3.y },
+      ]);
     }
     // Vertical gap
     if (b1.y + b1.height < b2.y || b2.y + b2.height < b1.y) {
-       const gapMidY = b1.y + b1.height < b2.y ? (b1.y + b1.height + b2.y) / 2 : (b2.y + b2.height + b1.y) / 2;
-       candidates.push([{ x: p1.x, y: gapMidY }, { x: p3.x, y: gapMidY }]);
+      const gapMidY =
+        b1.y + b1.height < b2.y
+          ? (b1.y + b1.height + b2.y) / 2
+          : (b2.y + b2.height + b1.y) / 2;
+      candidates.push([
+        { x: p1.x, y: gapMidY },
+        { x: p3.x, y: gapMidY },
+      ]);
     }
   }
 
@@ -157,10 +235,22 @@ export const getConnectorPoints = (
     const minY = Math.min(b1.y, b2.y) - margin;
     const maxY = Math.max(b1.y + b1.height, b2.y + b2.height) + margin;
 
-    candidates.push([{ x: maxX, y: p1.y }, { x: maxX, y: p3.y }]);
-    candidates.push([{ x: minX, y: p1.y }, { x: minX, y: p3.y }]);
-    candidates.push([{ x: p1.x, y: maxY }, { x: p3.x, y: maxY }]);
-    candidates.push([{ x: p1.x, y: minY }, { x: p3.x, y: minY }]);
+    candidates.push([
+      { x: maxX, y: p1.y },
+      { x: maxX, y: p3.y },
+    ]);
+    candidates.push([
+      { x: minX, y: p1.y },
+      { x: minX, y: p3.y },
+    ]);
+    candidates.push([
+      { x: p1.x, y: maxY },
+      { x: p3.x, y: maxY },
+    ]);
+    candidates.push([
+      { x: p1.x, y: minY },
+      { x: p3.x, y: minY },
+    ]);
   }
 
   let bestPath: { x: number; y: number }[] | null = null;
@@ -181,26 +271,26 @@ export const getConnectorPoints = (
     let length = 0;
     let turns = 0;
     let prevDir = { x: 0, y: 0 };
-    
+
     for (let i = 0; i < fullPath.length - 1; i++) {
-      const dx = fullPath[i+1].x - fullPath[i].x;
-      const dy = fullPath[i+1].y - fullPath[i].y;
+      const dx = fullPath[i + 1].x - fullPath[i].x;
+      const dy = fullPath[i + 1].y - fullPath[i].y;
       const segLen = Math.hypot(dx, dy);
-      
+
       if (segLen > 0.5) {
         // Discard the entire path if any segment passes through a shape
-        if (isBlocked(fullPath[i], fullPath[i+1])) {
+        if (isBlocked(fullPath[i], fullPath[i + 1])) {
           blocked = true;
           break;
         }
         length += segLen;
-        
+
         // Determine the current step direction for turn detection
-        const dir = { 
-          x: Math.abs(dx) > 0.1 ? Math.sign(dx) : 0, 
-          y: Math.abs(dy) > 0.1 ? Math.sign(dy) : 0 
+        const dir = {
+          x: Math.abs(dx) > 0.1 ? Math.sign(dx) : 0,
+          y: Math.abs(dy) > 0.1 ? Math.sign(dy) : 0,
         };
-        
+
         // If the direction changed from the previous segment, increment turn count
         if (prevDir.x !== 0 || prevDir.y !== 0) {
           if (dir.x !== prevDir.x || dir.y !== prevDir.y) turns++;
@@ -213,7 +303,7 @@ export const getConnectorPoints = (
 
     // SCORING HEURISTICS:
     // 1. Base Score: Length + significant penalty for each turn (prefer straight line)
-    let score = length + turns * 200; 
+    let score = length + turns * 200;
 
     // 2. Center Bonus: Reward Z-shapes that are equidistantly split between shapes
     const isCentered = cand === z1 || cand === z2;
@@ -231,8 +321,11 @@ export const getConnectorPoints = (
 
     // 5. Short segment penalty: avoid visually busy tiny bends
     for (let i = 0; i < fullPath.length - 1; i++) {
-        const d = Math.hypot(fullPath[i+1].x - fullPath[i].x, fullPath[i+1].y - fullPath[i].y);
-        if (d < 15 / zoom) score += 500;
+      const d = Math.hypot(
+        fullPath[i + 1].x - fullPath[i].x,
+        fullPath[i + 1].y - fullPath[i].y
+      );
+      if (d < 15 / zoom) score += 500;
     }
 
     return score;
@@ -264,7 +357,13 @@ export const getConnectorPoints = (
   // Post-processing: remove identical consecutive points to prevent render artifacts
   const finalPts: { x: number; y: number }[] = [];
   for (const pt of pts) {
-    if (finalPts.length === 0 || Math.hypot(pt.x - finalPts[finalPts.length - 1].x, pt.y - finalPts[finalPts.length - 1].y) > 0.5) {
+    if (
+      finalPts.length === 0 ||
+      Math.hypot(
+        pt.x - finalPts[finalPts.length - 1].x,
+        pt.y - finalPts[finalPts.length - 1].y
+      ) > 0.5
+    ) {
       finalPts.push(pt);
     }
   }
@@ -297,10 +396,24 @@ export const distToSegment = (
 /**
  * Calculates the shortest distance from a point to a path consisting of multiple segments.
  */
-export const distToPolyline = (px: number, py: number, points: { x: number; y: number }[]) => {
+export const distToPolyline = (
+  px: number,
+  py: number,
+  points: { x: number; y: number }[]
+) => {
   let minDist = Infinity;
   for (let i = 1; i < points.length; i++) {
-    minDist = Math.min(minDist, distToSegment(px, py, points[i - 1].x, points[i - 1].y, points[i].x, points[i].y));
+    minDist = Math.min(
+      minDist,
+      distToSegment(
+        px,
+        py,
+        points[i - 1].x,
+        points[i - 1].y,
+        points[i].x,
+        points[i].y
+      )
+    );
   }
   return minDist;
 };
@@ -317,7 +430,8 @@ export const getRectAnchor = (
   if (anchor === "top") return { x: rect.x + rect.width * percent, y: rect.y };
   if (anchor === "bottom")
     return { x: rect.x + rect.width * percent, y: rect.y + rect.height };
-  if (anchor === "left") return { x: rect.x, y: rect.y + rect.height * percent };
+  if (anchor === "left")
+    return { x: rect.x, y: rect.y + rect.height * percent };
   return { x: rect.x + rect.width, y: rect.y + rect.height * percent };
 };
 
@@ -330,7 +444,6 @@ export const getCircleAnchor = (circle: CircleShape, anchor: AnchorSide) => {
   if (anchor === "left") return { x: circle.x - circle.rx, y: circle.y };
   return { x: circle.x + circle.rx, y: circle.y };
 };
-
 
 /**
  * Metadata about an anchor point relative to a specific shape.
@@ -345,21 +458,35 @@ interface AnchorInfo {
 /**
  * Resolves an anchor/connector definition into concrete {x, y} world coordinates.
  * Consults the current shape library to find the exact position of the shape's boundaries.
- * 
+ *
  * @param anchor - Unified anchor object, containing either a direct point or a shape reference.
  * @param shapes - The global state of all shapes on the canvas.
  */
-export const getAnchorPoint = (anchor: AnchorInfo & { point?: { x: number; y: number } }, shapes: ShapeCollection) => {
+export const getAnchorPoint = (
+  anchor: AnchorInfo & { point?: { x: number; y: number } },
+  shapes: ShapeCollection
+) => {
   // Direct point definition (used during dragging or for unattached connectors)
   if (anchor.kind === "point" && anchor.point) return anchor.point;
-  
+
   // Destructure with defaults to ensure safe access
-  const { rectangles = [], circles = [], images = [], texts = [], frames = [], polygons = [], figures = [], codes = [] } = shapes;
-  
+  const {
+    rectangles = [],
+    circles = [],
+    images = [],
+    texts = [],
+    frames = [],
+    polygons = [],
+    figures = [],
+    codes = [],
+  } = shapes;
+
   // Logic branch for Rectangular based shapes
   if (anchor.kind === "rect") {
     const r = rectangles.find((i) => i.id === anchor.shapeId);
-    return r ? getRectAnchor(r, anchor.anchor as AnchorSide, anchor.percent) : null;
+    return r
+      ? getRectAnchor(r, anchor.anchor as AnchorSide, anchor.percent)
+      : null;
   }
   // Logic branch for Circle/Ellipse shapes
   if (anchor.kind === "circle") {
@@ -369,32 +496,44 @@ export const getAnchorPoint = (anchor: AnchorInfo & { point?: { x: number; y: nu
   // Image assets
   if (anchor.kind === "image") {
     const im = images.find((i) => i.id === anchor.shapeId);
-    return im ? getRectAnchor(im, anchor.anchor as AnchorSide, anchor.percent) : null;
+    return im
+      ? getRectAnchor(im, anchor.anchor as AnchorSide, anchor.percent)
+      : null;
   }
   // Text blocks
   if (anchor.kind === "text") {
     const t = texts.find((i) => i.id === anchor.shapeId);
-    return t ? getRectAnchor(t, anchor.anchor as AnchorSide, anchor.percent) : null;
+    return t
+      ? getRectAnchor(t, anchor.anchor as AnchorSide, anchor.percent)
+      : null;
   }
   // Group frames
   if (anchor.kind === "frame") {
     const f = frames.find((i) => i.id === anchor.shapeId);
-    return f ? getRectAnchor(f, anchor.anchor as AnchorSide, anchor.percent) : null;
+    return f
+      ? getRectAnchor(f, anchor.anchor as AnchorSide, anchor.percent)
+      : null;
   }
   // Dynamic polygons (Triangles, Diamonds, etc.)
   if (anchor.kind === "poly") {
     const p = polygons.find((i) => i.id === anchor.shapeId);
-    return p ? getRectAnchor(p, anchor.anchor as AnchorSide, anchor.percent) : null;
+    return p
+      ? getRectAnchor(p, anchor.anchor as AnchorSide, anchor.percent)
+      : null;
   }
   // Figure primitives
   if (anchor.kind === "figure") {
     const f = figures.find((i) => i.id === anchor.shapeId);
-    return f ? getRectAnchor(f, anchor.anchor as AnchorSide, anchor.percent) : null;
+    return f
+      ? getRectAnchor(f, anchor.anchor as AnchorSide, anchor.percent)
+      : null;
   }
   // Code block wrappers
   if (anchor.kind === "code") {
     const c = codes.find((i) => i.id === anchor.shapeId);
-    return c ? getRectAnchor(c, anchor.anchor as AnchorSide, anchor.percent) : null;
+    return c
+      ? getRectAnchor(c, anchor.anchor as AnchorSide, anchor.percent)
+      : null;
   }
   return null; // Anchor could not be resolved (shape was likely deleted)
 };
@@ -403,24 +542,48 @@ export const getAnchorPoint = (anchor: AnchorInfo & { point?: { x: number; y: nu
  * Retrieves the bounding box of a specific shape identified by kind and ID.
  * Useful for collision detection and routing logic.
  */
-export const getShapeBounds = (anchor: { kind: string; shapeId: string }, shapes: ShapeCollection) => {
+export const getShapeBounds = (
+  anchor: { kind: string; shapeId: string },
+  shapes: ShapeCollection
+) => {
   if (anchor.kind === "point") return null;
 
-  const { rectangles = [], circles = [], images = [], texts = [], frames = [], polygons = [], figures = [], codes = [] } = shapes;
-  type HasBounds = { id: string; x: number; y: number; width: number; height: number };
+  const {
+    rectangles = [],
+    circles = [],
+    images = [],
+    texts = [],
+    frames = [],
+    polygons = [],
+    figures = [],
+    codes = [],
+  } = shapes;
+  type HasBounds = {
+    id: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
   let s: HasBounds | undefined;
 
   // Search through categorized collections for the matching ID
-  if (anchor.kind === "rect") s = rectangles.find((i) => i.id === anchor.shapeId);
+  if (anchor.kind === "rect")
+    s = rectangles.find((i) => i.id === anchor.shapeId);
   else if (anchor.kind === "circle") {
     const c = circles.find((i) => i.id === anchor.shapeId);
     // Convert circle {x, y, rx, ry} to box {x, y, width, height}
-    return c ? { x: c.x - c.rx, y: c.y - c.ry, width: c.rx * 2, height: c.ry * 2 } : null;
-  }
-  else if (anchor.kind === "image") s = images.find((i) => i.id === anchor.shapeId);
-  else if (anchor.kind === "text") s = texts.find((i) => i.id === anchor.shapeId);
-  else if (anchor.kind === "frame") s = frames.find((i) => i.id === anchor.shapeId);
-  else if (anchor.kind === "poly") s = polygons.find((i) => i.id === anchor.shapeId);
+    return c
+      ? { x: c.x - c.rx, y: c.y - c.ry, width: c.rx * 2, height: c.ry * 2 }
+      : null;
+  } else if (anchor.kind === "image")
+    s = images.find((i) => i.id === anchor.shapeId);
+  else if (anchor.kind === "text")
+    s = texts.find((i) => i.id === anchor.shapeId);
+  else if (anchor.kind === "frame")
+    s = frames.find((i) => i.id === anchor.shapeId);
+  else if (anchor.kind === "poly")
+    s = polygons.find((i) => i.id === anchor.shapeId);
 
   return s ? { x: s.x, y: s.y, width: s.width, height: s.height } : null;
 };
@@ -430,57 +593,116 @@ export const getShapeBounds = (anchor: { kind: string; shapeId: string }, shapes
  * This can be used for "Zoom to Fit" or scrolling boundary calculations.
  */
 export const getContentBounds = (shapes: ShapeCollection) => {
-  const { rectangles = [], circles = [], lines = [], arrows = [], paths = [], images = [], texts = [], frames = [], polygons = [], figures = [], codes = [] } = shapes;
-  
+  const {
+    rectangles = [],
+    circles = [],
+    lines = [],
+    arrows = [],
+    paths = [],
+    images = [],
+    texts = [],
+    frames = [],
+    polygons = [],
+    figures = [],
+    codes = [],
+  } = shapes;
+
   // Accumulate every corner coordinate from every shape
   const xs: number[] = [];
   const ys: number[] = [];
 
-  rectangles.forEach((r) => { xs.push(r.x, r.x + r.width); ys.push(r.y, r.y + r.height); });
-  circles.forEach((c) => { xs.push(c.x - c.rx, c.x + c.rx); ys.push(c.y - c.ry, c.y + c.ry); });
-  lines.forEach((l) => { xs.push(l.x1, l.x2); ys.push(l.y1, l.y2); });
-  arrows.forEach((a) => { xs.push(a.x1, a.x2); ys.push(a.y1, a.y2); });
-  paths.forEach((p) => p.points.forEach((pt) => { xs.push(pt.x); ys.push(pt.y); }));
-  images.forEach((im) => { xs.push(im.x, im.x + im.width); ys.push(im.y, im.y + im.height); });
-  texts.forEach((t) => { xs.push(t.x, t.x + t.width); ys.push(t.y, t.y + t.height); });
-  frames.forEach((f) => { xs.push(f.x, f.x + f.width); ys.push(f.y, f.y + f.height); });
-  polygons.forEach((p) => { xs.push(p.x, p.x + (p.width ?? 0)); ys.push(p.y, p.y + (p.height ?? 0)); });
-  figures.forEach((f) => { xs.push(f.x, f.x + f.width); ys.push(f.y, f.y + f.height); });
-  codes.forEach((c) => { xs.push(c.x, c.x + c.width); ys.push(c.y, c.y + c.height); });
+  rectangles.forEach((r) => {
+    xs.push(r.x, r.x + r.width);
+    ys.push(r.y, r.y + r.height);
+  });
+  circles.forEach((c) => {
+    xs.push(c.x - c.rx, c.x + c.rx);
+    ys.push(c.y - c.ry, c.y + c.ry);
+  });
+  lines.forEach((l) => {
+    xs.push(l.x1, l.x2);
+    ys.push(l.y1, l.y2);
+  });
+  arrows.forEach((a) => {
+    xs.push(a.x1, a.x2);
+    ys.push(a.y1, a.y2);
+  });
+  paths.forEach((p) =>
+    p.points.forEach((pt) => {
+      xs.push(pt.x);
+      ys.push(pt.y);
+    })
+  );
+  images.forEach((im) => {
+    xs.push(im.x, im.x + im.width);
+    ys.push(im.y, im.y + im.height);
+  });
+  texts.forEach((t) => {
+    xs.push(t.x, t.x + t.width);
+    ys.push(t.y, t.y + t.height);
+  });
+  frames.forEach((f) => {
+    xs.push(f.x, f.x + f.width);
+    ys.push(f.y, f.y + f.height);
+  });
+  polygons.forEach((p) => {
+    xs.push(p.x, p.x + (p.width ?? 0));
+    ys.push(p.y, p.y + (p.height ?? 0));
+  });
+  figures.forEach((f) => {
+    xs.push(f.x, f.x + f.width);
+    ys.push(f.y, f.y + f.height);
+  });
+  codes.forEach((c) => {
+    xs.push(c.x, c.x + c.width);
+    ys.push(c.y, c.y + c.height);
+  });
 
   // Return null if there are no items to measure
   if (!xs.length || !ys.length) return null;
   // Compute min/max for to find out the extremes
-  return { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
+  return {
+    minX: Math.min(...xs),
+    maxX: Math.max(...xs),
+    minY: Math.min(...ys),
+    maxY: Math.max(...ys),
+  };
 };
 
-export const getSelectionBounds = (selected: { kind: string; id: string }[], shapes: ShapeCollection) => {
+export const getSelectionBounds = (
+  selected: { kind: string; id: string }[],
+  shapes: ShapeCollection
+) => {
   if (selected.length === 0) return null;
   const xs: number[] = [];
   const ys: number[] = [];
 
-  const addBox = (box: { x: number; y: number; width: number; height: number } | null) => {
+  const addBox = (
+    box: { x: number; y: number; width: number; height: number } | null
+  ) => {
     if (box) {
       xs.push(box.x, box.x + box.width);
       ys.push(box.y, box.y + box.height);
     }
   };
 
-  selected.forEach(s => {
+  selected.forEach((s) => {
     const bounds = getShapeBounds({ kind: s.kind, shapeId: s.id }, shapes);
     if (bounds) {
       addBox(bounds);
     } else if (s.kind === "line" || s.kind === "arrow") {
-      const line = (s.kind === "line" ? shapes.lines : shapes.arrows)?.find(i => i.id === s.id);
+      const line = (s.kind === "line" ? shapes.lines : shapes.arrows)?.find(
+        (i) => i.id === s.id
+      );
       if (line) {
         xs.push(line.x1, line.x2);
         ys.push(line.y1, line.y2);
       }
     } else if (s.kind === "figure") {
-      const f = shapes.figures?.find(i => i.id === s.id);
+      const f = shapes.figures?.find((i) => i.id === s.id);
       if (f) addBox({ x: f.x, y: f.y, width: f.width, height: f.height });
     } else if (s.kind === "code") {
-      const c = shapes.codes?.find(i => i.id === s.id);
+      const c = shapes.codes?.find((i) => i.id === s.id);
       if (c) addBox({ x: c.x, y: c.y, width: c.width, height: c.height });
     }
   });

@@ -75,17 +75,31 @@ export default function SignUp() {
                 Check your email
               </h1>
               <p className="mt-4 text-zinc-500 dark:text-zinc-400">
-                We've sent a verification link to <strong className="text-zinc-900 dark:text-zinc-100 font-medium">{email}</strong>. 
-                Please verify your email to continue.
+                We've sent a verification link to{" "}
+                <strong className="text-zinc-900 dark:text-zinc-100 font-medium">
+                  {email}
+                </strong>
+                . Please verify your email to continue.
               </p>
             </div>
             <div className="flex flex-col gap-3">
-              <Button asChild className="h-11 w-full bg-zinc-900 text-zinc-50 hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200">
-                <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer">
+              <Button
+                asChild
+                className="h-11 w-full bg-zinc-900 text-zinc-50 hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              >
+                <a
+                  href="https://mail.google.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   Go to Gmail
                 </a>
               </Button>
-              <Button asChild variant="outline" className="h-11 w-full border-zinc-200 dark:border-zinc-800">
+              <Button
+                asChild
+                variant="outline"
+                className="h-11 w-full border-zinc-200 dark:border-zinc-800"
+              >
                 <Link href="/sign-in">Back to login</Link>
               </Button>
             </div>
@@ -192,7 +206,9 @@ export default function SignUp() {
               <span className="w-full border-t border-zinc-200 dark:border-zinc-800"></span>
             </div>
             <div className="relative flex justify-center text-xs uppercase tracking-wider text-zinc-500">
-              <span className="bg-background px-3 font-medium">Or continue with email</span>
+              <span className="bg-background px-3 font-medium">
+                Or continue with email
+              </span>
             </div>
           </div>
 

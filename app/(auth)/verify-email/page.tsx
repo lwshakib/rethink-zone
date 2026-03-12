@@ -1,14 +1,20 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
 /**
  * VerifyEmailPage
- * A simple confirmation landing page shown after a user has successfully 
+ * A simple confirmation landing page shown after a user has successfully
  * verified their email address via the backend link.
  */
 export default function VerifyEmailPage() {
@@ -25,18 +31,21 @@ export default function VerifyEmailPage() {
               Email Verified!
             </h1>
             <p className="mt-4 text-zinc-500 dark:text-zinc-400">
-              Your email address has been successfully confirmed. 
-              You can now access all features of Rethink.
+              Your email address has been successfully confirmed. You can now
+              access all features of Rethink.
             </p>
           </div>
           <div className="flex flex-col gap-3">
-            <Button asChild className="h-11 w-full bg-zinc-900 text-zinc-50 hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200">
+            <Button
+              asChild
+              className="h-11 w-full bg-zinc-900 text-zinc-50 hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
               <Link href="/sign-in">Continue to login</Link>
             </Button>
           </div>
         </div>
       </div>
-      
+
       {/* Right Side: Image */}
       <div className="hidden lg:block lg:w-1/2 relative">
         <Image

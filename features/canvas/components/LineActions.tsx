@@ -1,11 +1,11 @@
 import React, { useMemo } from "react";
 import { X } from "lucide-react";
-import { 
-  SelectedShape, 
-  Connector, 
-  LineShape, 
-  ArrowShape, 
-  ConnectorAnchor 
+import {
+  SelectedShape,
+  Connector,
+  LineShape,
+  ArrowShape,
+  ConnectorAnchor,
 } from "../types";
 import { getConnectorPoints } from "../utils/geometry";
 
@@ -23,7 +23,9 @@ interface LineActionsProps {
   figures: any[];
   codes: any[];
   getAnchorPoint: (anchor: ConnectorAnchor) => { x: number; y: number } | null;
-  getShapeBounds: (anchor: ConnectorAnchor) => { x: number; y: number; width: number; height: number } | null;
+  getShapeBounds: (
+    anchor: ConnectorAnchor
+  ) => { x: number; y: number; width: number; height: number } | null;
   canvasToClient: (x: number, y: number) => { x: number; y: number };
   onDelete: () => void;
   zoom: number;
@@ -76,7 +78,16 @@ export const LineActions: React.FC<LineActionsProps> = ({
       const toPt = getAnchorPoint(c.to);
       if (!fromPt || !toPt) return null;
 
-      const shapes = { rectangles, circles, images, texts, frames, polygons, figures, codes };
+      const shapes = {
+        rectangles,
+        circles,
+        images,
+        texts,
+        frames,
+        polygons,
+        figures,
+        codes,
+      };
       const fromBounds = getShapeBounds(c.from);
       const toBounds = getShapeBounds(c.to);
 
@@ -95,13 +106,19 @@ export const LineActions: React.FC<LineActionsProps> = ({
       // Find the visual center of the path
       let totalLength = 0;
       for (let i = 1; i < points.length; i++) {
-        totalLength += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+        totalLength += Math.hypot(
+          points[i].x - points[i - 1].x,
+          points[i].y - points[i - 1].y
+        );
       }
 
       let currentLength = 0;
       const targetLength = totalLength / 2;
       for (let i = 1; i < points.length; i++) {
-        const segLen = Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+        const segLen = Math.hypot(
+          points[i].x - points[i - 1].x,
+          points[i].y - points[i - 1].y
+        );
         if (currentLength + segLen >= targetLength) {
           const t = (targetLength - currentLength) / segLen;
           return {

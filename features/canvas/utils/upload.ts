@@ -11,9 +11,9 @@ export interface CloudinaryUploadResult {
 
 /**
  * Orchestrates the secure client-side upload of a file to Cloudinary.
- * Uses a two-step process: fetching a signed authorization token from the local backend, 
+ * Uses a two-step process: fetching a signed authorization token from the local backend,
  * then posting the file directly to Cloudinary's API.
- * 
+ *
  * @param file - The Blob or File object to upload.
  * @param onProgress - Optional callback for tracking upload percentage.
  * @param signal - Optional AbortSignal to cancel the pending request.
@@ -25,7 +25,7 @@ export const uploadFileToCloudinary = async (
 ): Promise<CloudinaryUploadResult> => {
   // 1. Get the signature from our server-side API to authorize the client-side upload
   const sigRes = await axios.get("/api/cloudinary-signature", { signal });
-  
+
   // Validate successful retrieval of the signature
   if (sigRes.status !== 200) {
     throw new Error("Failed to get upload signature");
@@ -52,7 +52,9 @@ export const uploadFileToCloudinary = async (
     onUploadProgress: (progressEvent) => {
       // Calculate and report upload progress percentage if the total size is known
       if (progressEvent.total && onProgress) {
-        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        const percentCompleted = Math.round(
+          (progressEvent.loaded * 100) / progressEvent.total
+        );
         onProgress(percentCompleted);
       }
     },

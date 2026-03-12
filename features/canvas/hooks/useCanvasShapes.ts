@@ -19,12 +19,39 @@ import {
 } from "../types"; // Interface definitions for various canvas objects
 
 // Interfaces for temporary preview shapes being drawn in real-time
-interface CurrentRect { x: number; y: number; width: number; height: number }
-interface CurrentCircle { x: number; y: number; rx: number; ry: number }
-interface CurrentLine { x1: number; y1: number; x2: number; y2: number }
-interface CurrentArrow { x1: number; y1: number; x2: number; y2: number }
-interface CurrentPath { points: { x: number; y: number }[] }
-interface CurrentFrame { x: number; y: number; width: number; height: number }
+interface CurrentRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+interface CurrentCircle {
+  x: number;
+  y: number;
+  rx: number;
+  ry: number;
+}
+interface CurrentLine {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+interface CurrentArrow {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+interface CurrentPath {
+  points: { x: number; y: number }[];
+}
+interface CurrentFrame {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 /**
  * useCanvasShapes - Centralized hook for managing the state of all objects present on the canvas.
@@ -71,7 +98,7 @@ export const useCanvasShapes = (initialData: CanvasData | null | undefined) => {
 
   // Tracks which shapes are currently selected by the user
   const [selectedShape, setSelectedShape] = useState<SelectedShape>([]);
-  
+
   // Tracks which connection point the user's mouse is currently hovering over
   const [hoverAnchor, setHoverAnchor] = useState<{
     kind: ShapeKind;
@@ -83,7 +110,9 @@ export const useCanvasShapes = (initialData: CanvasData | null | undefined) => {
 
   // States for "ghost" shapes being rendered while the user is actively dragging to create them
   const [currentRect, setCurrentRect] = useState<CurrentRect | null>(null);
-  const [currentCircle, setCurrentCircle] = useState<CurrentCircle | null>(null);
+  const [currentCircle, setCurrentCircle] = useState<CurrentCircle | null>(
+    null
+  );
   const [currentLine, setCurrentLine] = useState<CurrentLine | null>(null);
   const [currentArrow, setCurrentArrow] = useState<CurrentArrow | null>(null);
   const [currentPath, setCurrentPath] = useState<CurrentPath | null>(null);

@@ -47,10 +47,12 @@ const generateGradientThumbnail = () => {
     <svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style="stop-color:${randomGradient.match(/#[a-fA-F0-9]{6}/g)?.[0] || "#667eea"
-    }" />
-          <stop offset="100%" style="stop-color:${randomGradient.match(/#[a-fA-F0-9]{6}/g)?.[1] || "#764ba2"
-    }" />
+          <stop offset="0%" style="stop-color:${
+            randomGradient.match(/#[a-fA-F0-9]{6}/g)?.[0] || "#667eea"
+          }" />
+          <stop offset="100%" style="stop-color:${
+            randomGradient.match(/#[a-fA-F0-9]{6}/g)?.[1] || "#764ba2"
+          }" />
         </linearGradient>
       </defs>
       <rect width="100%" height="100%" fill="url(#grad)" />
@@ -96,7 +98,7 @@ export default function WorkspacesPage() {
   const { data: session } = authClient.useSession(); // Client-side authentication session hook
 
   /**
-   * Memoized thumbnails map to ensure stability across re-renders 
+   * Memoized thumbnails map to ensure stability across re-renders
    * (prevents flickering of random gradients).
    */
   const workspaceThumbnails = useMemo(() => {
@@ -172,7 +174,7 @@ export default function WorkspacesPage() {
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span className="hidden text-[11px] sm:inline">Limited credits</span>
-          
+
           {/* User Profile dropdown */}
           <UserMenu />
 

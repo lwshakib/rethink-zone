@@ -1,10 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback } from "react"; // React hook for memoized callbacks
 import { makeId } from "../utils"; // Utility to generate unique IDs for clones
-import { 
-  HistoryEntry, SelectedShape, SelectedShapeInfo,
-  RectShape, CircleShape, LineShape, ArrowShape, PathShape, 
-  ImageShape, TextShape, FrameShape, PolyShape, Connector, FigureShape, CodeShape
+import {
+  HistoryEntry,
+  SelectedShape,
+  SelectedShapeInfo,
+  RectShape,
+  CircleShape,
+  LineShape,
+  ArrowShape,
+  PathShape,
+  ImageShape,
+  TextShape,
+  FrameShape,
+  PolyShape,
+  Connector,
+  FigureShape,
+  CodeShape,
 } from "../types"; // Type definitions for all canvas objects
 
 // Interface defining the dependencies required by this hook to manipulate the canvas state
@@ -46,10 +58,32 @@ export const useCanvasCommands = (
   pushHistory: (overrides?: Partial<HistoryEntry>) => void // Callback to save the new state to the history stack
 ) => {
   const {
-    rectangles, setRectangles, circles, setCircles, lines, setLines,
-    arrows, setArrows, images, setImages, texts, setTexts, frames, setFrames,
-    polygons, setPolygons, connectors, setConnectors, selectedShape, setSelectedShape,
-    paths, setPaths, figures, setFigures, codes, setCodes
+    rectangles,
+    setRectangles,
+    circles,
+    setCircles,
+    lines,
+    setLines,
+    arrows,
+    setArrows,
+    images,
+    setImages,
+    texts,
+    setTexts,
+    frames,
+    setFrames,
+    polygons,
+    setPolygons,
+    connectors,
+    setConnectors,
+    selectedShape,
+    setSelectedShape,
+    paths,
+    setPaths,
+    figures,
+    setFigures,
+    codes,
+    setCodes,
   } = props;
 
   /**
@@ -61,9 +95,17 @@ export const useCanvasCommands = (
 
     // Group IDs of items to be removed by their kind
     const idsToDeleteByKind: Record<string, Set<string>> = {
-      rect: new Set(), circle: new Set(), image: new Set(), text: new Set(),
-      frame: new Set(), line: new Set(), arrow: new Set(), poly: new Set(),
-      connector: new Set(), figure: new Set(), code: new Set()
+      rect: new Set(),
+      circle: new Set(),
+      image: new Set(),
+      text: new Set(),
+      frame: new Set(),
+      line: new Set(),
+      arrow: new Set(),
+      poly: new Set(),
+      connector: new Set(),
+      figure: new Set(),
+      code: new Set(),
     };
 
     // Populate the deletion lookup table
@@ -83,26 +125,35 @@ export const useCanvasCommands = (
       if (id) idsToDeleteByKind[kind].add(id);
     });
 
-    const allDeletedIds = new Set(Object.values(idsToDeleteByKind).flatMap(s => Array.from(s)));
+    const allDeletedIds = new Set(
+      Object.values(idsToDeleteByKind).flatMap((s) => Array.from(s))
+    );
     if (allDeletedIds.size === 0) return;
 
     // Filter out deleted items from each shape array
-    const nextRects = rectangles.filter(r => !idsToDeleteByKind.rect.has(r.id));
-    const nextCircles = circles.filter(c => !idsToDeleteByKind.circle.has(c.id));
-    const nextImages = images.filter(i => !idsToDeleteByKind.image.has(i.id));
-    const nextTexts = texts.filter(t => !idsToDeleteByKind.text.has(t.id));
-    const nextFrames = frames.filter(f => !idsToDeleteByKind.frame.has(f.id));
-    const nextLines = lines.filter(l => !idsToDeleteByKind.line.has(l.id));
-    const nextArrows = arrows.filter(a => !idsToDeleteByKind.arrow.has(a.id));
-    const nextPolys = polygons.filter(p => !idsToDeleteByKind.poly.has(p.id));
-    // Specialized logic: and also remove connectors if either of their endpoint shapes were deleted
-    const nextConnectors = connectors.filter(c => 
-      !idsToDeleteByKind.connector.has(c.id) && 
-      !allDeletedIds.has(c.from.shapeId) && 
-      !allDeletedIds.has(c.to.shapeId)
+    const nextRects = rectangles.filter(
+      (r) => !idsToDeleteByKind.rect.has(r.id)
     );
-    const nextFigures = figures.filter(f => !idsToDeleteByKind.figure.has(f.id));
-    const nextCodes = codes.filter(c => !idsToDeleteByKind.code.has(c.id));
+    const nextCircles = circles.filter(
+      (c) => !idsToDeleteByKind.circle.has(c.id)
+    );
+    const nextImages = images.filter((i) => !idsToDeleteByKind.image.has(i.id));
+    const nextTexts = texts.filter((t) => !idsToDeleteByKind.text.has(t.id));
+    const nextFrames = frames.filter((f) => !idsToDeleteByKind.frame.has(f.id));
+    const nextLines = lines.filter((l) => !idsToDeleteByKind.line.has(l.id));
+    const nextArrows = arrows.filter((a) => !idsToDeleteByKind.arrow.has(a.id));
+    const nextPolys = polygons.filter((p) => !idsToDeleteByKind.poly.has(p.id));
+    // Specialized logic: and also remove connectors if either of their endpoint shapes were deleted
+    const nextConnectors = connectors.filter(
+      (c) =>
+        !idsToDeleteByKind.connector.has(c.id) &&
+        !allDeletedIds.has(c.from.shapeId) &&
+        !allDeletedIds.has(c.to.shapeId)
+    );
+    const nextFigures = figures.filter(
+      (f) => !idsToDeleteByKind.figure.has(f.id)
+    );
+    const nextCodes = codes.filter((c) => !idsToDeleteByKind.code.has(c.id));
 
     // Update active UI state
     setRectangles(nextRects);
@@ -129,12 +180,38 @@ export const useCanvasCommands = (
       polygons: nextPolys,
       connectors: nextConnectors,
       figures: nextFigures,
-      codes: nextCodes
+      codes: nextCodes,
     });
 
     // Clear selection after deletion
     setSelectedShape([]);
-  }, [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, connectors, figures, codes, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setConnectors, setFigures, setCodes, pushHistory, setSelectedShape]);
+  }, [
+    selectedShape,
+    rectangles,
+    circles,
+    images,
+    texts,
+    frames,
+    lines,
+    arrows,
+    polygons,
+    connectors,
+    figures,
+    codes,
+    setRectangles,
+    setCircles,
+    setImages,
+    setTexts,
+    setFrames,
+    setLines,
+    setArrows,
+    setPolygons,
+    setConnectors,
+    setFigures,
+    setCodes,
+    pushHistory,
+    setSelectedShape,
+  ]);
 
   /**
    * duplicateSelection - Clones selected objects and shifts them slightly (offset) for visual clarity.
@@ -142,72 +219,176 @@ export const useCanvasCommands = (
   const duplicateSelection = useCallback(
     (offset = 20) => {
       if (selectedShape.length === 0) return;
-      
+
       const newSelection: any[] = [];
       const updates: any = {};
 
       selectedShape.forEach(({ kind, index }) => {
         // For each selected item, create a shallow copy with a new ID and shifted coordinates
         if (kind === "rect") {
-          const src = rectangles[index]; if (!src) return;
-          const clone = { ...src, id: makeId(), x: src.x + offset, y: src.y + offset };
+          const src = rectangles[index];
+          if (!src) return;
+          const clone = {
+            ...src,
+            id: makeId(),
+            x: src.x + offset,
+            y: src.y + offset,
+          };
           if (!updates.rectangles) updates.rectangles = [...rectangles];
           updates.rectangles.push(clone);
-          newSelection.push({ kind: "rect", index: updates.rectangles.length - 1, id: clone.id });
+          newSelection.push({
+            kind: "rect",
+            index: updates.rectangles.length - 1,
+            id: clone.id,
+          });
         } else if (kind === "circle") {
-          const src = circles[index]; if (!src) return;
-          const clone = { ...src, id: makeId(), x: src.x + offset, y: src.y + offset };
+          const src = circles[index];
+          if (!src) return;
+          const clone = {
+            ...src,
+            id: makeId(),
+            x: src.x + offset,
+            y: src.y + offset,
+          };
           if (!updates.circles) updates.circles = [...circles];
           updates.circles.push(clone);
-          newSelection.push({ kind: "circle", index: updates.circles.length - 1, id: clone.id });
+          newSelection.push({
+            kind: "circle",
+            index: updates.circles.length - 1,
+            id: clone.id,
+          });
         } else if (kind === "image") {
-          const src = images[index]; if (!src) return;
-          const clone = { ...src, id: makeId(), x: src.x + offset, y: src.y + offset };
+          const src = images[index];
+          if (!src) return;
+          const clone = {
+            ...src,
+            id: makeId(),
+            x: src.x + offset,
+            y: src.y + offset,
+          };
           if (!updates.images) updates.images = [...images];
           updates.images.push(clone);
-          newSelection.push({ kind: "image", index: updates.images.length - 1, id: clone.id });
+          newSelection.push({
+            kind: "image",
+            index: updates.images.length - 1,
+            id: clone.id,
+          });
         } else if (kind === "text") {
-          const src = texts[index]; if (!src) return;
-          const clone = { ...src, id: makeId(), x: src.x + offset, y: src.y + offset };
+          const src = texts[index];
+          if (!src) return;
+          const clone = {
+            ...src,
+            id: makeId(),
+            x: src.x + offset,
+            y: src.y + offset,
+          };
           if (!updates.texts) updates.texts = [...texts];
           updates.texts.push(clone);
-          newSelection.push({ kind: "text", index: updates.texts.length - 1, id: clone.id });
+          newSelection.push({
+            kind: "text",
+            index: updates.texts.length - 1,
+            id: clone.id,
+          });
         } else if (kind === "frame") {
-          const src = frames[index]; if (!src) return;
-          const clone = { ...src, id: makeId(), x: src.x + offset, y: src.y + offset };
+          const src = frames[index];
+          if (!src) return;
+          const clone = {
+            ...src,
+            id: makeId(),
+            x: src.x + offset,
+            y: src.y + offset,
+          };
           if (!updates.frames) updates.frames = [...frames];
           updates.frames.push(clone);
-          newSelection.push({ kind: "frame", index: updates.frames.length - 1, id: clone.id });
+          newSelection.push({
+            kind: "frame",
+            index: updates.frames.length - 1,
+            id: clone.id,
+          });
         } else if (kind === "line") {
-          const src = lines[index]; if (!src) return;
-          const clone = { ...src, id: makeId(), x1: src.x1 + offset, y1: src.y1 + offset, x2: src.x2 + offset, y2: src.y2 + offset };
+          const src = lines[index];
+          if (!src) return;
+          const clone = {
+            ...src,
+            id: makeId(),
+            x1: src.x1 + offset,
+            y1: src.y1 + offset,
+            x2: src.x2 + offset,
+            y2: src.y2 + offset,
+          };
           if (!updates.lines) updates.lines = [...lines];
           updates.lines.push(clone);
-          newSelection.push({ kind: "line", index: updates.lines.length - 1, id: clone.id });
+          newSelection.push({
+            kind: "line",
+            index: updates.lines.length - 1,
+            id: clone.id,
+          });
         } else if (kind === "arrow") {
-          const src = arrows[index]; if (!src) return;
-          const clone = { ...src, id: makeId(), x1: src.x1 + offset, y1: src.y1 + offset, x2: src.x2 + offset, y2: src.y2 + offset };
+          const src = arrows[index];
+          if (!src) return;
+          const clone = {
+            ...src,
+            id: makeId(),
+            x1: src.x1 + offset,
+            y1: src.y1 + offset,
+            x2: src.x2 + offset,
+            y2: src.y2 + offset,
+          };
           if (!updates.arrows) updates.arrows = [...arrows];
           updates.arrows.push(clone);
-          newSelection.push({ kind: "arrow", index: updates.arrows.length - 1, id: clone.id });
+          newSelection.push({
+            kind: "arrow",
+            index: updates.arrows.length - 1,
+            id: clone.id,
+          });
         } else if (kind === "poly") {
-          const src = polygons[index]; if (!src) return;
-          const clone = { ...src, id: makeId(), x: src.x + offset, y: src.y + offset };
+          const src = polygons[index];
+          if (!src) return;
+          const clone = {
+            ...src,
+            id: makeId(),
+            x: src.x + offset,
+            y: src.y + offset,
+          };
           if (!updates.polygons) updates.polygons = [...polygons];
           updates.polygons.push(clone);
-          newSelection.push({ kind: "poly", index: updates.polygons.length - 1, id: clone.id });
+          newSelection.push({
+            kind: "poly",
+            index: updates.polygons.length - 1,
+            id: clone.id,
+          });
         } else if (kind === "figure") {
-          const src = figures[index]; if (!src) return;
-          const clone = { ...src, id: makeId(), x: src.x + offset, y: src.y + offset };
+          const src = figures[index];
+          if (!src) return;
+          const clone = {
+            ...src,
+            id: makeId(),
+            x: src.x + offset,
+            y: src.y + offset,
+          };
           if (!updates.figures) updates.figures = [...figures];
           updates.figures.push(clone);
-          newSelection.push({ kind: "figure", index: updates.figures.length - 1, id: clone.id });
+          newSelection.push({
+            kind: "figure",
+            index: updates.figures.length - 1,
+            id: clone.id,
+          });
         } else if (kind === "code") {
-          const src = codes[index]; if (!src) return;
-          const clone = { ...src, id: makeId(), x: src.x + offset, y: src.y + offset };
+          const src = codes[index];
+          if (!src) return;
+          const clone = {
+            ...src,
+            id: makeId(),
+            x: src.x + offset,
+            y: src.y + offset,
+          };
           if (!updates.codes) updates.codes = [...codes];
           updates.codes.push(clone);
-          newSelection.push({ kind: "code", index: updates.codes.length - 1, id: clone.id });
+          newSelection.push({
+            kind: "code",
+            index: updates.codes.length - 1,
+            id: clone.id,
+          });
         }
       });
 
@@ -226,7 +407,31 @@ export const useCanvasCommands = (
       pushHistory(updates); // Save to history
       setSelectedShape(newSelection); // Switch selection to the new clones
     },
-    [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, figures, codes, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setFigures, setCodes, pushHistory, setSelectedShape]
+    [
+      selectedShape,
+      rectangles,
+      circles,
+      images,
+      texts,
+      frames,
+      lines,
+      arrows,
+      polygons,
+      figures,
+      codes,
+      setRectangles,
+      setCircles,
+      setImages,
+      setTexts,
+      setFrames,
+      setLines,
+      setArrows,
+      setPolygons,
+      setFigures,
+      setCodes,
+      pushHistory,
+      setSelectedShape,
+    ]
   );
 
   /**
@@ -236,10 +441,10 @@ export const useCanvasCommands = (
     if (selectedShape.length < 2) return;
     const newGroupId = makeId();
     const updates: any = {};
-    const selectedIds = new Set(selectedShape.map(s => s.id));
+    const selectedIds = new Set(selectedShape.map((s) => s.id));
 
     const updateCollection = (items: any[], kind: string, setter: any) => {
-      const next = items.map(item => 
+      const next = items.map((item) =>
         selectedIds.has(item.id) ? { ...item, groupId: newGroupId } : item
       );
       if (JSON.stringify(next) !== JSON.stringify(items)) {
@@ -260,7 +465,30 @@ export const useCanvasCommands = (
     updateCollection(codes, "code", setCodes);
 
     pushHistory(updates);
-  }, [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, figures, codes, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setFigures, setCodes, pushHistory]);
+  }, [
+    selectedShape,
+    rectangles,
+    circles,
+    images,
+    texts,
+    frames,
+    lines,
+    arrows,
+    polygons,
+    figures,
+    codes,
+    setRectangles,
+    setCircles,
+    setImages,
+    setTexts,
+    setFrames,
+    setLines,
+    setArrows,
+    setPolygons,
+    setFigures,
+    setCodes,
+    pushHistory,
+  ]);
 
   /**
    * ungroupSelected - Removes the groupId from all shapes that belong to the groups in the current selection.
@@ -282,7 +510,7 @@ export const useCanvasCommands = (
       else if (kind === "poly") shape = polygons[index];
       else if (kind === "figure") shape = figures[index];
       else if (kind === "code") shape = codes[index];
-      
+
       if (shape?.groupId) groupIdsToUngroup.add(shape.groupId);
     });
 
@@ -290,8 +518,10 @@ export const useCanvasCommands = (
 
     const updates: any = {};
     const ungroupCollection = (items: any[], kind: string, setter: any) => {
-      const next = items.map(item => 
-        item.groupId && groupIdsToUngroup.has(item.groupId) ? { ...item, groupId: undefined } : item
+      const next = items.map((item) =>
+        item.groupId && groupIdsToUngroup.has(item.groupId)
+          ? { ...item, groupId: undefined }
+          : item
       );
       if (JSON.stringify(next) !== JSON.stringify(items)) {
         updates[kind + "s" === "polys" ? "polygons" : kind + "s"] = next;
@@ -311,7 +541,30 @@ export const useCanvasCommands = (
     ungroupCollection(codes, "code", setCodes);
 
     pushHistory(updates);
-  }, [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, figures, codes, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setFigures, setCodes, pushHistory]);
+  }, [
+    selectedShape,
+    rectangles,
+    circles,
+    images,
+    texts,
+    frames,
+    lines,
+    arrows,
+    polygons,
+    figures,
+    codes,
+    setRectangles,
+    setCircles,
+    setImages,
+    setTexts,
+    setFrames,
+    setLines,
+    setArrows,
+    setPolygons,
+    setFigures,
+    setCodes,
+    pushHistory,
+  ]);
 
   return { deleteSelected, duplicateSelection, groupSelected, ungroupSelected };
 };

@@ -64,9 +64,9 @@ export async function POST(request: Request) {
         userId: user.id,
         name,
         // Ensure default empty objects if data is missing
-        documentData: documentData === null ? {} : documentData as any,
-        canvasData: canvasData === null ? {} : canvasData as any,
-        kanbanBoard: kanbanBoard === null ? {} : kanbanBoard as any,
+        documentData: documentData === null ? {} : (documentData as any),
+        canvasData: canvasData === null ? {} : (canvasData as any),
+        kanbanBoard: kanbanBoard === null ? {} : (kanbanBoard as any),
       },
     });
 

@@ -155,7 +155,9 @@ export default function LoginPage() {
               <span className="w-full border-t border-zinc-200 dark:border-zinc-800"></span>
             </div>
             <div className="relative flex justify-center text-xs uppercase tracking-wider text-zinc-500">
-              <span className="bg-background px-3 font-medium">Or continue with email</span>
+              <span className="bg-background px-3 font-medium">
+                Or continue with email
+              </span>
             </div>
           </div>
 

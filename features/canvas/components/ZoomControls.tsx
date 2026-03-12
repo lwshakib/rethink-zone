@@ -1,16 +1,23 @@
 import React from "react"; // React core
-import { ZoomIn, ZoomOut, Scan, RefreshCw, ChevronUp, ChevronDown } from "lucide-react"; // Zoom and view utility icons
+import {
+  ZoomIn,
+  ZoomOut,
+  Scan,
+  RefreshCw,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react"; // Zoom and view utility icons
 
 // Props interface for Zoom management UI
 interface ZoomControlsProps {
-  zoomPercent: number;    // Calculated zoom level shown as percentage string
-  onZoomIn: () => void;   // Increment zoom trigger
-  onZoomOut: () => void;  // Decrement zoom trigger
+  zoomPercent: number; // Calculated zoom level shown as percentage string
+  onZoomIn: () => void; // Increment zoom trigger
+  onZoomOut: () => void; // Decrement zoom trigger
   onFitToScreen: () => void; // Fit all elements into the viewport
-  onResetView: () => void;   // Reset pan and zoom to default (100% at center)
-  isMiniMapOpen: boolean;    // Status of the MiniMap
+  onResetView: () => void; // Reset pan and zoom to default (100% at center)
+  isMiniMapOpen: boolean; // Status of the MiniMap
   onToggleMiniMap: () => void; // Toggle MiniMap visibility
-  className?: string;       // Optional custom styling
+  className?: string; // Optional custom styling
 }
 
 /**

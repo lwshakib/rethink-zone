@@ -10,12 +10,16 @@ interface ColorPickerProps {
 /**
  * ColorPicker - A custom HSV-based color selection component.
  */
-const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange, theme = "dark" }) => {
+const ColorPicker: React.FC<ColorPickerProps> = ({
+  color,
+  onChange,
+  theme = "dark",
+}) => {
   // State for Hue, Saturation, and Value to drive the UI
   const [hue, setHue] = useState(0);
   const [sat, setSat] = useState(0);
   const [val, setVal] = useState(100);
-  
+
   // Synchronize internal HSV state whenever the 'color' hex prop changes
   useEffect(() => {
     if (color && color.startsWith("#")) {
@@ -55,9 +59,9 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange, theme = "dar
     window.addEventListener("mouseup", onEnd);
     window.addEventListener("touchmove", onTouchMove);
     window.addEventListener("touchend", onEnd);
-    
+
     // Initial movement on click
-    if ('clientX' in e) move(e.clientX);
+    if ("clientX" in e) move(e.clientX);
     else move(e.touches[0].clientX);
   };
 
@@ -77,7 +81,8 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange, theme = "dar
 
     // Global listeners for dragging behavior
     const onMouseMove = (e: MouseEvent) => move(e.clientX, e.clientY);
-    const onTouchMove = (e: TouchEvent) => move(e.touches[0].clientX, e.touches[0].clientY);
+    const onTouchMove = (e: TouchEvent) =>
+      move(e.touches[0].clientX, e.touches[0].clientY);
     const onEnd = () => {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onEnd);
@@ -90,7 +95,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange, theme = "dar
     window.addEventListener("touchmove", onTouchMove);
     window.addEventListener("touchend", onEnd);
 
-    if ('clientX' in e) move(e.clientX, e.clientY);
+    if ("clientX" in e) move(e.clientX, e.clientY);
     else move(e.touches[0].clientX, e.touches[0].clientY);
   };
 
@@ -98,26 +103,34 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange, theme = "dar
 
   return (
     // Main container with theme-aware background and borders
-    <div className={`flex flex-col gap-3 p-3 rounded-lg border shadow-2xl w-[200px] ${
-      isDark ? "bg-[#1e1e1e] border-white/10" : "bg-white border-black/10"
-    }`}>
+    <div
+      className={`flex flex-col gap-3 p-3 rounded-lg border shadow-2xl w-[200px] ${
+        isDark ? "bg-[#1e1e1e] border-white/10" : "bg-white border-black/10"
+      }`}
+    >
       {/* Hue Slider: The rainbow horizontal bar */}
-      <div 
+      <div
         ref={hueRef}
         className="h-3 w-full rounded-full cursor-pointer relative"
-        style={{ background: "linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)" }}
+        style={{
+          background:
+            "linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)",
+        }}
         onMouseDown={handleHueMouseDown}
         onTouchStart={handleHueMouseDown}
       >
         {/* The visual handle indicator on the hue slider */}
-        <div 
+        <div
           className="absolute top-1/2 -translate-y-1/2 h-5 w-2 bg-white border border-black/20 rounded-full pointer-events-none"
-          style={{ left: `${(hue / 360) * 100}%`, transform: "translate(-50%, -50%)" }}
+          style={{
+            left: `${(hue / 360) * 100}%`,
+            transform: "translate(-50%, -50%)",
+          }}
         />
       </div>
 
       {/* Saturation/Value Area: The large square for fine-tuning colors */}
-      <div 
+      <div
         ref={satValRef}
         className="h-[150px] w-full rounded-md cursor-crosshair relative overflow-hidden ring-1 ring-black/10"
         style={{ backgroundColor: hsvToHex(hue, 100, 100) }} // Background color is the full-saturated hue
@@ -128,20 +141,27 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange, theme = "dar
         <div className="absolute inset-0 bg-gradient-to-r from-white to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />
         {/* The target reticle indicator */}
-        <div 
+        <div
           className="absolute h-4 w-4 border-2 border-white rounded-full shadow-md pointer-events-none -translate-x-1/2 -translate-y-1/2"
           style={{ left: `${sat}%`, top: `${100 - val}%` }}
         />
       </div>
 
       {/* Hex Input: Manual code entry and color preview */}
-      <div className={`flex items-center gap-2 px-2 py-1.5 rounded-md border ${
-        isDark ? "bg-muted/30 border-white/10" : "bg-black/[0.03] border-black/10"
-      }`}>
-        <div className={`h-4 w-4 rounded-sm border ${isDark ? "border-white/20" : "border-black/10"}`} style={{ backgroundColor: color }} />
-        <input 
-          type="text" 
-          value={color.toUpperCase()} 
+      <div
+        className={`flex items-center gap-2 px-2 py-1.5 rounded-md border ${
+          isDark
+            ? "bg-muted/30 border-white/10"
+            : "bg-black/[0.03] border-black/10"
+        }`}
+      >
+        <div
+          className={`h-4 w-4 rounded-sm border ${isDark ? "border-white/20" : "border-black/10"}`}
+          style={{ backgroundColor: color }}
+        />
+        <input
+          type="text"
+          value={color.toUpperCase()}
           onChange={(e) => onChange(e.target.value)} // Allows users to type custom hex codes
           className="bg-transparent border-none outline-none text-[11px] font-mono font-bold w-full text-foreground"
         />
@@ -161,17 +181,46 @@ function hsvToHex(h: number, s: number, v: number) {
   const p = v * (1 - s);
   const q = v * (1 - f * s);
   const t = v * (1 - (1 - f) * s);
-  let r = 0, g = 0, b = 0;
+  let r = 0,
+    g = 0,
+    b = 0;
   // Choose algorithm based on hue sector (6 sectors of 60 degrees)
   switch (i % 6) {
-    case 0: r = v; g = t; b = p; break;
-    case 1: r = q; g = v; b = p; break;
-    case 2: r = p; g = v; b = t; break;
-    case 3: r = p; g = q; b = v; break;
-    case 4: r = t; g = p; b = v; break;
-    case 5: r = v; g = p; b = q; break;
+    case 0:
+      r = v;
+      g = t;
+      b = p;
+      break;
+    case 1:
+      r = q;
+      g = v;
+      b = p;
+      break;
+    case 2:
+      r = p;
+      g = v;
+      b = t;
+      break;
+    case 3:
+      r = p;
+      g = q;
+      b = v;
+      break;
+    case 4:
+      r = t;
+      g = p;
+      b = v;
+      break;
+    case 5:
+      r = v;
+      g = p;
+      b = q;
+      break;
   }
-  const toHex = (n: number) => Math.round(n * 255).toString(16).padStart(2, '0');
+  const toHex = (n: number) =>
+    Math.round(n * 255)
+      .toString(16)
+      .padStart(2, "0");
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
@@ -179,7 +228,9 @@ function hsvToHex(h: number, s: number, v: number) {
  * HELPER: Parses a Hex string into its HSV components.
  */
 function hexToHsv(hex: string) {
-  let r = 0, g = 0, b = 0;
+  let r = 0,
+    g = 0,
+    b = 0;
   // Handle both shorthand (#FFF) and full length (#FFFFFF) hex
   if (hex.length === 4) {
     r = parseInt(hex[1] + hex[1], 16);
@@ -190,16 +241,27 @@ function hexToHsv(hex: string) {
     g = parseInt(hex.substring(3, 5), 16);
     b = parseInt(hex.substring(5, 7), 16);
   }
-  r /= 255; g /= 255; b /= 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0, v = max;
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b);
+  let h = 0,
+    s = 0,
+    v = max;
   const d = max - min;
   s = max === 0 ? 0 : d / max;
   if (max !== min) {
     switch (max) {
-      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-      case g: h = (b - r) / d + 2; break;
-      case b: h = (r - g) / d + 4; break;
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
     }
     h /= 6;
   }

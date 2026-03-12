@@ -19,14 +19,18 @@ This project and everyone participating in it is governed by our [Code of Conduc
 ## How Can I Contribute?
 
 ### Reporting Bugs
+
 Before creating bug reports, please check the existing issue list. When creating a report, please include:
+
 - A clear and descriptive title.
 - Exact steps to reproduce the problem.
 - Expected vs. observed behavior.
 - Screenshots or screen recordings if relevant.
 
 ### Suggesting Enhancements
+
 Enhancement suggestions are tracked as GitHub issues. Please provide:
+
 - A clear description of the proposed enhancement.
 - Rationale for why this would improve the user experience.
 - Any comparable examples from other applications.
@@ -34,6 +38,7 @@ Enhancement suggestions are tracked as GitHub issues. Please provide:
 ## Development Setup
 
 ### Prerequisites
+
 - **Node.js**: 18.0 or higher
 - **Bun** (Preferred) or **npm**
 - **PostgreSQL**: 12.0 or higher
@@ -67,16 +72,19 @@ Enhancement suggestions are tracked as GitHub issues. Please provide:
 ## Coding Standards
 
 ### TypeScript
+
 - **Strict Typing**: Avoid use of `any`. Use interfaces for object shapes and types for unions.
 - **Exhaustive Types**: Ensure all possible states are handled, especially in UI and API logic.
 
 ### React & Components
+
 - **Functional Components**: Use modern functional components with hooks.
 - **Atomic Design**: Keep components small, focused, and reusable.
 - **Theme Awareness**: Use Tailwind theme variables (e.g., `text-foreground`, `bg-background`) instead of hardcoded hex colors.
 - **Premium Aesthetics**: Maintain the project's premium look by using glassmorphism, appropriate shadows, and smooth transitions.
 
 ### CSS & Styling
+
 - **Tailwind CSS 4**: Leverage the latest Tailwind features and utility classes.
 - **Global Styles**: Minimize global CSS; prefer component-level styling or Tailwind utilities.
 

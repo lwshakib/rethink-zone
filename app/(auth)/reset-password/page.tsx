@@ -6,7 +6,14 @@ import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { LogoIcon } from "@/components/logo";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
@@ -29,7 +36,7 @@ function ResetPasswordContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (password !== confirmPassword) {
       toast.error("Passwords do not match");
       return;
@@ -70,11 +77,15 @@ function ResetPasswordContent() {
                 Password Reset
               </h1>
               <p className="mt-4 text-zinc-500 dark:text-zinc-400">
-                Your password has been successfully updated. You can now log in with your new credentials.
+                Your password has been successfully updated. You can now log in
+                with your new credentials.
               </p>
             </div>
             <div className="flex flex-col gap-3">
-              <Button asChild className="h-11 w-full bg-zinc-900 text-zinc-50 hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200">
+              <Button
+                asChild
+                className="h-11 w-full bg-zinc-900 text-zinc-50 hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              >
                 <Link href="/sign-in">Back to login</Link>
               </Button>
             </div>
@@ -105,11 +116,15 @@ function ResetPasswordContent() {
                 Invalid Reset Link
               </h1>
               <p className="mt-4 text-zinc-500 dark:text-zinc-400">
-                It looks like this password reset link is missing or invalid. Please request a new one.
+                It looks like this password reset link is missing or invalid.
+                Please request a new one.
               </p>
             </div>
             <div className="flex flex-col gap-3">
-              <Button asChild className="h-11 w-full bg-zinc-900 text-zinc-50 hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200">
+              <Button
+                asChild
+                className="h-11 w-full bg-zinc-900 text-zinc-50 hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              >
                 <Link href="/forgot-password">Request new link</Link>
               </Button>
             </div>
@@ -147,7 +162,10 @@ function ResetPasswordContent() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <Label
+                htmlFor="password"
+                className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+              >
                 New password
               </Label>
               <Input
@@ -162,7 +180,10 @@ function ResetPasswordContent() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <Label
+                htmlFor="confirmPassword"
+                className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+              >
                 Confirm new password
               </Label>
               <Input
@@ -214,11 +235,13 @@ function ResetPasswordContent() {
  */
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={
-      <section className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 py-32 dark:bg-transparent">
-        <Loader2 className="h-12 w-12 animate-spin text-zinc-500" />
-      </section>
-    }>
+    <Suspense
+      fallback={
+        <section className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 py-32 dark:bg-transparent">
+          <Loader2 className="h-12 w-12 animate-spin text-zinc-500" />
+        </section>
+      }
+    >
       <ResetPasswordContent />
     </Suspense>
   );

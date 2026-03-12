@@ -26,43 +26,43 @@ type KanbanColumn = {
 };
 
 type KanbanItem = {
-  id: string;        // Unique identifier for the task
-  text: string;      // Main heading/title of the task
+  id: string; // Unique identifier for the task
+  text: string; // Main heading/title of the task
   description: string; // Detailed notes about the task
-  status: string;    // Current lifecycle stage (Ready, In Progress, etc)
-  priority: string;  // Urgency level (Low, Medium, High)
-  eta: string;       // Expected completion time (Today, Morrow, etc)
+  status: string; // Current lifecycle stage (Ready, In Progress, etc)
+  priority: string; // Urgency level (Low, Medium, High)
+  eta: string; // Expected completion time (Today, Morrow, etc)
 };
 
 type KanbanState = {
-  title: string;       // Name of the column (e.g., "To Do")
+  title: string; // Name of the column (e.g., "To Do")
   items: KanbanItem[]; // List of structured task objects in this column
 };
 
 type DragPayload = {
   fromCol: number; // Index of the column the item is being dragged FROM
-  itemId: string;  // ID of the item being dragged
+  itemId: string; // ID of the item being dragged
 };
 
 // Represents state for the 'Edit' modal
 type EditingState = {
-  colIdx: number;       // Column index of the item being edited
-  itemId: string;      // ID of the item being edited
-  value: string;        // Modified title
-  description: string;  // Modified description
-  status: string;       // Modified status
-  priority: string;     // Modified priority
-  eta: string;          // Modified ETA
+  colIdx: number; // Column index of the item being edited
+  itemId: string; // ID of the item being edited
+  value: string; // Modified title
+  description: string; // Modified description
+  status: string; // Modified status
+  priority: string; // Modified priority
+  eta: string; // Modified ETA
 } | null;
 
 // Represents state for the 'New Item' modal
 type NewItemModalState = {
-  colIdx: number;       // Index of the column where the new item will be added
-  text: string;         // New item title
-  description: string;  // New item description
-  status: string;       // New item status
-  priority: string;     // New item priority
-  eta: string;          // New item ETA
+  colIdx: number; // Index of the column where the new item will be added
+  text: string; // New item title
+  description: string; // New item description
+  status: string; // New item status
+  priority: string; // New item priority
+  eta: string; // New item ETA
 } | null;
 
 const newItemLabel = "New item"; // Default label for nameless tasks
@@ -86,12 +86,9 @@ const defaultBoard: KanbanColumn[] = [
 /**
  * Main KanbanArea Component
  */
-export default function KanbanArea({
-  board,
-  onChange,
-}: KanbanAreaProps) {
+export default function KanbanArea({ board, onChange }: KanbanAreaProps) {
   const safeBoard = board || defaultBoard; // Fallback to seed data
-  
+
   // Transform the potentially heterogeneous 'board' input into a strictly typed 'KanbanState[]'
   const initialState = useMemo<KanbanState[]>(
     () =>
@@ -151,11 +148,11 @@ export default function KanbanArea({
   /**
    * INTERACTION STATE
    */
-  const [dragging, setDragging] = useState<DragPayload | null>(null);   // Information about the currently dragged item
+  const [dragging, setDragging] = useState<DragPayload | null>(null); // Information about the currently dragged item
   const [activeDropCol, setActiveDropCol] = useState<number | null>(null); // Highlights the target column during drag
-  const [editingModal, setEditingModal] = useState<EditingState>(null);    // Controls the edit task modal
-  const [createBoardOpen, setCreateBoardOpen] = useState(false);           // Controls the 'New Column' modal
-  const [newBoardName, setNewBoardName] = useState("");                    // Buffer for new column title
+  const [editingModal, setEditingModal] = useState<EditingState>(null); // Controls the edit task modal
+  const [createBoardOpen, setCreateBoardOpen] = useState(false); // Controls the 'New Column' modal
+  const [newBoardName, setNewBoardName] = useState(""); // Buffer for new column title
   const [newItemModal, setNewItemModal] = useState<NewItemModalState>(null); // Controls the add task modal
 
   /**
@@ -185,7 +182,7 @@ export default function KanbanArea({
       if (sourceIdx === -1) return prev;
 
       const [item] = source.items.splice(sourceIdx, 1);
-      
+
       // Calculate where to insert the item in the target column
       let insertAt = beforeItemId
         ? target.items.findIndex((it) => it.id === beforeItemId)
@@ -226,7 +223,7 @@ export default function KanbanArea({
     if (payload) {
       moveItem(payload.fromCol, payload.itemId, toCol); // Execute move
     }
-    setDragging(null);      // Reset drag state
+    setDragging(null); // Reset drag state
     setActiveDropCol(null);
   };
 
@@ -343,7 +340,7 @@ export default function KanbanArea({
   const createBoard = () => {
     const title = newBoardName.trim() || `Board ${columns.length + 1}`;
     updateColumns((prev) => [...prev, { title, items: [] }]);
-    setNewBoardName("");      // Clear the input
+    setNewBoardName(""); // Clear the input
     setCreateBoardOpen(false); // Close the dialog
   };
 
@@ -393,10 +390,11 @@ export default function KanbanArea({
               key={`${column.title}-${colIdx}`}
               onDragOver={onDragOver(colIdx)}
               onDrop={onDropColumn(colIdx)}
-              className={`flex flex-col w-80 rounded-2xl border transition-all duration-300 ${activeDropCol === colIdx
-                ? "border-primary/40 bg-accent/10" // Highlight column when dragging over
-                : "border-border bg-card/50"
-                }`}
+              className={`flex flex-col w-80 rounded-2xl border transition-all duration-300 ${
+                activeDropCol === colIdx
+                  ? "border-primary/40 bg-accent/10" // Highlight column when dragging over
+                  : "border-border bg-card/50"
+              }`}
             >
               {/* Column Header */}
               <div className="p-4 flex items-center justify-between border-b border-white/5">
@@ -438,13 +436,14 @@ export default function KanbanArea({
                 {column.items.map((item) => (
                   <div
                     key={item.id}
-                    className={`group relative rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/20 hover:bg-accent/10 cursor-grab active:cursor-grabbing ${isDraggingItem(item.id) ? "opacity-40 scale-95" : ""
-                      }`}
+                    className={`group relative rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/20 hover:bg-accent/10 cursor-grab active:cursor-grabbing ${
+                      isDraggingItem(item.id) ? "opacity-40 scale-95" : ""
+                    }`}
                     draggable
                     onDragStart={onDragStart(colIdx, item.id)}
                     onDragOver={(event) => event.preventDefault()} // Required for drop target
-                    onDrop={onDropItem(colIdx, item.id)}            // Enable reordering by dropping on items
-                    onClick={() => startEditing(colIdx, item)}      // Open edit modal on click
+                    onDrop={onDropItem(colIdx, item.id)} // Enable reordering by dropping on items
+                    onClick={() => startEditing(colIdx, item)} // Open edit modal on click
                   >
                     <div className="space-y-3">
                       <div className="flex justify-between items-start gap-2">
@@ -453,12 +452,13 @@ export default function KanbanArea({
                         </span>
                         {/* Priority indicator dot */}
                         <div
-                          className={`h-1.5 w-1.5 rounded-full shrink-0 mt-1 ${item.priority === "High"
-                            ? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]"
-                            : item.priority === "Medium"
-                              ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]"
-                              : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
-                            }`}
+                          className={`h-1.5 w-1.5 rounded-full shrink-0 mt-1 ${
+                            item.priority === "High"
+                              ? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]"
+                              : item.priority === "Medium"
+                                ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]"
+                                : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
+                          }`}
                         />
                       </div>
 
@@ -709,7 +709,7 @@ export default function KanbanArea({
             </button>
             <button
               type="button"
-               onClick={createItem}
+              onClick={createItem}
               className="flex-1 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground hover:bg-primary/90 shadow-lg active:scale-[0.98] transition-all"
             >
               Create Task
