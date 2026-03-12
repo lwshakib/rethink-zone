@@ -106,6 +106,7 @@ export const useCanvasCommands = (
       connector: new Set(),
       figure: new Set(),
       code: new Set(),
+      path: new Set(),
     };
 
     // Populate the deletion lookup table
@@ -122,8 +123,33 @@ export const useCanvasCommands = (
       else if (kind === "connector") id = connectors[index]?.id;
       else if (kind === "figure") id = figures[index]?.id;
       else if (kind === "code") id = codes[index]?.id;
+      else if (kind === "path") id = paths[index]?.id;
       if (id) idsToDeleteByKind[kind].add(id);
     });
+
+    // CASCADE DELETE: If a Figure is being deleted, also delete everything "on" it
+    const selectedFigureItems = figures.filter((f) => idsToDeleteByKind.figure.has(f.id));
+    if (selectedFigureItems.length > 0) {
+      const isInsideAnyDeletedFigure = (x: number, y: number) => {
+        return selectedFigureItems.some(
+          (f) => x >= f.x && x <= f.x + f.width && y >= f.y && y <= f.y + f.height
+        );
+      };
+
+      // Check all other shapes for containment
+      rectangles.forEach((r) => { if (!idsToDeleteByKind.rect.has(r.id) && isInsideAnyDeletedFigure(r.x + r.width / 2, r.y + r.height / 2)) idsToDeleteByKind.rect.add(r.id); });
+      circles.forEach((c) => { if (!idsToDeleteByKind.circle.has(c.id) && isInsideAnyDeletedFigure(c.x, c.y)) idsToDeleteByKind.circle.add(c.id); });
+      images.forEach((i) => { if (!idsToDeleteByKind.image.has(i.id) && isInsideAnyDeletedFigure(i.x + i.width / 2, i.y + i.height / 2)) idsToDeleteByKind.image.add(i.id); });
+      texts.forEach((t) => { if (!idsToDeleteByKind.text.has(t.id) && isInsideAnyDeletedFigure(t.x + t.width / 2, t.y + t.height / 2)) idsToDeleteByKind.text.add(t.id); });
+      frames.forEach((f) => { if (!idsToDeleteByKind.frame.has(f.id) && isInsideAnyDeletedFigure(f.x + f.width / 2, f.y + f.height / 2)) idsToDeleteByKind.frame.add(f.id); });
+      lines.forEach((l) => { if (!idsToDeleteByKind.line.has(l.id) && isInsideAnyDeletedFigure((l.x1 + l.x2) / 2, (l.y1 + l.y2) / 2)) idsToDeleteByKind.line.add(l.id); });
+      arrows.forEach((a) => { if (!idsToDeleteByKind.arrow.has(a.id) && isInsideAnyDeletedFigure((a.x1 + a.x2) / 2, (a.y1 + a.y2) / 2)) idsToDeleteByKind.arrow.add(a.id); });
+      polygons.forEach((p) => { if (!idsToDeleteByKind.poly.has(p.id) && isInsideAnyDeletedFigure(p.x + p.width / 2, p.y + p.height / 2)) idsToDeleteByKind.poly.add(p.id); });
+      codes.forEach((c) => { if (!idsToDeleteByKind.code.has(c.id) && isInsideAnyDeletedFigure(c.x + c.width / 2, c.y + c.height / 2)) idsToDeleteByKind.code.add(c.id); });
+      paths.forEach((p) => { if (!idsToDeleteByKind.path.has(p.id) && p.points.length > 0 && isInsideAnyDeletedFigure(p.points[0].x, p.points[0].y)) idsToDeleteByKind.path.add(p.id); });
+      // Also recursively delete nested figures (except the ones already being deleted)
+      figures.forEach((f) => { if (!idsToDeleteByKind.figure.has(f.id) && isInsideAnyDeletedFigure(f.x + f.width / 2, f.y + f.height / 2)) idsToDeleteByKind.figure.add(f.id); });
+    }
 
     const allDeletedIds = new Set(
       Object.values(idsToDeleteByKind).flatMap((s) => Array.from(s))
@@ -154,6 +180,7 @@ export const useCanvasCommands = (
       (f) => !idsToDeleteByKind.figure.has(f.id)
     );
     const nextCodes = codes.filter((c) => !idsToDeleteByKind.code.has(c.id));
+    const nextPaths = paths.filter((p) => !idsToDeleteByKind.path.has(p.id));
 
     // Update active UI state
     setRectangles(nextRects);
@@ -167,6 +194,7 @@ export const useCanvasCommands = (
     setConnectors(nextConnectors);
     setFigures(nextFigures);
     setCodes(nextCodes);
+    setPaths(nextPaths);
 
     // Persist this major change to history
     pushHistory({
@@ -181,6 +209,7 @@ export const useCanvasCommands = (
       connectors: nextConnectors,
       figures: nextFigures,
       codes: nextCodes,
+      paths: nextPaths,
     });
 
     // Clear selection after deletion
@@ -624,6 +653,20 @@ export const useCanvasCommands = (
     polygons,
     figures,
     codes,
+    paths,
+    setRectangles,
+    setCircles,
+    setImages,
+    setTexts,
+    setFrames,
+    setLines,
+    setArrows,
+    setPolygons,
+    setConnectors,
+    setFigures,
+    setCodes,
+    setPaths,
+    pushHistory,
   ]);
 
   /**
