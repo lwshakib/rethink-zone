@@ -1,5 +1,5 @@
 import React from "react"; // React core
-import { ZoomIn, ZoomOut, Scan, RefreshCw } from "lucide-react"; // Zoom and view utility icons
+import { ZoomIn, ZoomOut, Scan, RefreshCw, ChevronUp, ChevronDown } from "lucide-react"; // Zoom and view utility icons
 
 // Props interface for Zoom management UI
 interface ZoomControlsProps {
@@ -8,6 +8,8 @@ interface ZoomControlsProps {
   onZoomOut: () => void;  // Decrement zoom trigger
   onFitToScreen: () => void; // Fit all elements into the viewport
   onResetView: () => void;   // Reset pan and zoom to default (100% at center)
+  isMiniMapOpen: boolean;    // Status of the MiniMap
+  onToggleMiniMap: () => void; // Toggle MiniMap visibility
   className?: string;       // Optional custom styling
 }
 
@@ -20,6 +22,8 @@ const ZoomControls: React.FC<ZoomControlsProps> = ({
   onZoomOut,
   onFitToScreen,
   onResetView,
+  isMiniMapOpen,
+  onToggleMiniMap,
   className,
 }) => {
   return (
@@ -73,6 +77,21 @@ const ZoomControls: React.FC<ZoomControlsProps> = ({
         title="Reset zoom"
       >
         <RefreshCw className="h-[18px] w-[18px]" />
+      </button>
+      {/* SEPARATOR */}
+      <div className="h-4 w-px bg-border/40" />
+      {/* MINIMAP TOGGLE ACTION */}
+      <button
+        onClick={onToggleMiniMap}
+        className="flex items-center justify-center h-8 w-8 rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+        aria-label={isMiniMapOpen ? "Collapse MiniMap" : "Expand MiniMap"}
+        title={isMiniMapOpen ? "Collapse MiniMap" : "Expand MiniMap"}
+      >
+        {isMiniMapOpen ? (
+          <ChevronDown className="h-[18px] w-[18px]" />
+        ) : (
+          <ChevronUp className="h-[18px] w-[18px]" />
+        )}
       </button>
     </div>
   );

@@ -92,6 +92,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   const [pendingAddIcon, setPendingAddIcon] = useState<{ name: string; src: string } | null>(null); // Icon awaiting placement
   const [pendingAddShapeLabel, setPendingAddShapeLabel] = useState<string | null>(null);           // Shape awaiting placement
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });                       // Track canvas container size for UI positioning
+  const [isMiniMapOpen, setIsMiniMapOpen] = useState(false);                                         // Controls visibility of the navigation mini-map
 
   // Centralized shape state: manages collections of all items currently on the canvas
   const {
@@ -790,30 +791,32 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
 
           {/* Navigation Controls Group (MiniMap + Zoom) */}
           <div className="absolute right-6 bottom-6 flex flex-col items-stretch gap-0 w-[240px] rounded-sm bg-background/80 backdrop-blur-xl border border-border/40 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] z-50 overflow-hidden">
-            <MiniMap
-              rectangles={rectangles}
-              circles={circles}
-              lines={lines}
-              arrows={arrows}
-              paths={paths}
-              images={images}
-              texts={texts}
-              frames={frames}
-              polygons={polygons}
-              figures={figures}
-              codes={codes}
-              pan={pan}
-              zoom={zoom}
-              containerWidth={containerSize.width}
-              containerHeight={containerSize.height}
-              onPanChange={setPan}
-              theme={(resolvedTheme as 'light' | 'dark') || 'light'}
-              mapWidth={240}
-              mapHeight={160}
-            />
+            {isMiniMapOpen && (
+              <MiniMap
+                rectangles={rectangles}
+                circles={circles}
+                lines={lines}
+                arrows={arrows}
+                paths={paths}
+                images={images}
+                texts={texts}
+                frames={frames}
+                polygons={polygons}
+                figures={figures}
+                codes={codes}
+                pan={pan}
+                zoom={zoom}
+                containerWidth={containerSize.width}
+                containerHeight={containerSize.height}
+                onPanChange={setPan}
+                theme={(resolvedTheme as 'light' | 'dark') || 'light'}
+                mapWidth={240}
+                mapHeight={160}
+              />
+            )}
             
             {/* Visual separator between the map and buttons */}
-            <div className="h-px w-full bg-border/20" />
+            {isMiniMapOpen && <div className="h-px w-full bg-border/20" />}
 
             {/* Inline zoom navigation controls */}
             <ZoomControls
@@ -822,6 +825,8 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
               onZoomOut={zoomOut}
               onFitToScreen={fitToScreen}
               onResetView={resetView}
+              isMiniMapOpen={isMiniMapOpen}
+              onToggleMiniMap={() => setIsMiniMapOpen(!isMiniMapOpen)}
               className="flex items-center justify-between gap-1 px-3 py-2"
             />
           </div>
