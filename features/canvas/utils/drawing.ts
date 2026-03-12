@@ -791,6 +791,7 @@ export const drawFigure = (
   f: FigureShape,
   themeStroke: string,
   themeText: string,
+  themeBg: string,
   zoom: number,
   isSelected = false,
   options?: { hideTitle?: boolean }
@@ -798,7 +799,7 @@ export const drawFigure = (
   ctx.save();
   ctx.globalAlpha = f.opacity ?? 1;
   const strokeColor = f.stroke || themeStroke;
-  const fill = f.fill || "transparent";
+  const fill = f.fill || themeBg; // Use theme-aware background color
 
   // Body background
   ctx.fillStyle = fill;

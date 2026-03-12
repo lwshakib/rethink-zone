@@ -2528,72 +2528,80 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
           const startState = dragShapesStartRef.current;
 
+          // Figure Container Logic: Find all figures being moved
+          const movedFigures = selectedShapeRef.current
+            .filter((s) => s.kind === "figure")
+            .map((s) => startState.figures.find((f) => f.id === s.id))
+            .filter((f): f is FigureShape => !!f);
+
+          const isContainedInMovedFigure = (startShape: any) => {
+            if (!startShape || movedFigures.length === 0) return false;
+            // Use center point for containment check
+            const w = startShape.width ?? (startShape.rx ? startShape.rx * 2 : 0);
+            const h = startShape.height ?? (startShape.ry ? startShape.ry * 2 : 0);
+            const cx = startShape.x + w / 2;
+            const cy = startShape.y + h / 2;
+            return movedFigures.some(
+              (f) => cx >= f.x && cx <= f.x + f.width && cy >= f.y && cy <= f.y + f.height
+            );
+          };
+
           const selKinds = new Set(selectedShapeRef.current.map((s) => s.kind));
 
-          if (selKinds.has("rect")) {
+          if (selKinds.has("rect") || movedFigures.length > 0) {
             setRectangles((prev) =>
               prev.map((r) => {
-                const sel = selectedShapeRef.current.find(
+                const startR = startState.rectangles.find((sr) => sr.id === r.id);
+                const isSel = selectedShapeRef.current.some(
                   (s) => s.kind === "rect" && s.id === r.id
                 );
-                if (sel) {
-                  const startR = startState.rectangles.find(
-                    (sr) => sr.id === r.id
-                  );
-                  if (startR)
-                    return { ...r, x: startR.x + dx, y: startR.y + dy };
+                if ((isSel || isContainedInMovedFigure(startR)) && startR) {
+                  return { ...r, x: startR.x + dx, y: startR.y + dy };
                 }
                 return r;
               })
             );
           }
 
-          if (selKinds.has("circle")) {
+          if (selKinds.has("circle") || movedFigures.length > 0) {
             setCircles((prev) =>
               prev.map((c) => {
-                const sel = selectedShapeRef.current.find(
+                const startC = startState.circles.find((sc) => sc.id === c.id);
+                const isSel = selectedShapeRef.current.some(
                   (s) => s.kind === "circle" && s.id === c.id
                 );
-                if (sel) {
-                  const startC = startState.circles.find(
-                    (sc) => sc.id === c.id
-                  );
-                  if (startC)
-                    return { ...c, x: startC.x + dx, y: startC.y + dy };
+                if ((isSel || isContainedInMovedFigure(startC)) && startC) {
+                  return { ...c, x: startC.x + dx, y: startC.y + dy };
                 }
                 return c;
               })
             );
           }
 
-          if (selKinds.has("image")) {
+          if (selKinds.has("image") || movedFigures.length > 0) {
             setImages((prev) =>
               prev.map((im) => {
-                const sel = selectedShapeRef.current.find(
+                const startIm = startState.images.find((sim) => sim.id === im.id);
+                const isSel = selectedShapeRef.current.some(
                   (s) => s.kind === "image" && s.id === im.id
                 );
-                if (sel) {
-                  const startIm = startState.images.find(
-                    (sim) => sim.id === im.id
-                  );
-                  if (startIm)
-                    return { ...im, x: startIm.x + dx, y: startIm.y + dy };
+                if ((isSel || isContainedInMovedFigure(startIm)) && startIm) {
+                  return { ...im, x: startIm.x + dx, y: startIm.y + dy };
                 }
                 return im;
               })
             );
           }
 
-          if (selKinds.has("text")) {
+          if (selKinds.has("text") || movedFigures.length > 0) {
             setTexts((prev) =>
               prev.map((t) => {
-                const sel = selectedShapeRef.current.find(
+                const startT = startState.texts.find((st) => st.id === t.id);
+                const isSel = selectedShapeRef.current.some(
                   (s) => s.kind === "text" && s.id === t.id
                 );
-                if (sel) {
-                  const startT = startState.texts.find((st) => st.id === t.id);
-                  if (startT)
-                    return { ...t, x: startT.x + dx, y: startT.y + dy };
+                if ((isSel || isContainedInMovedFigure(startT)) && startT) {
+                  return { ...t, x: startT.x + dx, y: startT.y + dy };
                 }
                 return t;
               })
@@ -2616,62 +2624,57 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             );
           }
 
-          if (selKinds.has("poly")) {
+          if (selKinds.has("poly") || movedFigures.length > 0) {
             setPolygons((prev) =>
               prev.map((p) => {
-                const sel = selectedShapeRef.current.find(
+                const startP = startState.polygons.find((sp) => sp.id === p.id);
+                const isSel = selectedShapeRef.current.some(
                   (s) => s.kind === "poly" && s.id === p.id
                 );
-                if (sel) {
-                  const startP = startState.polygons.find(
-                    (sp) => sp.id === p.id
-                  );
-                  if (startP)
-                    return { ...p, x: startP.x + dx, y: startP.y + dy };
+                if ((isSel || isContainedInMovedFigure(startP)) && startP) {
+                  return { ...p, x: startP.x + dx, y: startP.y + dy };
                 }
                 return p;
               })
             );
           }
 
-          if (selKinds.has("line")) {
+          if (selKinds.has("line") || movedFigures.length > 0) {
             setLines((prev) =>
               prev.map((l) => {
-                const sel = selectedShapeRef.current.find(
+                const startL = startState.lines.find((sl) => sl.id === l.id);
+                const isSel = selectedShapeRef.current.some(
                   (s) => s.kind === "line" && s.id === l.id
                 );
-                if (sel) {
-                  const startL = startState.lines.find((sl) => sl.id === l.id);
-                  if (startL)
-                    return {
-                      ...l,
-                      x1: startL.x1 + dx,
-                      y1: startL.y1 + dy,
-                      x2: startL.x2 + dx,
-                      y2: startL.y2 + dy,
-                    };
+                if ((isSel || isContainedInMovedFigure({ ...startL, x: startL?.x1, y: startL?.y1 })) && startL) {
+                  return {
+                    ...l,
+                    x1: startL.x1 + dx,
+                    y1: startL.y1 + dy,
+                    x2: startL.x2 + dx,
+                    y2: startL.y2 + dy,
+                  };
                 }
                 return l;
               })
             );
           }
 
-          if (selKinds.has("arrow")) {
+          if (selKinds.has("arrow") || movedFigures.length > 0) {
             setArrows((prev) =>
               prev.map((a) => {
-                const sel = selectedShapeRef.current.find(
+                const startA = startState.arrows.find((sa) => sa.id === a.id);
+                const isSel = selectedShapeRef.current.some(
                   (s) => s.kind === "arrow" && s.id === a.id
                 );
-                if (sel) {
-                  const startA = startState.arrows.find((sa) => sa.id === a.id);
-                  if (startA)
-                    return {
-                      ...a,
-                      x1: startA.x1 + dx,
-                      y1: startA.y1 + dy,
-                      x2: startA.x2 + dx,
-                      y2: startA.y2 + dy,
-                    };
+                if ((isSel || isContainedInMovedFigure({ ...startA, x: startA?.x1, y: startA?.y1 })) && startA) {
+                  return {
+                    ...a,
+                    x1: startA.x1 + dx,
+                    y1: startA.y1 + dy,
+                    x2: startA.x2 + dx,
+                    y2: startA.y2 + dy,
+                  };
                 }
                 return a;
               })
@@ -2696,16 +2699,16 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             );
           }
 
-          if (selKinds.has("code")) {
+          if (selKinds.has("code") || movedFigures.length > 0) {
             setCodes((prev) =>
               prev.map((c) => {
-                const sel = selectedShapeRef.current.find(
+                const startC = startState.codes.find((sc) => sc.id === c.id);
+                const isSel = selectedShapeRef.current.some(
                   (s) => s.kind === "code" && s.id === c.id
                 );
-                if (sel) {
-                  const startC = startState.codes.find((sc) => sc.id === c.id);
-                  if (startC)
-                    return { ...c, x: startC.x + dx, y: startC.y + dy };
+                // Important: Don't move a code block if it is the figure itself! (But kind is different, so it's fine)
+                if ((isSel || isContainedInMovedFigure(startC)) && startC) {
+                  return { ...c, x: startC.x + dx, y: startC.y + dy };
                 }
                 return c;
               })

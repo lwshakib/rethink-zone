@@ -566,6 +566,381 @@ export const useCanvasCommands = (
     pushHistory,
   ]);
 
-  return { deleteSelected, duplicateSelection, groupSelected, ungroupSelected };
+  /**
+   * copySelected - Saves a deep clone of the current selection to a local clipboard.
+   */
+  const copySelected = useCallback(() => {
+    if (selectedShape.length === 0) return;
+
+    const copiedShapes: Partial<HistoryEntry> = {};
+
+    selectedShape.forEach(({ kind, index }) => {
+      if (kind === "rect") {
+        if (!copiedShapes.rectangles) copiedShapes.rectangles = [];
+        copiedShapes.rectangles.push({ ...rectangles[index] });
+      } else if (kind === "circle") {
+        if (!copiedShapes.circles) copiedShapes.circles = [];
+        copiedShapes.circles.push({ ...circles[index] });
+      } else if (kind === "image") {
+        if (!copiedShapes.images) copiedShapes.images = [];
+        copiedShapes.images.push({ ...images[index] });
+      } else if (kind === "text") {
+        if (!copiedShapes.texts) copiedShapes.texts = [];
+        copiedShapes.texts.push({ ...texts[index] });
+      } else if (kind === "frame") {
+        if (!copiedShapes.frames) copiedShapes.frames = [];
+        copiedShapes.frames.push({ ...frames[index] });
+      } else if (kind === "line") {
+        if (!copiedShapes.lines) copiedShapes.lines = [];
+        copiedShapes.lines.push({ ...lines[index] });
+      } else if (kind === "arrow") {
+        if (!copiedShapes.arrows) copiedShapes.arrows = [];
+        copiedShapes.arrows.push({ ...arrows[index] });
+      } else if (kind === "poly") {
+        if (!copiedShapes.polygons) copiedShapes.polygons = [];
+        copiedShapes.polygons.push({ ...polygons[index] });
+      } else if (kind === "figure") {
+        if (!copiedShapes.figures) copiedShapes.figures = [];
+        copiedShapes.figures.push({ ...figures[index] });
+      } else if (kind === "code") {
+        if (!copiedShapes.codes) copiedShapes.codes = [];
+        copiedShapes.codes.push({ ...codes[index] });
+      } else if (kind === "path") {
+        if (!copiedShapes.paths) copiedShapes.paths = [];
+        copiedShapes.paths.push({ ...paths[index] });
+      }
+    });
+
+    localStorage.setItem("canvas_clipboard", JSON.stringify(copiedShapes));
+  }, [
+    selectedShape,
+    rectangles,
+    circles,
+    images,
+    texts,
+    frames,
+    lines,
+    arrows,
+    polygons,
+    figures,
+    codes,
+  ]);
+
+  /**
+   * pasteSelected - Clones items from the clipboard and places them at a slight offset.
+   */
+  const pasteSelected = useCallback(
+    (offset = 20) => {
+      const stored = localStorage.getItem("canvas_clipboard");
+      if (!stored) return;
+
+      try {
+        const clipboard: Partial<HistoryEntry> = JSON.parse(stored);
+        const newSelection: any[] = [];
+        const updates: any = {};
+
+        const processCollection = (
+          items: any[] | undefined,
+          kind: string,
+          existing: any[],
+          setter: any
+        ) => {
+          if (!items || items.length === 0) return;
+          const next = [...existing];
+          items.forEach((item) => {
+            const clone = { ...item, id: makeId() };
+            if (clone.x !== undefined) clone.x += offset;
+            if (clone.y !== undefined) clone.y += offset;
+            if (clone.x1 !== undefined) {
+              clone.x1 += offset;
+              clone.y1 += offset;
+              clone.x2 += offset;
+              clone.y2 += offset;
+            }
+            next.push(clone);
+            newSelection.push({
+              kind,
+              index: next.length - 1,
+              id: clone.id,
+            });
+          });
+          updates[kind + "s" === "polys" ? "polygons" : kind + "s"] = next;
+          setter(next);
+        };
+
+        processCollection(clipboard.rectangles, "rect", rectangles, setRectangles);
+        processCollection(clipboard.circles, "circle", circles, setCircles);
+        processCollection(clipboard.images, "image", images, setImages);
+        processCollection(clipboard.texts, "text", texts, setTexts);
+        processCollection(clipboard.frames, "frame", frames, setFrames);
+        processCollection(clipboard.lines, "line", lines, setLines);
+        processCollection(clipboard.arrows, "arrow", arrows, setArrows);
+        processCollection(clipboard.polygons, "poly", polygons, setPolygons);
+        processCollection(clipboard.figures, "figure", figures, setFigures);
+        processCollection(clipboard.codes, "code", codes, setCodes);
+        processCollection(clipboard.paths, "path", paths, setPaths);
+
+        pushHistory(updates);
+        setSelectedShape(newSelection);
+      } catch (e) {
+        console.error("Paste failed", e);
+      }
+    },
+    [
+      rectangles,
+      circles,
+      images,
+      texts,
+      frames,
+      lines,
+      arrows,
+      polygons,
+      figures,
+      codes,
+      setRectangles,
+      setCircles,
+      setImages,
+      setTexts,
+      setFrames,
+      setLines,
+      setArrows,
+      setPolygons,
+      setFigures,
+      setCodes,
+      pushHistory,
+      setSelectedShape,
+    ]
+  );
+
+  /**
+   * cutSelected - Combines copy and delete operations.
+   */
+  const cutSelected = useCallback(() => {
+    copySelected();
+    deleteSelected();
+  }, [copySelected, deleteSelected]);
+
+  /**
+   * selectAll - Selects every shape currently present on the canvas.
+   */
+  const selectAll = useCallback(() => {
+    const all: SelectedShape = [];
+    const collect = (items: any[], kind: string) => {
+      items.forEach((item, idx) => {
+        all.push({ kind: kind as any, index: idx, id: item.id });
+      });
+    };
+
+    collect(rectangles, "rect");
+    collect(circles, "circle");
+    collect(images, "image");
+    collect(texts, "text");
+    collect(frames, "frame");
+    collect(polygons, "poly");
+    collect(paths, "path");
+    collect(lines, "line");
+    collect(arrows, "arrow");
+    collect(figures, "figure");
+    collect(codes, "code");
+
+    setSelectedShape(all);
+  }, [
+    rectangles,
+    circles,
+    images,
+    texts,
+    frames,
+    polygons,
+    lines,
+    arrows,
+    figures,
+    codes,
+    setSelectedShape,
+  ]);
+
+  /**
+   * bringToFront - Moves selected shapes to the top of their respective collection.
+   */
+  const bringToFront = useCallback(() => {
+    if (selectedShape.length === 0) return;
+    const updates: any = {};
+    const kindMap: Record<string, number[]> = {};
+    selectedShape.forEach((s) => {
+      if (!kindMap[s.kind]) kindMap[s.kind] = [];
+      kindMap[s.kind].push(s.index);
+    });
+
+    Object.entries(kindMap).forEach(([kind, indices]) => {
+      indices.sort((a, b) => a - b);
+      let items: any[] = [];
+      let setter: any = null;
+      let kindKey = kind + "s" === "polys" ? "polygons" : kind + "s";
+
+      if (kind === "rect") { items = [...rectangles]; setter = setRectangles; }
+      else if (kind === "circle") { items = [...circles]; setter = setCircles; }
+      else if (kind === "image") { items = [...images]; setter = setImages; }
+      else if (kind === "text") { items = [...texts]; setter = setTexts; }
+      else if (kind === "frame") { items = [...frames]; setter = setFrames; }
+      else if (kind === "line") { items = [...lines]; setter = setLines; }
+      else if (kind === "arrow") { items = [...arrows]; setter = setArrows; }
+      else if (kind === "poly") { items = [...polygons]; setter = setPolygons; }
+      else if (kind === "figure") { items = [...figures]; setter = setFigures; }
+      else if (kind === "code") { items = [...codes]; setter = setCodes; }
+      else if (kind === "path") { items = [...paths]; setter = setPaths; }
+
+      if (items.length && setter) {
+        const selected = indices.map((i) => items[i]);
+        const remaining = items.filter((_, i) => !indices.includes(i));
+        const next = [...remaining, ...selected];
+        updates[kindKey] = next;
+        setter(next);
+      }
+    });
+    pushHistory(updates);
+  }, [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, figures, codes, paths, pushHistory, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setFigures, setCodes, setPaths]);
+
+  /**
+   * sendToBack - Moves selected shapes to the bottom of their respective collection.
+   */
+  const sendToBack = useCallback(() => {
+    if (selectedShape.length === 0) return;
+    const updates: any = {};
+    const kindMap: Record<string, number[]> = {};
+    selectedShape.forEach((s) => {
+      if (!kindMap[s.kind]) kindMap[s.kind] = [];
+      kindMap[s.kind].push(s.index);
+    });
+
+    Object.entries(kindMap).forEach(([kind, indices]) => {
+      indices.sort((a, b) => a - b);
+      let items: any[] = [];
+      let setter: any = null;
+      let kindKey = kind + "s" === "polys" ? "polygons" : kind + "s";
+
+      if (kind === "rect") { items = [...rectangles]; setter = setRectangles; }
+      else if (kind === "circle") { items = [...circles]; setter = setCircles; }
+      else if (kind === "image") { items = [...images]; setter = setImages; }
+      else if (kind === "text") { items = [...texts]; setter = setTexts; }
+      else if (kind === "frame") { items = [...frames]; setter = setFrames; }
+      else if (kind === "line") { items = [...lines]; setter = setLines; }
+      else if (kind === "arrow") { items = [...arrows]; setter = setArrows; }
+      else if (kind === "poly") { items = [...polygons]; setter = setPolygons; }
+      else if (kind === "figure") { items = [...figures]; setter = setFigures; }
+      else if (kind === "code") { items = [...codes]; setter = setCodes; }
+      else if (kind === "path") { items = [...paths]; setter = setPaths; }
+
+      if (items.length && setter) {
+        const selected = indices.map((i) => items[i]);
+        const remaining = items.filter((_, i) => !indices.includes(i));
+        const next = [...selected, ...remaining];
+        updates[kindKey] = next;
+        setter(next);
+      }
+    });
+    pushHistory(updates);
+  }, [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, figures, codes, paths, pushHistory, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setFigures, setCodes, setPaths]);
+
+  /**
+   * bringForward - Move selected shapes one level up within their collection.
+   */
+  const bringForward = useCallback(() => {
+    if (selectedShape.length === 0) return;
+    const updates: any = {};
+    const kindMap: Record<string, number[]> = {};
+    selectedShape.forEach((s) => {
+      if (!kindMap[s.kind]) kindMap[s.kind] = [];
+      kindMap[s.kind].push(s.index);
+    });
+
+    Object.entries(kindMap).forEach(([kind, indices]) => {
+      indices.sort((a, b) => b - a); // Higher indices first for upward move
+      let items: any[] = [];
+      let setter: any = null;
+      let kindKey = kind + "s" === "polys" ? "polygons" : kind + "s";
+
+      if (kind === "rect") { items = [...rectangles]; setter = setRectangles; }
+      else if (kind === "circle") { items = [...circles]; setter = setCircles; }
+      else if (kind === "image") { items = [...images]; setter = setImages; }
+      else if (kind === "text") { items = [...texts]; setter = setTexts; }
+      else if (kind === "frame") { items = [...frames]; setter = setFrames; }
+      else if (kind === "line") { items = [...lines]; setter = setLines; }
+      else if (kind === "arrow") { items = [...arrows]; setter = setArrows; }
+      else if (kind === "poly") { items = [...polygons]; setter = setPolygons; }
+      else if (kind === "figure") { items = [...figures]; setter = setFigures; }
+      else if (kind === "code") { items = [...codes]; setter = setCodes; }
+      else if (kind === "path") { items = [...paths]; setter = setPaths; }
+
+      if (items.length && setter) {
+        const next = [...items];
+        indices.forEach((idx) => {
+          if (idx < next.length - 1 && !indices.includes(idx + 1)) {
+            [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+          }
+        });
+        updates[kindKey] = next;
+        setter(next);
+      }
+    });
+    pushHistory(updates);
+  }, [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, figures, codes, paths, pushHistory, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setFigures, setCodes, setPaths]);
+
+  /**
+   * sendBackward - Move selected shapes one level down within their collection.
+   */
+  const sendBackward = useCallback(() => {
+    if (selectedShape.length === 0) return;
+    const updates: any = {};
+    const kindMap: Record<string, number[]> = {};
+    selectedShape.forEach((s) => {
+      if (!kindMap[s.kind]) kindMap[s.kind] = [];
+      kindMap[s.kind].push(s.index);
+    });
+
+    Object.entries(kindMap).forEach(([kind, indices]) => {
+      indices.sort((a, b) => a - b); // Lower indices first for downward move
+      let items: any[] = [];
+      let setter: any = null;
+      let kindKey = kind + "s" === "polys" ? "polygons" : kind + "s";
+
+      if (kind === "rect") { items = [...rectangles]; setter = setRectangles; }
+      else if (kind === "circle") { items = [...circles]; setter = setCircles; }
+      else if (kind === "image") { items = [...images]; setter = setImages; }
+      else if (kind === "text") { items = [...texts]; setter = setTexts; }
+      else if (kind === "frame") { items = [...frames]; setter = setFrames; }
+      else if (kind === "line") { items = [...lines]; setter = setLines; }
+      else if (kind === "arrow") { items = [...arrows]; setter = setArrows; }
+      else if (kind === "poly") { items = [...polygons]; setter = setPolygons; }
+      else if (kind === "figure") { items = [...figures]; setter = setFigures; }
+      else if (kind === "code") { items = [...codes]; setter = setCodes; }
+      else if (kind === "path") { items = [...paths]; setter = setPaths; }
+
+      if (items.length && setter) {
+        const next = [...items];
+        indices.forEach((idx) => {
+          if (idx > 0 && !indices.includes(idx - 1)) {
+            [next[idx], next[idx - 1]] = [next[idx - 1], next[idx]];
+          }
+        });
+        updates[kindKey] = next;
+        setter(next);
+      }
+    });
+    pushHistory(updates);
+  }, [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, figures, codes, paths, pushHistory, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setFigures, setCodes, setPaths]);
+
+  return {
+    deleteSelected,
+    duplicateSelection,
+    groupSelected,
+    ungroupSelected,
+    copySelected,
+    pasteSelected,
+    cutSelected,
+    selectAll,
+    bringToFront,
+    sendToBack,
+    bringForward,
+    sendBackward,
+  };
 };
 export default useCanvasCommands;

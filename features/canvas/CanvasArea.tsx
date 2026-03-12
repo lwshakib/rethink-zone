@@ -65,6 +65,7 @@ import { PencilToolbar } from "./components/PencilToolbar"; // Toolbar for freeh
 import CodeBlock from "./components/CodeBlock"; // Component to render and edit code snippets
 import { LineActions } from "./components/LineActions"; // Context actions for lines and arrows
 import { MiniMap } from "./components/MiniMap"; // Navigational mini-map overlay
+import { ContextMenu } from "./components/ContextMenu";
 
 /**
  * Main CanvasArea component - provides a rich, interactive infinite canvas experience.
@@ -109,6 +110,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     useState<DiagramTemplate | null>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 }); // Track canvas container size for UI positioning
   const [isMiniMapOpen, setIsMiniMapOpen] = useState(false); // Controls visibility of the navigation mini-map
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
   // Centralized shape state: manages collections of all items currently on the canvas
   const {
@@ -230,38 +232,52 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   );
 
   // Bulk actions like deletion and duplication
-  const { deleteSelected, duplicateSelection, groupSelected, ungroupSelected } =
-    useCanvasCommands(
-      {
-        rectangles,
-        setRectangles,
-        circles,
-        setCircles,
-        lines,
-        setLines,
-        arrows,
-        setArrows,
-        paths,
-        setPaths,
-        images,
-        setImages,
-        texts,
-        setTexts,
-        frames,
-        setFrames,
-        polygons,
-        setPolygons,
-        connectors,
-        setConnectors,
-        figures,
-        setFigures,
-        codes,
-        setCodes,
-        selectedShape,
-        setSelectedShape,
-      },
-      pushHistory
-    );
+  const commands = useCanvasCommands(
+    {
+      rectangles,
+      setRectangles,
+      circles,
+      setCircles,
+      lines,
+      setLines,
+      arrows,
+      setArrows,
+      paths,
+      setPaths,
+      images,
+      setImages,
+      texts,
+      setTexts,
+      frames,
+      setFrames,
+      polygons,
+      setPolygons,
+      connectors,
+      setConnectors,
+      figures,
+      setFigures,
+      codes,
+      setCodes,
+      selectedShape,
+      setSelectedShape,
+    },
+    pushHistory
+  );
+
+  const {
+    copySelected,
+    pasteSelected,
+    cutSelected,
+    selectAll,
+    deleteSelected,
+    duplicateSelection,
+    groupSelected,
+    ungroupSelected,
+    bringToFront,
+    sendToBack,
+    bringForward,
+    sendBackward,
+  } = commands;
 
   // Logic to fetch and filter icons based on user input
   const { filteredLibraryIcons, isLibraryLoading } = useCanvasIcons(
@@ -933,10 +949,42 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       }
       if (
         isCmd &&
-        (e.key.toLowerCase() === "c" || e.key.toLowerCase() === "d")
+        (e.key.toLowerCase() === "c")
       ) {
         e.preventDefault();
-        duplicateSelection(0);
+        copySelected();
+        return;
+      }
+      if (
+        isCmd &&
+        (e.key.toLowerCase() === "v")
+      ) {
+        e.preventDefault();
+        pasteSelected();
+        return;
+      }
+      if (
+        isCmd &&
+        (e.key.toLowerCase() === "x")
+      ) {
+        e.preventDefault();
+        cutSelected();
+        return;
+      }
+      if (
+        isCmd &&
+        (e.key.toLowerCase() === "a")
+      ) {
+        e.preventDefault();
+        selectAll();
+        return;
+      }
+      if (
+        isCmd &&
+        (e.key.toLowerCase() === "d")
+      ) {
+        e.preventDefault();
+        duplicateSelection();
         return;
       }
       if (isCmd && (e.key === "+" || e.key === "=")) {
@@ -948,6 +996,20 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       } else if (isCmd && e.key === "0") {
         e.preventDefault();
         resetView();
+      }
+
+      if (e.altKey && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        bringToFront();
+      } else if (e.altKey && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        sendToBack();
+      } else if (e.altKey && e.key === "]") {
+        e.preventDefault();
+        bringForward();
+      } else if (e.altKey && e.key === "[") {
+        e.preventDefault();
+        sendBackward();
       }
     };
 
@@ -1006,18 +1068,37 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
 
     const isMulti = selectedShape.length > 1;
 
-    // Render each shape type in order (Z-index is determined by iteration order here)
-    images.forEach((im, idx) =>
-      drawImageItem(
+    // 1. Containers and backgrounds - drawn first so they appear behind contents
+    frames.forEach((f, idx) =>
+      drawFrame(
         ctx,
-        im,
-        imageCacheRef.current,
+        f,
+        themeStroke,
+        themeText,
+        themeFrameBg,
         zoom,
         1,
         !isMulti &&
-          selectedShape.some((s) => s.kind === "image" && s.index === idx)
+          selectedShape.some((s) => s.kind === "frame" && s.index === idx)
       )
     );
+    figures.forEach((f, idx) =>
+      drawFigure(
+        ctx,
+        f,
+        themeStroke,
+        themeText,
+        themeFrameBg,
+        zoom,
+        !isMulti &&
+          selectedShape.some((s) => s.kind === "figure" && s.index === idx),
+        {
+          hideTitle: textEditor?.kind === "figure" && textEditor?.index === idx,
+        }
+      )
+    );
+
+    // 2. Base geometry and images
     rectangles.forEach((r, idx) =>
       drawRect(
         ctx,
@@ -1048,6 +1129,20 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
           selectedShape.some((s) => s.kind === "poly" && s.index === idx)
       )
     );
+    images.forEach((im, idx) =>
+      drawImageItem(
+        ctx,
+        im,
+        imageCacheRef.current,
+        zoom,
+        1,
+        !isMulti &&
+          selectedShape.some((s) => s.kind === "image" && s.index === idx)
+      )
+    );
+
+    // 3. Freehand drawings and connections
+    paths.forEach((p) => drawPath(ctx, p, themeStroke, zoom));
     lines.forEach((l, idx) =>
       drawLine(
         ctx,
@@ -1068,10 +1163,11 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
           selectedShape.some((s) => s.kind === "arrow" && s.index === idx)
       )
     );
+
     connectors.forEach((c, idx) => {
       const fromPt = getAnchorPointLocal(c.from);
       const toPt = getAnchorPointLocal(c.to);
-      if (!fromPt || !toPt) return; // Only draw if both ends are valid
+      if (!fromPt || !toPt) return;
       drawConnector(ctx, fromPt, toPt, themeStroke, zoom, {
         fromAnchor: c.from.anchor,
         toAnchor: c.to.anchor,
@@ -1082,9 +1178,9 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
           selectedShape.some((s) => s.kind === "connector" && s.index === idx),
       });
     });
-    paths.forEach((p) => drawPath(ctx, p, themeStroke, zoom)); // Render freehand paths
+
+    // 4. Content (Texts) - drawn last to ensure readability
     texts.forEach((t, idx) => {
-      // Don't draw the static text if the overlay editor is currently active for this shape
       if (textEditor?.index === idx) return;
       drawText(
         ctx,
@@ -1096,33 +1192,6 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
           selectedShape.some((s) => s.kind === "text" && s.index === idx)
       );
     });
-    frames.forEach((f, idx) =>
-      drawFrame(
-        ctx,
-        f,
-        themeStroke,
-        themeText,
-        themeFrameBg,
-        zoom,
-        1,
-        !isMulti &&
-          selectedShape.some((s) => s.kind === "frame" && s.index === idx)
-      )
-    );
-    figures.forEach((f, idx) =>
-      drawFigure(
-        ctx,
-        f,
-        themeStroke,
-        themeText,
-        zoom,
-        !isMulti &&
-          selectedShape.some((s) => s.kind === "figure" && s.index === idx),
-        {
-          hideTitle: textEditor?.kind === "figure" && textEditor?.index === idx,
-        }
-      )
-    );
 
     // Draw aggregate selection overlay if multiple shapes are selected
     if (isMulti) {
@@ -1318,6 +1387,11 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     };
   }, [canvasToClient, selectionRect]);
 
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY });
+  }, []);
+
   return (
     <div
       ref={canvasContainerRef}
@@ -1359,7 +1433,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
         onPointerUp={handlePointerUp as any}
         onPointerLeave={handlePointerUp as any}
         onDoubleClick={handleDoubleClick as any}
-        onContextMenu={(e) => e.preventDefault()} // Disable default right-click menu
+        onContextMenu={handleContextMenu} // Disable default right-click menu
         style={{ cursor: cursorStyle }} // Cursor changes based on active tool (e.g., crosshair, grab)
       />
 
@@ -1449,6 +1523,24 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
             onUngroup={ungroupSelected}
             theme={resolvedTheme}
           />
+
+          {contextMenu && (
+            <ContextMenu
+              x={contextMenu.x}
+              y={contextMenu.y}
+              onClose={() => setContextMenu(null)}
+              onCut={cutSelected}
+              onCopy={copySelected}
+              onPaste={pasteSelected}
+              onDuplicate={duplicateSelection}
+              onSelectAll={selectAll}
+              onDelete={deleteSelected}
+              onBringToFront={bringToFront}
+              onSendToBack={sendToBack}
+              onBringForward={bringForward}
+              onSendBackward={sendBackward}
+            />
+          )}
 
           {/* Navigation Controls Group (MiniMap + Zoom) */}
           <div className="absolute right-6 bottom-6 flex flex-col items-stretch gap-0 w-[240px] rounded-sm bg-background/80 backdrop-blur-xl border border-border/40 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] z-50 overflow-hidden">

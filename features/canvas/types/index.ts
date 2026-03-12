@@ -194,6 +194,10 @@ export type ShapeKind =
   | "text"
   | "frame"
   | "poly"
+  | "line"
+  | "arrow"
+  | "path"
+  | "connector"
   | "figure"
   | "code";
 
@@ -321,10 +325,11 @@ export type SelectedShapeInfo = {
     | "image"
     | "text"
     | "frame"
-    | "connector"
+    | "poly"
     | "line"
     | "arrow"
-    | "poly"
+    | "path"
+    | "connector"
     | "figure"
     | "code";
   index: number; // Position in relevant collection array
