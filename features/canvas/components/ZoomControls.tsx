@@ -8,6 +8,7 @@ interface ZoomControlsProps {
   onZoomOut: () => void;  // Decrement zoom trigger
   onFitToScreen: () => void; // Fit all elements into the viewport
   onResetView: () => void;   // Reset pan and zoom to default (100% at center)
+  className?: string;       // Optional custom styling
 }
 
 /**
@@ -19,13 +20,17 @@ const ZoomControls: React.FC<ZoomControlsProps> = ({
   onZoomOut,
   onFitToScreen,
   onResetView,
+  className,
 }) => {
   return (
     <div
       // Prevent the mouse wheel from zooming the canvas while scrolling within this UI
       onWheel={(e) => e.stopPropagation()}
-      // Styled with Glassmorphism for a premium desktop feel
-      className="absolute right-6 bottom-6 flex items-center gap-1.5 rounded-sm bg-background/80 backdrop-blur-xl px-1.5 py-1.5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-border/40 z-10"
+      // Default to absolute position if no className provided
+      className={
+        className ||
+        "absolute right-6 bottom-6 flex items-center gap-1.5 rounded-sm bg-background/80 backdrop-blur-xl px-1.5 py-1.5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-border/40 z-10"
+      }
     >
       {/* ZOOM OUT BUTTON */}
       <button

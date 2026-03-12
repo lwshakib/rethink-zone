@@ -63,6 +63,7 @@ import FloatingToolbar from "./components/FloatingToolbar";       // Context-sen
 import { PencilToolbar } from "./components/PencilToolbar";       // Toolbar for freehand drawing settings
 import CodeBlock from "./components/CodeBlock";                   // Component to render and edit code snippets
 import { LineActions } from "./components/LineActions";           // Context actions for lines and arrows
+import { MiniMap } from "./components/MiniMap";                   // Navigational mini-map overlay
 
 /**
  * Main CanvasArea component - provides a rich, interactive infinite canvas experience.
@@ -90,6 +91,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   const [visibleIconsLimit, setVisibleIconsLimit] = useState(60);            // Pagination/limit for icon library display
   const [pendingAddIcon, setPendingAddIcon] = useState<{ name: string; src: string } | null>(null); // Icon awaiting placement
   const [pendingAddShapeLabel, setPendingAddShapeLabel] = useState<string | null>(null);           // Shape awaiting placement
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });                       // Track canvas container size for UI positioning
 
   // Centralized shape state: manages collections of all items currently on the canvas
   const {
@@ -157,7 +159,23 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   // Bound helper functions to find points and bounds relative to current shape state
   const getAnchorPointLocal = useCallback((a: ConnectorAnchor) => getAnchorPoint(a, { rectangles, circles, images, texts, frames, polygons, figures, codes }), [rectangles, circles, images, texts, frames, polygons, figures, codes]);
   const getShapeBoundsLocal = useCallback((a: ConnectorAnchor) => getShapeBounds(a, { rectangles, circles, images, texts, frames, polygons, figures, codes }), [rectangles, circles, images, texts, frames, polygons, figures, codes]);
-  const getContentBoundsLocal = useCallback(() => getContentBounds({ rectangles, circles, lines, arrows, paths, images, texts, frames, polygons }), [rectangles, circles, lines, arrows, paths, images, texts, frames, polygons]);
+  const getContentBoundsLocal = useCallback(() => getContentBounds({ rectangles, circles, lines, arrows, paths, images, texts, frames, polygons, figures, codes }), [rectangles, circles, lines, arrows, paths, images, texts, frames, polygons, figures, codes]);
+
+  // Track the actual pixel dimensions of the container for mini-map and centering logic
+  useEffect(() => {
+    const updateSize = () => {
+      if (canvasContainerRef.current) {
+        setContainerSize({
+          width: canvasContainerRef.current.clientWidth,
+          height: canvasContainerRef.current.clientHeight
+        });
+      }
+    };
+    updateSize();
+    // Re-run on window resize
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, []);
 
   // Dynamically calculates where connector handles should appear based on current shapes and active tool
   const anchorHandles = useMemo(() => {
@@ -770,21 +788,50 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
             theme={resolvedTheme}
           />
 
+          {/* Navigation Controls Group (MiniMap + Zoom) */}
+          <div className="absolute right-6 bottom-6 flex flex-col items-stretch gap-0 w-[240px] rounded-sm bg-background/80 backdrop-blur-xl border border-border/40 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] z-50 overflow-hidden">
+            <MiniMap
+              rectangles={rectangles}
+              circles={circles}
+              lines={lines}
+              arrows={arrows}
+              paths={paths}
+              images={images}
+              texts={texts}
+              frames={frames}
+              polygons={polygons}
+              figures={figures}
+              codes={codes}
+              pan={pan}
+              zoom={zoom}
+              containerWidth={containerSize.width}
+              containerHeight={containerSize.height}
+              onPanChange={setPan}
+              theme={(resolvedTheme as 'light' | 'dark') || 'light'}
+              mapWidth={240}
+              mapHeight={160}
+            />
+            
+            {/* Visual separator between the map and buttons */}
+            <div className="h-px w-full bg-border/20" />
+
+            {/* Inline zoom navigation controls */}
+            <ZoomControls
+              zoomPercent={zoomPercent}
+              onZoomIn={zoomIn}
+              onZoomOut={zoomOut}
+              onFitToScreen={fitToScreen}
+              onResetView={resetView}
+              className="flex items-center justify-between gap-1 px-3 py-2"
+            />
+          </div>
+
           {/* History control buttons (Undo/Redo) */}
           <HistoryControls
             canUndo={canUndo}
             canRedo={canRedo}
             onUndo={handleUndo}
             onRedo={handleRedo}
-          />
-
-          {/* Zoom navigation controls */}
-          <ZoomControls
-            zoomPercent={zoomPercent}
-            onZoomIn={zoomIn}
-            onZoomOut={zoomOut}
-            onFitToScreen={fitToScreen}
-            onResetView={resetView}
           />
 
           {/* The creation menu for adding icons, shapes, and other assets */}

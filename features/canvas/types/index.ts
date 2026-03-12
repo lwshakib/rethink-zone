@@ -230,6 +230,20 @@ export type HistoryEntry = {
   codes: CodeShape[];
 };
 
+export interface ShapeCollection {
+  rectangles?: RectShape[];
+  circles?: CircleShape[];
+  images?: ImageShape[];
+  texts?: TextShape[];
+  frames?: FrameShape[];
+  polygons?: PolyShape[];
+  lines?: LineShape[];
+  arrows?: ArrowShape[];
+  paths?: PathShape[];
+  figures?: FigureShape[];
+  codes?: CodeShape[];
+}
+
 /** 
  * CanvasData - The full state required to persist or restore a canvas session
  */

@@ -1,4 +1,4 @@
-import { AnchorSide, CircleShape, RectShape, ImageShape, TextShape, FrameShape, PolyShape, LineShape, ArrowShape, PathShape, ConnectorAnchor, FigureShape, CodeShape } from "../types"; // Import all shape types for consistent geometry math
+import { AnchorSide, CircleShape, RectShape, ImageShape, TextShape, FrameShape, PolyShape, LineShape, ArrowShape, PathShape, ConnectorAnchor, FigureShape, CodeShape, ShapeCollection } from "../types"; // Import all shape types for consistent geometry math
 
 /**
  * Translates an AnchorSide enum into a 2D unit vector representing the exit/entry direction.
@@ -331,20 +331,6 @@ export const getCircleAnchor = (circle: CircleShape, anchor: AnchorSide) => {
   return { x: circle.x + circle.rx, y: circle.y };
 };
 
-// Internal interface for grouping all active canvas shapes for global operations
-interface ShapeCollection {
-  rectangles?: RectShape[];
-  circles?: CircleShape[];
-  images?: ImageShape[];
-  texts?: TextShape[];
-  frames?: FrameShape[];
-  polygons?: PolyShape[];
-  lines?: LineShape[];
-  arrows?: ArrowShape[];
-  paths?: PathShape[];
-  figures?: FigureShape[];
-  codes?: CodeShape[];
-}
 
 /**
  * Metadata about an anchor point relative to a specific shape.
@@ -444,7 +430,7 @@ export const getShapeBounds = (anchor: { kind: string; shapeId: string }, shapes
  * This can be used for "Zoom to Fit" or scrolling boundary calculations.
  */
 export const getContentBounds = (shapes: ShapeCollection) => {
-  const { rectangles = [], circles = [], lines = [], arrows = [], paths = [], images = [], texts = [], frames = [], polygons = [] } = shapes;
+  const { rectangles = [], circles = [], lines = [], arrows = [], paths = [], images = [], texts = [], frames = [], polygons = [], figures = [], codes = [] } = shapes;
   
   // Accumulate every corner coordinate from every shape
   const xs: number[] = [];
@@ -459,6 +445,8 @@ export const getContentBounds = (shapes: ShapeCollection) => {
   texts.forEach((t) => { xs.push(t.x, t.x + t.width); ys.push(t.y, t.y + t.height); });
   frames.forEach((f) => { xs.push(f.x, f.x + f.width); ys.push(f.y, f.y + f.height); });
   polygons.forEach((p) => { xs.push(p.x, p.x + (p.width ?? 0)); ys.push(p.y, p.y + (p.height ?? 0)); });
+  figures.forEach((f) => { xs.push(f.x, f.x + f.width); ys.push(f.y, f.y + f.height); });
+  codes.forEach((c) => { xs.push(c.x, c.x + c.width); ys.push(c.y, c.y + c.height); });
 
   // Return null if there are no items to measure
   if (!xs.length || !ys.length) return null;
