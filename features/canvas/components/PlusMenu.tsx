@@ -166,7 +166,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
             {searchQuery && view !== "provider-icons" ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between px-3 py-1.5 bg-muted/20 rounded-sm">
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                  <div className="text-[10px] font-bold text-muted-foreground tracking-widest">
                     Search Results
                   </div>
                   <button 
@@ -214,7 +214,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
               // VIEW B: Main Landing Page (Categories)
               <div className="space-y-3">
                 <div className="space-y-0.5">
-                  <div className="px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                  <div className="px-3 py-2 text-[10px] font-bold text-muted-foreground tracking-widest">
                     All Categories
                   </div>
 
@@ -332,7 +332,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                       className="flex flex-col items-center gap-1.5 p-3 rounded-sm bg-accent/20 border border-border/50 hover:border-border transition-all group shadow-sm active:scale-95"
                     >
                       <action.icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                      <span className="text-[9px] font-bold text-muted-foreground group-hover:text-foreground uppercase tracking-tight">
+                      <span className="text-[9px] font-bold text-muted-foreground group-hover:text-foreground tracking-tight">
                         {action.label}
                       </span>
                     </button>
@@ -344,7 +344,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   {/* Breadcrumb Navigation */}
-                  <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest">
+                  <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold tracking-widest">
                     <button
                       onClick={() => setView("categories")}
                       className="text-muted-foreground hover:text-foreground transition-colors"
@@ -401,7 +401,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
               // VIEW D: Icon Categories and General Search
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest">
+                  <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold tracking-widest">
                     <button
                       onClick={() => {
                         setView("categories");
@@ -511,7 +511,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
               // VIEW E: Tech/Cloud Icon Search Results
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest flex-wrap">
+                  <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold tracking-widest flex-wrap">
                     <button
                       onClick={() => {
                         setView("categories");
@@ -624,7 +624,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
               // VIEW G: Cloud Provider Category list (Top-level)
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest">
+                  <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold tracking-widest">
                     <button
                       onClick={() => setView("categories")}
                       className="text-muted-foreground hover:text-foreground transition-colors"
@@ -714,17 +714,17 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
           {/* MENU FOOTER: Contextual Status and Shortcuts */}
           <div className="flex items-center justify-between px-4 py-3 bg-muted/40 border-t border-border/50">
             <div className="text-[11px] font-bold text-foreground/80 tracking-tight">
-              {view === "device-frame" ? "PHONE" : (
+              {view === "device-frame" ? "Phone" : (
                 pendingAddIcon ? (
                   // Alert the user that they have an item currently "on their cursor" for placement
                   <span className="text-primary flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
-                    READY TO PLACE: {pendingAddIcon.name.toUpperCase()}
+                    Ready to place: {pendingAddIcon.name}
                   </span>
                 ) : pendingAddShapeLabel ? (
                   <span className="text-primary flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
-                    READY TO PLACE: {pendingAddShapeLabel.toUpperCase()}
+                    Ready to place: {pendingAddShapeLabel}
                   </span>
-                ) : "ALL CATEGORIES"
+                ) : "All Categories"
               )}
             </div>
             {/* Keyboard shortcut hints */}
