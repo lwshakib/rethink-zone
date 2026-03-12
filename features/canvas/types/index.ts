@@ -198,7 +198,15 @@ export type ShapeKind =
   | "code";
 
 // Anchor sides for smart connectors (arrows that snap to shapes)
-export type AnchorSide = "top" | "bottom" | "left" | "right";
+export type AnchorSide =
+  | "top"
+  | "bottom"
+  | "left"
+  | "right"
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right";
 
 /**
  * ConnectorAnchor - Defines where one end of a connector line is attached

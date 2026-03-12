@@ -21,11 +21,15 @@ import {
  * @returns {x, y} unit vector.
  */
 export const getAnchorDir = (anchor?: AnchorSide | "none") => {
-  if (anchor === "top") return { x: 0, y: -1 }; // Upwards
-  if (anchor === "bottom") return { x: 0, y: 1 }; // Downwards
-  if (anchor === "left") return { x: -1, y: 0 }; // Leftwards
-  if (anchor === "right") return { x: 1, y: 0 }; // Rightwards
-  return { x: 0, y: 0 }; // No specific direction
+  if (anchor === "top") return { x: 0, y: -1 };
+  if (anchor === "bottom") return { x: 0, y: 1 };
+  if (anchor === "left") return { x: -1, y: 0 };
+  if (anchor === "right") return { x: 1, y: 0 };
+  if (anchor === "top-left") return { x: -1, y: -1 };
+  if (anchor === "top-right") return { x: 1, y: -1 };
+  if (anchor === "bottom-left") return { x: -1, y: 1 };
+  if (anchor === "bottom-right") return { x: 1, y: 1 };
+  return { x: 0, y: 0 };
 };
 
 /**
@@ -432,7 +436,12 @@ export const getRectAnchor = (
     return { x: rect.x + rect.width * percent, y: rect.y + rect.height };
   if (anchor === "left")
     return { x: rect.x, y: rect.y + rect.height * percent };
-  return { x: rect.x + rect.width, y: rect.y + rect.height * percent };
+  if (anchor === "right")
+    return { x: rect.x + rect.width, y: rect.y + rect.height * percent };
+  if (anchor === "top-left") return { x: rect.x, y: rect.y };
+  if (anchor === "top-right") return { x: rect.x + rect.width, y: rect.y };
+  if (anchor === "bottom-left") return { x: rect.x, y: rect.y + rect.height };
+  return { x: rect.x + rect.width, y: rect.y + rect.height };
 };
 
 /**
@@ -442,7 +451,18 @@ export const getCircleAnchor = (circle: CircleShape, anchor: AnchorSide) => {
   if (anchor === "top") return { x: circle.x, y: circle.y - circle.ry };
   if (anchor === "bottom") return { x: circle.x, y: circle.y + circle.ry };
   if (anchor === "left") return { x: circle.x - circle.rx, y: circle.y };
-  return { x: circle.x + circle.rx, y: circle.y };
+  if (anchor === "right") return { x: circle.x + circle.rx, y: circle.y };
+
+  const cos45 = Math.cos(Math.PI / 4);
+  const sin45 = Math.sin(Math.PI / 4);
+
+  if (anchor === "top-left")
+    return { x: circle.x - circle.rx * cos45, y: circle.y - circle.ry * sin45 };
+  if (anchor === "top-right")
+    return { x: circle.x + circle.rx * cos45, y: circle.y - circle.ry * sin45 };
+  if (anchor === "bottom-left")
+    return { x: circle.x - circle.rx * cos45, y: circle.y + circle.ry * sin45 };
+  return { x: circle.x + circle.rx * cos45, y: circle.y + circle.ry * sin45 };
 };
 
 /**

@@ -372,7 +372,9 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       kind: ShapeKind
     ) => {
       if (!isArrow && !selectedIds.has(r.id)) return;
-      (["top", "right", "bottom", "left"] as AnchorSide[]).forEach((side) => {
+      (
+        ["top-left", "top-right", "bottom-left", "bottom-right"] as AnchorSide[]
+      ).forEach((side) => {
         handles.push({
           kind,
           shapeId: r.id,
@@ -395,7 +397,9 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     // Circles have specialized anchor calculation
     circles.forEach((c) => {
       if (!isArrow && !selectedIds.has(c.id)) return;
-      (["top", "right", "bottom", "left"] as AnchorSide[]).forEach((side) => {
+      (
+        ["top-left", "top-right", "bottom-left", "bottom-right"] as AnchorSide[]
+      ).forEach((side) => {
         handles.push({
           kind: "circle",
           shapeId: c.id,
