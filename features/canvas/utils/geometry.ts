@@ -465,3 +465,42 @@ export const getContentBounds = (shapes: ShapeCollection) => {
   // Compute min/max for to find out the extremes
   return { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
 };
+
+export const getSelectionBounds = (selected: { kind: string; id: string }[], shapes: ShapeCollection) => {
+  if (selected.length === 0) return null;
+  const xs: number[] = [];
+  const ys: number[] = [];
+
+  const addBox = (box: { x: number; y: number; width: number; height: number } | null) => {
+    if (box) {
+      xs.push(box.x, box.x + box.width);
+      ys.push(box.y, box.y + box.height);
+    }
+  };
+
+  selected.forEach(s => {
+    const bounds = getShapeBounds({ kind: s.kind, shapeId: s.id }, shapes);
+    if (bounds) {
+      addBox(bounds);
+    } else if (s.kind === "line" || s.kind === "arrow") {
+      const line = (s.kind === "line" ? shapes.lines : shapes.arrows)?.find(i => i.id === s.id);
+      if (line) {
+        xs.push(line.x1, line.x2);
+        ys.push(line.y1, line.y2);
+      }
+    } else if (s.kind === "figure") {
+      const f = shapes.figures?.find(i => i.id === s.id);
+      if (f) addBox({ x: f.x, y: f.y, width: f.width, height: f.height });
+    } else if (s.kind === "code") {
+      const c = shapes.codes?.find(i => i.id === s.id);
+      if (c) addBox({ x: c.x, y: c.y, width: c.width, height: c.height });
+    }
+  });
+
+  if (xs.length === 0) return null;
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+};

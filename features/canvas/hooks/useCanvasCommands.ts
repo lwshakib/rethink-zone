@@ -229,5 +229,90 @@ export const useCanvasCommands = (
     [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, figures, codes, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setFigures, setCodes, pushHistory, setSelectedShape]
   );
 
-  return { deleteSelected, duplicateSelection };
+  /**
+   * groupSelected - Assigns a common groupId to all currently selected shapes.
+   */
+  const groupSelected = useCallback(() => {
+    if (selectedShape.length < 2) return;
+    const newGroupId = makeId();
+    const updates: any = {};
+    const selectedIds = new Set(selectedShape.map(s => s.id));
+
+    const updateCollection = (items: any[], kind: string, setter: any) => {
+      const next = items.map(item => 
+        selectedIds.has(item.id) ? { ...item, groupId: newGroupId } : item
+      );
+      if (JSON.stringify(next) !== JSON.stringify(items)) {
+        updates[kind + "s" === "polys" ? "polygons" : kind + "s"] = next;
+        setter(next);
+      }
+    };
+
+    updateCollection(rectangles, "rect", setRectangles);
+    updateCollection(circles, "circle", setCircles);
+    updateCollection(images, "image", setImages);
+    updateCollection(texts, "text", setTexts);
+    updateCollection(frames, "frame", setFrames);
+    updateCollection(lines, "line", setLines);
+    updateCollection(arrows, "arrow", setArrows);
+    updateCollection(polygons, "poly", setPolygons);
+    updateCollection(figures, "figure", setFigures);
+    updateCollection(codes, "code", setCodes);
+
+    pushHistory(updates);
+  }, [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, figures, codes, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setFigures, setCodes, pushHistory]);
+
+  /**
+   * ungroupSelected - Removes the groupId from all shapes that belong to the groups in the current selection.
+   */
+  const ungroupSelected = useCallback(() => {
+    if (selectedShape.length === 0) return;
+
+    // Find all groupIds in the current selection
+    const groupIdsToUngroup = new Set<string>();
+    selectedShape.forEach(({ kind, index }) => {
+      let shape: any = null;
+      if (kind === "rect") shape = rectangles[index];
+      else if (kind === "circle") shape = circles[index];
+      else if (kind === "image") shape = images[index];
+      else if (kind === "text") shape = texts[index];
+      else if (kind === "frame") shape = frames[index];
+      else if (kind === "line") shape = lines[index];
+      else if (kind === "arrow") shape = arrows[index];
+      else if (kind === "poly") shape = polygons[index];
+      else if (kind === "figure") shape = figures[index];
+      else if (kind === "code") shape = codes[index];
+      
+      if (shape?.groupId) groupIdsToUngroup.add(shape.groupId);
+    });
+
+    if (groupIdsToUngroup.size === 0) return;
+
+    const updates: any = {};
+    const ungroupCollection = (items: any[], kind: string, setter: any) => {
+      const next = items.map(item => 
+        item.groupId && groupIdsToUngroup.has(item.groupId) ? { ...item, groupId: undefined } : item
+      );
+      if (JSON.stringify(next) !== JSON.stringify(items)) {
+        updates[kind + "s" === "polys" ? "polygons" : kind + "s"] = next;
+        setter(next);
+      }
+    };
+
+    ungroupCollection(rectangles, "rect", setRectangles);
+    ungroupCollection(circles, "circle", setCircles);
+    ungroupCollection(images, "image", setImages);
+    ungroupCollection(texts, "text", setTexts);
+    ungroupCollection(frames, "frame", setFrames);
+    ungroupCollection(lines, "line", setLines);
+    ungroupCollection(arrows, "arrow", setArrows);
+    ungroupCollection(polygons, "poly", setPolygons);
+    ungroupCollection(figures, "figure", setFigures);
+    ungroupCollection(codes, "code", setCodes);
+
+    pushHistory(updates);
+  }, [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, figures, codes, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setFigures, setCodes, pushHistory]);
+
+  return { deleteSelected, duplicateSelection, groupSelected, ungroupSelected };
 };
+export default useCanvasCommands;

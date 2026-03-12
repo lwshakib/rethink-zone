@@ -25,6 +25,7 @@ import {
   getAnchorPoint,   // Generic helper to get an anchor point for any shape
   getShapeBounds,   // Helper to calculate the bounding box of a shape
   getContentBounds, // Helper to calculate the total bounding box of all content
+  getSelectionBounds, // Helper for aggregate selection box
 } from "./utils/geometry";
 import { measureText } from "./utils/canvas-helpers"; // Helper to calculate text dimensions on canvas
 import {
@@ -138,7 +139,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   }, [basePushHistory, snapshot]);
 
   // Bulk actions like deletion and duplication
-  const { deleteSelected, duplicateSelection } = useCanvasCommands({
+  const { deleteSelected, duplicateSelection, groupSelected, ungroupSelected } = useCanvasCommands({
     rectangles, setRectangles, circles, setCircles, lines, setLines, arrows, setArrows,
     paths, setPaths, images, setImages, texts, setTexts, frames, setFrames,
     polygons, setPolygons, connectors, setConnectors, figures, setFigures, codes, setCodes, selectedShape, setSelectedShape
@@ -477,24 +478,26 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     ctx.translate(pan.x, pan.y); // Apply view translation (panning)
     ctx.scale(zoom, zoom);        // Apply view scale (zooming)
 
+    const isMulti = selectedShape.length > 1;
+
     // Render each shape type in order (Z-index is determined by iteration order here)
     images.forEach((im, idx) =>
-      drawImageItem(ctx, im, imageCacheRef.current, zoom, 1, selectedShape.some(s => s.kind === "image" && s.index === idx))
+      drawImageItem(ctx, im, imageCacheRef.current, zoom, 1, !isMulti && selectedShape.some(s => s.kind === "image" && s.index === idx))
     );
     rectangles.forEach((r, idx) =>
-      drawRect(ctx, r, themeStroke, zoom, selectedShape.some(s => s.kind === "rect" && s.index === idx))
+      drawRect(ctx, r, themeStroke, zoom, !isMulti && selectedShape.some(s => s.kind === "rect" && s.index === idx))
     );
     circles.forEach((c, idx) =>
-      drawCircle(ctx, c, themeStroke, zoom, selectedShape.some(s => s.kind === "circle" && s.index === idx))
+      drawCircle(ctx, c, themeStroke, zoom, !isMulti && selectedShape.some(s => s.kind === "circle" && s.index === idx))
     );
     polygons.forEach((p, idx) =>
-      drawPoly(ctx, p, themeStroke, zoom, selectedShape.some(s => s.kind === "poly" && s.index === idx))
+      drawPoly(ctx, p, themeStroke, zoom, !isMulti && selectedShape.some(s => s.kind === "poly" && s.index === idx))
     );
     lines.forEach((l, idx) =>
-      drawLine(ctx, l, themeStroke, zoom, selectedShape.some(s => s.kind === "line" && s.index === idx))
+      drawLine(ctx, l, themeStroke, zoom, !isMulti && selectedShape.some(s => s.kind === "line" && s.index === idx))
     );
     arrows.forEach((l, idx) =>
-      drawArrow(ctx, l, themeStroke, zoom, selectedShape.some(s => s.kind === "arrow" && s.index === idx))
+      drawArrow(ctx, l, themeStroke, zoom, !isMulti && selectedShape.some(s => s.kind === "arrow" && s.index === idx))
     );
     connectors.forEach((c, idx) => {
       const fromPt = getAnchorPointLocal(c.from);
@@ -505,29 +508,33 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
         toAnchor: c.to.anchor,
         fromBounds: getShapeBoundsLocal(c.from) || undefined,
         toBounds: getShapeBoundsLocal(c.to) || undefined,
-        highlight: selectedShape.some(s => s.kind === "connector" && s.index === idx),
+        highlight: !isMulti && selectedShape.some(s => s.kind === "connector" && s.index === idx),
       });
     });
     paths.forEach((p) => drawPath(ctx, p, themeStroke, zoom)); // Render freehand paths
     texts.forEach((t, idx) => {
       // Don't draw the static text if the overlay editor is currently active for this shape
       if (textEditor?.index === idx) return;
-      drawText(ctx, t, themeText, zoom, 1, selectedShape.some(s => s.kind === "text" && s.index === idx));
+      drawText(ctx, t, themeText, zoom, 1, !isMulti && selectedShape.some(s => s.kind === "text" && s.index === idx));
     });
     frames.forEach((f, idx) =>
-      drawFrame(ctx, f, themeStroke, themeText, themeFrameBg, zoom, 1, selectedShape.some(s => s.kind === "frame" && s.index === idx))
+      drawFrame(ctx, f, themeStroke, themeText, themeFrameBg, zoom, 1, !isMulti && selectedShape.some(s => s.kind === "frame" && s.index === idx))
     );
     figures.forEach((f, idx) =>
-      drawFigure(ctx, f, themeStroke, themeText, zoom, selectedShape.some(s => s.kind === "figure" && s.index === idx), {
+      drawFigure(ctx, f, themeStroke, themeText, zoom, !isMulti && selectedShape.some(s => s.kind === "figure" && s.index === idx), {
         hideTitle: textEditor?.kind === "figure" && textEditor?.index === idx
       })
     );
 
-    // codes.forEach((c, idx) => {
-    //   if (selectedShape.some(s => s.kind === "code" && s.id === c.id)) {
-    //     drawSelectionOverlay(ctx, c.x, c.y, c.width, c.height, zoom, "code");
-    //   }
-    // });
+    // Draw aggregate selection overlay if multiple shapes are selected
+    if (isMulti) {
+      const b = getSelectionBounds(selectedShape, {
+        rectangles, circles, images, texts, frames, polygons, lines, arrows, figures, codes
+      });
+      if (b) {
+        drawSelectionOverlay(ctx, b.x, b.y, b.width, b.height, zoom);
+      }
+    }
 
     // Draw current drawing previews
     // Render temporary previews for shapes currently being drawn by the user
@@ -554,7 +561,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     ctx.restore(); // Restore context state (undoes translate/scale) for subsequent drawings
   }, [
     // Depend on all shape states and view transforms to trigger redraws
-    rectangles, circles, connectors, getAnchorPointLocal, lines, arrows, paths, polygons,
+    rectangles, circles, connectors, getAnchorPointLocal, lines, arrows, paths, polygons, figures, codes,
     images, texts, frames, currentRect, currentCircle, currentLine, currentArrow,
     currentPath, pendingConnector, currentFrame, zoom, pan, selectedShape,
     rerenderTick, resolvedTheme, themeText, themeStroke, themeFrameBg, getShapeBoundsLocal, imageCacheRef, textEditor?.index, hoverAnchor
@@ -573,7 +580,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       zoom,
       snapshot: snapshot() // Pass the full state snapshot
     });
-  }, [rectangles, circles, lines, arrows, paths, images, texts, frames, connectors, polygons, pan, zoom, snapshot]);
+  }, [rectangles, circles, lines, arrows, paths, images, texts, frames, connectors, polygons, figures, codes, pan, zoom, snapshot]);
 
   // Pre-load images into the cache when they appear in the 'images' state
   useEffect(() => {
@@ -758,6 +765,8 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
             onChangeKind={onChangeKind}
             onDelete={deleteSelected}
             onDuplicate={() => duplicateSelection(20)}
+            onGroup={groupSelected}
+            onUngroup={ungroupSelected}
             theme={resolvedTheme}
           />
 

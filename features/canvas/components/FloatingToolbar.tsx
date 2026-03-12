@@ -6,7 +6,7 @@ import {
   Minus, Type, Image as LucideImage, Frame as LucideFrame,
   Activity, ChevronDown, Check, MoreVertical, Layers,
   AlignLeft, AlignCenter, AlignRight, MessageSquare, Plus,
-  Code as CodeIcon, Type as TypeIcon
+  Code as CodeIcon, Type as TypeIcon, Group, Ungroup
 } from "lucide-react";
 // Type definitions for various shapes supportable on the canvas
 import { SelectedShape, RectShape, CircleShape, ImageShape, TextShape, FrameShape, PolyShape, LineShape, ArrowShape, CodeShape, Connector } from "../types";
@@ -30,6 +30,8 @@ interface FloatingToolbarProps {
   onChangeKind: (kind: string, index: number, newKind: string) => void; // Shape transformation trigger
   onDelete: () => void;         // Global delete handler
   onDuplicate: () => void;      // Global duplicate handler
+  onGroup?: () => void;         // Grouping handler
+  onUngroup?: () => void;       // Ungrouping handler
   theme?: string;                // Component theme context
 }
 
@@ -152,6 +154,8 @@ const FloatingToolbar = React.memo(({
   onChangeKind,
   onDelete,
   onDuplicate,
+  onGroup,
+  onUngroup,
   theme = "dark",
 }: FloatingToolbarProps) => {
   // Theme-derived utility classes
@@ -206,6 +210,23 @@ const FloatingToolbar = React.memo(({
     return { ...source, kind, label };
   }, [selectedShape, rectangles, circles, images, texts, frames, polygons, lines, arrows, codes, connectors]);
 
+  // Grouping logic: check if selected items are part of a group
+  const isInGroup = useMemo(() => {
+    return selectedShape.some(s => {
+      const findById = (arr: any[]) => arr.find(item => item.id === s.id);
+      const shape = s.kind === "rect" ? findById(rectangles) :
+                    s.kind === "circle" ? findById(circles) :
+                    s.kind === "image" ? findById(images) :
+                    s.kind === "text" ? findById(texts) :
+                    s.kind === "frame" ? findById(frames) :
+                    s.kind === "poly" ? findById(polygons) :
+                    s.kind === "line" ? findById(lines) :
+                    s.kind === "arrow" ? findById(arrows) : 
+                    s.kind === "code" ? findById(codes) : null;
+      return !!shape?.groupId;
+    });
+  }, [selectedShape, rectangles, circles, images, texts, frames, polygons, lines, arrows, codes]);
+
   if (selectedShape.length === 0 || !shapeData) return null; // Guard: hide if no selection
 
   // Helper variables for logic simplification
@@ -228,7 +249,7 @@ const FloatingToolbar = React.memo(({
   const isLineOrArrow = ["line", "arrow"].includes(mainKind);
   const isConnector = mainKind === "connector";
 
-  /**
+   /**
    * RENDERS: The grid of shape options for transformation.
    */
   const renderShapesGrid = () => (
@@ -554,10 +575,20 @@ const FloatingToolbar = React.memo(({
             <Layers className="h-4 w-4 text-primary" />
             <span className="text-[11px] font-bold text-foreground/90">{selectedShape.length} selected</span>
           </div>
-          <button onClick={onDuplicate} className={`h-9 w-9 flex items-center justify-center rounded-sm ${bgHover} transition-all duration-200`}>
+          <button onClick={onDuplicate} className={`h-9 w-9 flex items-center justify-center rounded-sm ${bgHover} transition-all duration-200`} title="Duplicate">
             <Copy className="h-4 w-4" />
           </button>
-          <button onClick={onDelete} className="h-9 w-9 flex items-center justify-center rounded-sm hover:bg-destructive/10 text-destructive transition-all duration-200">
+          <div className={`h-6 w-px ${separatorColor} mx-0.5`} />
+          <button onClick={onGroup} className={`h-9 w-9 flex items-center justify-center rounded-sm ${bgHover} transition-all duration-200`} title="Group">
+            <Group className="h-4 w-4" />
+          </button>
+          {isInGroup && (
+            <button onClick={onUngroup} className={`h-9 w-9 flex items-center justify-center rounded-sm ${bgHover} transition-all duration-200`} title="Ungroup">
+              <Ungroup className="h-4 w-4" />
+            </button>
+          )}
+          <div className={`h-6 w-px ${separatorColor} mx-0.5`} />
+          <button onClick={onDelete} className="h-9 w-9 flex items-center justify-center rounded-sm hover:bg-destructive/10 text-destructive transition-all duration-200" title="Delete">
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
@@ -740,6 +771,12 @@ const FloatingToolbar = React.memo(({
                     <Copy className="h-4 w-4 opacity-60" />
                     <span>Duplicate</span>
                   </button>
+                  {isInGroup && (
+                    <button onClick={onUngroup} className={`flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-md ${bgHover} transition-colors`}>
+                      <Ungroup className="h-4 w-4 opacity-60" />
+                      <span>Ungroup</span>
+                    </button>
+                  )}
                   <button onClick={onDelete} className="flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-md hover:bg-destructive/10 text-destructive transition-colors">
                     <Trash2 className="h-4 w-4 opacity-60" />
                     <span>Delete</span>

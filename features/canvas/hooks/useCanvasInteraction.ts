@@ -6,7 +6,7 @@ import {
   RectShape, CircleShape, SelectedShape, SelectedShapeInfo, DragMode, PolyShape, Connector, LineShape, ArrowShape, PathShape, ImageShape, TextShape, FrameShape, FigureShape, CodeShape
 } from "../types";
 import { makeId } from "../utils";
-import { distToSegment, getConnectorPoints, distToPolyline } from "../utils/geometry";
+import { distToSegment, getConnectorPoints, distToPolyline, getSelectionBounds } from "../utils/geometry";
 import { measureText } from "../utils/canvas-helpers";
 import { uploadFileToCloudinary } from "../utils/upload";
 
@@ -141,6 +141,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
   const dragShapesStartRef = useRef<HistoryEntry | null>(null);
   const dragConnectorStartRef = useRef<any>(null);
   const dragConnectorOriginalAnchorRef = useRef<any>(null);
+  const dragSelectionStartBoundsRef = useRef<{ x: number, y: number, width: number, height: number } | null>(null);
   const selectionStartRef = useRef<any>(null);
   const pointerToolRef = useRef<Tool | "">("");
   const pendingMoveUpdateRef = useRef<number | null>(null);
@@ -722,7 +723,44 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         if (!workingState) {
           const isAlreadySelected = selectedShape.some(s => s.kind === workingPicked.kind && s.id === workingPicked.id);
           if (!isAlreadySelected) {
-            setSelectedShape([workingPicked]);
+            // Group-aware selection
+            const findById = (arr: any[]) => arr.find(item => item.id === workingPicked.id);
+            const shape = workingPicked.kind === "rect" ? findById(rectangles) :
+                          workingPicked.kind === "circle" ? findById(circles) :
+                          workingPicked.kind === "image" ? findById(images) :
+                          workingPicked.kind === "text" ? findById(texts) :
+                          workingPicked.kind === "frame" ? findById(frames) :
+                          workingPicked.kind === "poly" ? findById(polygons) :
+                          workingPicked.kind === "line" ? findById(lines) :
+                          workingPicked.kind === "arrow" ? findById(arrows) : 
+                          workingPicked.kind === "code" ? findById(codes) :
+                          workingPicked.kind === "figure" ? findById(figures) : null;
+            
+            if (shape?.groupId && !event.shiftKey) {
+              const groupShapes: SelectedShape = [];
+              const collect = (arr: any[], k: string) => {
+                arr.forEach((item, idx) => {
+                  if (item.groupId === shape.groupId) {
+                    groupShapes.push({ kind: k as any, index: idx, id: item.id });
+                  }
+                });
+              };
+              collect(rectangles, "rect");
+              collect(circles, "circle");
+              collect(images, "image");
+              collect(texts, "text");
+              collect(frames, "frame");
+              collect(polygons, "poly");
+              collect(lines, "line");
+              collect(arrows, "arrow");
+              collect(figures, "figure");
+              collect(codes, "code");
+              setSelectedShape(groupShapes);
+            } else if (event.shiftKey) {
+              setSelectedShape(prev => [...prev, workingPicked]);
+            } else {
+              setSelectedShape([workingPicked]);
+            }
           }
         }
 
@@ -754,6 +792,40 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         const s_figures = workingState ? workingState.figures : figures;
         const s_codes = workingState ? workingState.codes : codes;
         const s_connectors = workingState ? workingState.connectors : connectors;
+
+        dragSelectionStartBoundsRef.current = getSelectionBounds(selectedShapeRef.current, {
+          rectangles: s_rects,
+          circles: s_circles,
+          images: s_images,
+          texts: s_texts,
+          frames: s_frames,
+          polygons: s_polygons,
+          lines: s_lines,
+          arrows: s_arrows,
+          figures: s_figures,
+          codes: s_codes
+        });
+
+        // MULTI-SELECTION / GROUP RESIZE DETECTION
+        // Detect if the user clicked on the corners of the aggregate selection bounding box
+        if (dragSelectionStartBoundsRef.current && selectedShapeRef.current.length > 0) {
+          const b = dragSelectionStartBoundsRef.current;
+          const hs = 16 / zoom; // Large hit area for handles
+          const corners = [ 
+            { x: b.x, y: b.y, sx: -1, sy: -1 }, 
+            { x: b.x + b.width, y: b.y, sx: 1, sy: -1 }, 
+            { x: b.x, y: b.y + b.height, sx: -1, sy: 1 }, 
+            { x: b.x + b.width, y: b.y + b.height, sx: 1, sy: 1 } 
+          ];
+          const hitCorner = corners.find(c => Math.abs(point.x - c.x) <= hs / 2 && Math.abs(point.y - c.y) <= hs / 2);
+          
+          if (hitCorner) {
+            dragRectCornerRef.current = { sx: hitCorner.sx, sy: hitCorner.sy };
+            dragModeRef.current = "resize-selection";
+            // Store collective start states if not already present
+            return; // Intercept individual shape logic
+          }
+        }
 
         if (workingPicked.kind === "rect") {
           const r = s_rects[workingPicked.index];
@@ -1421,6 +1493,83 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
         return;
       }
+
+      if (dragModeRef.current === "resize-selection" && dragSelectionStartBoundsRef.current && dragShapesStartRef.current) {
+        const base = dragSelectionStartBoundsRef.current;
+        const corner = dragRectCornerRef.current ?? { sx: 1, sy: 1 };
+        const dx = point.x - pointerStartRef.current.x;
+        const dy = point.y - pointerStartRef.current.y;
+        
+        const newW = Math.max(10, base.width + dx * corner.sx);
+        const newH = Math.max(10, base.height + dy * corner.sy);
+        const newX = corner.sx < 0 ? base.x + (base.width - newW) : base.x;
+        const newY = corner.sy < 0 ? base.y + (base.height - newH) : base.y;
+        
+        const sx = base.width !== 0 ? newW / base.width : 1;
+        const sy = base.height !== 0 ? newH / base.height : 1;
+        const sState = dragShapesStartRef.current;
+        const kinds = new Set(selectedShapeRef.current.map(s => s.kind));
+
+        if (kinds.has("rect")) setRectangles(prev => prev.map(r => {
+          const s = selectedShapeRef.current.find(ss => ss.kind === "rect" && ss.id === r.id);
+          const sr = sState.rectangles.find(x => x.id === r.id);
+          return (s && sr) ? { ...r, x: newX + (sr.x - base.x) * sx, y: newY + (sr.y - base.y) * sy, width: sr.width * sx, height: sr.height * sy } : r;
+        }));
+        if (kinds.has("circle")) setCircles(prev => prev.map(c => {
+          const s = selectedShapeRef.current.find(ss => ss.kind === "circle" && ss.id === c.id);
+          const sc = sState.circles.find(x => x.id === c.id);
+          return (s && sc) ? { ...c, x: newX + (sc.x - base.x) * sx, y: newY + (sc.y - base.y) * sy, rx: sc.rx * sx, ry: sc.ry * sy } : c;
+        }));
+        if (kinds.has("image")) setImages(prev => prev.map(im => {
+          const s = selectedShapeRef.current.find(ss => ss.kind === "image" && ss.id === im.id);
+          const sim = sState.images.find(x => x.id === im.id);
+          return (s && sim) ? { ...im, x: newX + (sim.x - base.x) * sx, y: newY + (sim.y - base.y) * sy, width: sim.width * sx, height: sim.height * sy } : im;
+        }));
+        if (kinds.has("text")) setTexts(prev => prev.map(t => {
+          const s = selectedShapeRef.current.find(ss => ss.kind === "text" && ss.id === t.id);
+          const st = sState.texts.find(x => x.id === t.id);
+          if (s && st) {
+             const nH = st.height * sy;
+             const nF = Math.max(8, st.fontSize * (nH / st.height));
+             const m = measureText(st.text, nF);
+             return { ...t, x: newX + (st.x - base.x) * sx, y: newY + (st.y - base.y) * sy, fontSize: nF, width: m.width, height: m.height };
+          }
+          return t;
+        }));
+        if (kinds.has("frame")) setFrames(prev => prev.map(f => {
+          const s = selectedShapeRef.current.find(ss => ss.kind === "frame" && ss.id === f.id);
+          const sf = sState.frames.find(x => x.id === f.id);
+          return (s && sf) ? { ...f, x: newX + (sf.x - base.x) * sx, y: newY + (sf.y - base.y) * sy, width: sf.width * sx, height: sf.height * sy } : f;
+        }));
+        if (kinds.has("poly")) setPolygons(prev => prev.map(p => {
+          const s = selectedShapeRef.current.find(ss => ss.kind === "poly" && ss.id === p.id);
+          const sp = sState.polygons.find(x => x.id === p.id);
+          return (s && sp) ? { ...p, x: newX + (sp.x - base.x) * sx, y: newY + (sp.y - base.y) * sy, width: sp.width * sx, height: sp.height * sy } : p;
+        }));
+        if (kinds.has("figure")) setFigures(prev => prev.map(f => {
+          const s = selectedShapeRef.current.find(ss => ss.kind === "figure" && ss.id === f.id);
+          const sf = sState.figures.find(x => x.id === f.id);
+          return (s && sf) ? { ...f, x: newX + (sf.x - base.x) * sx, y: newY + (sf.y - base.y) * sy, width: sf.width * sx, height: sf.height * sy } : f;
+        }));
+        if (kinds.has("code")) setCodes(prev => prev.map(c => {
+          const s = selectedShapeRef.current.find(ss => ss.kind === "code" && ss.id === c.id);
+          const sc = sState.codes.find(x => x.id === c.id);
+          return (s && sc) ? { ...c, x: newX + (sc.x - base.x) * sx, y: newY + (sc.y - base.y) * sy, width: sc.width * sx, height: sc.height * sy } : c;
+        }));
+        if (kinds.has("line")) setLines(prev => prev.map(l => {
+          const s = selectedShapeRef.current.find(ss => ss.kind === "line" && ss.id === l.id);
+          const sl = sState.lines.find(x => x.id === l.id);
+          return (s && sl) ? { ...l, x1: newX + (sl.x1 - base.x) * sx, y1: newY + (sl.y1 - base.y) * sy, x2: newX + (sl.x2 - base.x) * sx, y2: newY + (sl.y2 - base.y) * sy } : l;
+        }));
+        if (kinds.has("arrow")) setArrows(prev => prev.map(a => {
+          const s = selectedShapeRef.current.find(ss => ss.kind === "arrow" && ss.id === a.id);
+          const sa = sState.arrows.find(x => x.id === a.id);
+          return (s && sa) ? { ...a, x1: newX + (sa.x1 - base.x) * sx, y1: newY + (sa.y1 - base.y) * sy, x2: newX + (sa.x2 - base.x) * sx, y2: newY + (sa.y2 - base.y) * sy } : a;
+        }));
+
+        return;
+      }
+
 
 
       // Resizing Logic

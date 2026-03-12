@@ -14,6 +14,7 @@ export type RectShape = {
   opacity?: number; 
   strokeDashArray?: number[]; // Used for dashed or dotted borders
   strokeWidth?: number;
+  groupId?: string;
 };
 
 /** 
@@ -30,6 +31,7 @@ export type CircleShape = {
   opacity?: number;
   strokeDashArray?: number[];
   strokeWidth?: number;
+  groupId?: string;
 };
 
 /** 
@@ -45,6 +47,7 @@ export type LineShape = {
   opacity?: number;
   strokeDashArray?: number[];
   strokeWidth?: number;
+  groupId?: string;
 };
 
 /** 
@@ -60,6 +63,7 @@ export type ArrowShape = {
   opacity?: number;
   strokeDashArray?: number[];
   strokeWidth?: number;
+  groupId?: string;
 };
 
 /** 
@@ -72,6 +76,7 @@ export type PathShape = {
   opacity?: number;
   strokeDashArray?: number[];
   strokeWidth?: number;
+  groupId?: string;
 };
 
 /** 
@@ -85,6 +90,7 @@ export type ImageShape = {
   width: number;
   height: number;
   opacity?: number;
+  groupId?: string;
 };
 
 /** 
@@ -102,6 +108,7 @@ export type TextShape = {
   opacity?: number;
   fontFamily?: "Rough" | "Clean" | "Mono"; // Hand-drawn vs Standard vs Monospace
   textAlign?: "left" | "center" | "right";
+  groupId?: string;
 };
 
 /** 
@@ -120,6 +127,7 @@ export type FrameShape = {
   opacity?: number;
   strokeDashArray?: number[];
   strokeWidth?: number;
+  groupId?: string;
 };
 
 /** 
@@ -137,6 +145,7 @@ export type PolyShape = {
   opacity?: number;
   strokeDashArray?: number[];
   strokeWidth?: number;
+  groupId?: string;
 };
 
 /** 
@@ -154,6 +163,7 @@ export type FigureShape = {
   stroke?: string;
   opacity?: number;
   strokeWidth?: number;
+  groupId?: string;
 };
 
 /** 
@@ -173,6 +183,7 @@ export type CodeShape = {
   fontFamily?: "Rough" | "Clean" | "Mono";
   textAlign?: "left" | "center" | "right";
   fontSize?: number;
+  groupId?: string;
 };
 
 // Kind identifiers for categorizing different shape types
@@ -304,7 +315,8 @@ export type DragMode =
   | "resize-frame-v"
   | "resize-line"
   | "resize-arrow"
-  | "resize-connector";
+  | "resize-connector"
+  | "resize-selection";
 
 // Simple UI wrapper for general icons
 export interface IconItem {
