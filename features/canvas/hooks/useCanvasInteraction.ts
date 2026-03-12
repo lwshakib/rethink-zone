@@ -1553,7 +1553,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           );
 
           // MULTI-SELECTION / GROUP RESIZE DETECTION
-          // Detect if the user clicked on the corners of the aggregate selection bounding box
+          const margin = 2 / zoom;
           if (
             dragSelectionStartBoundsRef.current &&
             selectedShapeRef.current.length > 0
@@ -1561,10 +1561,15 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             const b = dragSelectionStartBoundsRef.current;
             const hs = 16 / zoom; // Large hit area for handles
             const corners = [
-              { x: b.x, y: b.y, sx: -1, sy: -1 },
-              { x: b.x + b.width, y: b.y, sx: 1, sy: -1 },
-              { x: b.x, y: b.y + b.height, sx: -1, sy: 1 },
-              { x: b.x + b.width, y: b.y + b.height, sx: 1, sy: 1 },
+              { x: b.x - margin, y: b.y - margin, sx: -1, sy: -1 },
+              { x: b.x + b.width + margin, y: b.y - margin, sx: 1, sy: -1 },
+              { x: b.x - margin, y: b.y + b.height + margin, sx: -1, sy: 1 },
+              {
+                x: b.x + b.width + margin,
+                y: b.y + b.height + margin,
+                sx: 1,
+                sy: 1,
+              },
             ];
             const hitCorner = corners.find(
               (c) =>
@@ -1578,8 +1583,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
                 sy: hitCorner.sy,
               };
               dragModeRef.current = "resize-selection";
-              // Store collective start states if not already present
-              return; // Intercept individual shape logic
+              return;
             }
           }
 
@@ -1588,10 +1592,10 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             if (!r) return;
             const hs = 14 / zoom;
             const corners = [
-              { x: r.x, y: r.y, sx: -1, sy: -1 },
-              { x: r.x + r.width, y: r.y, sx: 1, sy: -1 },
-              { x: r.x, y: r.y + r.height, sx: -1, sy: 1 },
-              { x: r.x + r.width, y: r.y + r.height, sx: 1, sy: 1 },
+              { x: r.x - margin, y: r.y - margin, sx: -1, sy: -1 },
+              { x: r.x + r.width + margin, y: r.y - margin, sx: 1, sy: -1 },
+              { x: r.x - margin, y: r.y + r.height + margin, sx: -1, sy: 1 },
+              { x: r.x + r.width + margin, y: r.y + r.height + margin, sx: 1, sy: 1 },
             ];
             const hitCorner = corners.find(
               (c) =>
@@ -1609,19 +1613,19 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             } else {
               const tol = 10 / zoom;
               const onTop =
-                Math.abs(point.y - r.y) <= tol &&
+                Math.abs(point.y - (r.y - margin)) <= tol &&
                 point.x >= r.x - tol &&
                 point.x <= r.x + r.width + tol;
               const onBottom =
-                Math.abs(point.y - (r.y + r.height)) <= tol &&
+                Math.abs(point.y - (r.y + r.height + margin)) <= tol &&
                 point.x >= r.x - tol &&
                 point.x <= r.x + r.width + tol;
               const onLeft =
-                Math.abs(point.x - r.x) <= tol &&
+                Math.abs(point.x - (r.x - margin)) <= tol &&
                 point.y >= r.y - tol &&
                 point.y <= r.y + r.height + tol;
               const onRight =
-                Math.abs(point.x - (r.x + r.width)) <= tol &&
+                Math.abs(point.x - (r.x + r.width + margin)) <= tol &&
                 point.y >= r.y - tol &&
                 point.y <= r.y + r.width + tol;
 
@@ -1643,10 +1647,10 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             if (!c) return;
             const hs = 12 / zoom;
             const corners = [
-              { x: c.x - c.rx, y: c.y - c.ry, sx: -1, sy: -1 },
-              { x: c.x + c.rx, y: c.y - c.ry, sx: 1, sy: -1 },
-              { x: c.x - c.rx, y: c.y + c.ry, sx: -1, sy: 1 },
-              { x: c.x + c.rx, y: c.y + c.ry, sx: 1, sy: 1 },
+              { x: c.x - c.rx - margin, y: c.y - c.ry - margin, sx: -1, sy: -1 },
+              { x: c.x + c.rx + margin, y: c.y - c.ry - margin, sx: 1, sy: -1 },
+              { x: c.x - c.rx - margin, y: c.y + c.ry + margin, sx: -1, sy: 1 },
+              { x: c.x + c.rx + margin, y: c.y + c.ry + margin, sx: 1, sy: 1 },
             ];
             const hitCorner = corners.find(
               (cn) =>
@@ -1703,10 +1707,15 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             if (!im) return;
             const hs = 14 / zoom;
             const corners = [
-              { x: im.x, y: im.y, sx: -1, sy: -1 },
-              { x: im.x + im.width, y: im.y, sx: 1, sy: -1 },
-              { x: im.x, y: im.y + im.height, sx: -1, sy: 1 },
-              { x: im.x + im.width, y: im.y + im.height, sx: 1, sy: 1 },
+              { x: im.x - margin, y: im.y - margin, sx: -1, sy: -1 },
+              { x: im.x + im.width + margin, y: im.y - margin, sx: 1, sy: -1 },
+              { x: im.x - margin, y: im.y + im.height + margin, sx: -1, sy: 1 },
+              {
+                x: im.x + im.width + margin,
+                y: im.y + im.height + margin,
+                sx: 1,
+                sy: 1,
+              },
             ];
             const hitCorner = corners.find(
               (c) =>
@@ -1724,19 +1733,19 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             } else {
               const tol = 10 / zoom;
               const onTop =
-                Math.abs(point.y - im.y) <= tol &&
+                Math.abs(point.y - (im.y - margin)) <= tol &&
                 point.x >= im.x - tol &&
                 point.x <= im.x + im.width + tol;
               const onBottom =
-                Math.abs(point.y - (im.y + im.height)) <= tol &&
+                Math.abs(point.y - (im.y + im.height + margin)) <= tol &&
                 point.x >= im.x - tol &&
                 point.x <= im.x + im.width + tol;
               const onLeft =
-                Math.abs(point.x - im.x) <= tol &&
+                Math.abs(point.x - (im.x - margin)) <= tol &&
                 point.y >= im.y - tol &&
                 point.y <= im.y + im.height + tol;
               const onRight =
-                Math.abs(point.x - (im.x + im.width)) <= tol &&
+                Math.abs(point.x - (im.x + im.width + margin)) <= tol &&
                 point.y >= im.y - tol &&
                 point.y <= im.y + im.width + tol;
 
@@ -1758,10 +1767,10 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             if (!t) return;
             const hs = 14 / zoom;
             const corners = [
-              { x: t.x, y: t.y, sx: -1, sy: -1 },
-              { x: t.x + t.width, y: t.y, sx: 1, sy: -1 },
-              { x: t.x, y: t.y + t.height, sx: -1, sy: 1 },
-              { x: t.x + t.width, y: t.y + t.height, sx: 1, sy: 1 },
+              { x: t.x - margin, y: t.y - margin, sx: -1, sy: -1 },
+              { x: t.x + t.width + margin, y: t.y - margin, sx: 1, sy: -1 },
+              { x: t.x - margin, y: t.y + t.height + margin, sx: -1, sy: 1 },
+              { x: t.x + t.width + margin, y: t.y + t.height + margin, sx: 1, sy: 1 },
             ];
             const hitCorner = corners.find(
               (c) =>
@@ -1779,19 +1788,19 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             } else {
               const tol = 10 / zoom;
               const onTop =
-                Math.abs(point.y - t.y) <= tol &&
+                Math.abs(point.y - (t.y - margin)) <= tol &&
                 point.x >= t.x - tol &&
                 point.x <= t.x + t.width + tol;
               const onBottom =
-                Math.abs(point.y - (t.y + t.height)) <= tol &&
+                Math.abs(point.y - (t.y + t.height + margin)) <= tol &&
                 point.x >= t.x - tol &&
                 point.x <= t.x + t.width + tol;
               const onLeft =
-                Math.abs(point.x - t.x) <= tol &&
+                Math.abs(point.x - (t.x - margin)) <= tol &&
                 point.y >= t.y - tol &&
                 point.y <= t.y + t.height + tol;
               const onRight =
-                Math.abs(point.x - (t.x + t.width)) <= tol &&
+                Math.abs(point.x - (t.x + t.width + margin)) <= tol &&
                 point.y >= t.y - tol &&
                 point.y <= t.y + t.width + tol;
 
@@ -1813,10 +1822,10 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             if (!f) return;
             const hs = 14 / zoom;
             const corners = [
-              { x: f.x, y: f.y, sx: -1, sy: -1 },
-              { x: f.x + f.width, y: f.y, sx: 1, sy: -1 },
-              { x: f.x, y: f.y + f.height, sx: -1, sy: 1 },
-              { x: f.x + f.width, y: f.y + f.height, sx: 1, sy: 1 },
+              { x: f.x - margin, y: f.y - margin, sx: -1, sy: -1 },
+              { x: f.x + f.width + margin, y: f.y - margin, sx: 1, sy: -1 },
+              { x: f.x - margin, y: f.y + f.height + margin, sx: -1, sy: 1 },
+              { x: f.x + f.width + margin, y: f.y + f.height + margin, sx: 1, sy: 1 },
             ];
             const hitCorner = corners.find(
               (c) =>
@@ -1834,19 +1843,19 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             } else {
               const tol = 10 / zoom;
               const onTop =
-                Math.abs(point.y - f.y) <= tol &&
+                Math.abs(point.y - (f.y - margin)) <= tol &&
                 point.x >= f.x - tol &&
                 point.x <= f.x + f.width + tol;
               const onBottom =
-                Math.abs(point.y - (f.y + f.height)) <= tol &&
+                Math.abs(point.y - (f.y + f.height + margin)) <= tol &&
                 point.x >= f.x - tol &&
                 point.x <= f.x + f.width + tol;
               const onLeft =
-                Math.abs(point.x - f.x) <= tol &&
+                Math.abs(point.x - (f.x - margin)) <= tol &&
                 point.y >= f.y - tol &&
                 point.y <= f.y + f.height + tol;
               const onRight =
-                Math.abs(point.x - (f.x + f.width)) <= tol &&
+                Math.abs(point.x - (f.x + f.width + margin)) <= tol &&
                 point.y >= f.y - tol &&
                 point.y <= f.y + f.width + tol;
 
@@ -1868,10 +1877,10 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             if (!p) return;
             const hs = 12 / zoom;
             const corners = [
-              { x: p.x, y: p.y, sx: -1, sy: -1 },
-              { x: p.x + p.width, y: p.y, sx: 1, sy: -1 },
-              { x: p.x, y: p.y + p.height, sx: -1, sy: 1 },
-              { x: p.x + p.width, y: p.y + p.height, sx: 1, sy: 1 },
+              { x: p.x - margin, y: p.y - margin, sx: -1, sy: -1 },
+              { x: p.x + p.width + margin, y: p.y - margin, sx: 1, sy: -1 },
+              { x: p.x - margin, y: p.y + p.height + margin, sx: -1, sy: 1 },
+              { x: p.x + p.width + margin, y: p.y + p.height + margin, sx: 1, sy: 1 },
             ];
             const hitCorner = corners.find(
               (c) =>
@@ -1889,19 +1898,19 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             } else {
               const tol = 10 / zoom;
               const onTop =
-                Math.abs(point.y - p.y) <= tol &&
+                Math.abs(point.y - (p.y - margin)) <= tol &&
                 point.x >= p.x - tol &&
                 point.x <= p.x + p.width + tol;
               const onBottom =
-                Math.abs(point.y - (p.y + p.height)) <= tol &&
+                Math.abs(point.y - (p.y + p.height + margin)) <= tol &&
                 point.x >= p.x - tol &&
                 point.x <= p.x + p.width + tol;
               const onLeft =
-                Math.abs(point.x - p.x) <= tol &&
+                Math.abs(point.x - (p.x - margin)) <= tol &&
                 point.y >= p.y - tol &&
                 point.y <= p.y + p.height + tol;
               const onRight =
-                Math.abs(point.x - (p.x + p.width)) <= tol &&
+                Math.abs(point.x - (p.x + p.width + margin)) <= tol &&
                 point.y >= p.y - tol &&
                 point.y <= p.y + p.width + tol;
 
@@ -1923,10 +1932,10 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             if (!p) return;
             const hs = 12 / zoom;
             const corners = [
-              { x: p.x, y: p.y, sx: -1, sy: -1 },
-              { x: p.x + p.width, y: p.y, sx: 1, sy: -1 },
-              { x: p.x, y: p.y + p.height, sx: -1, sy: 1 },
-              { x: p.x + p.width, y: p.y + p.height, sx: 1, sy: 1 },
+              { x: p.x - margin, y: p.y - margin, sx: -1, sy: -1 },
+              { x: p.x + p.width + margin, y: p.y - margin, sx: 1, sy: -1 },
+              { x: p.x - margin, y: p.y + p.height + margin, sx: -1, sy: 1 },
+              { x: p.x + p.width + margin, y: p.y + p.height + margin, sx: 1, sy: 1 },
             ];
             const hitCorner = corners.find(
               (c) =>
@@ -1944,19 +1953,19 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             } else {
               const tol = 10 / zoom;
               const onTop =
-                Math.abs(point.y - p.y) <= tol &&
+                Math.abs(point.y - (p.y - margin)) <= tol &&
                 point.x >= p.x - tol &&
                 point.x <= p.x + p.width + tol;
               const onBottom =
-                Math.abs(point.y - (p.y + p.height)) <= tol &&
+                Math.abs(point.y - (p.y + p.height + margin)) <= tol &&
                 point.x >= p.x - tol &&
                 point.x <= p.x + p.width + tol;
               const onLeft =
-                Math.abs(point.x - p.x) <= tol &&
+                Math.abs(point.x - (p.x - margin)) <= tol &&
                 point.y >= p.y - tol &&
                 point.y <= p.y + p.height + tol;
               const onRight =
-                Math.abs(point.x - (p.x + p.width)) <= tol &&
+                Math.abs(point.x - (p.x + p.width + margin)) <= tol &&
                 point.y >= p.y - tol &&
                 point.y <= p.y + p.height + tol;
 
@@ -1978,10 +1987,10 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             if (!p) return;
             const hs = 12 / zoom;
             const corners = [
-              { x: p.x, y: p.y, sx: -1, sy: -1 },
-              { x: p.x + p.width, y: p.y, sx: 1, sy: -1 },
-              { x: p.x, y: p.y + p.height, sx: -1, sy: 1 },
-              { x: p.x + p.width, y: p.y + p.height, sx: 1, sy: 1 },
+              { x: p.x - margin, y: p.y - margin, sx: -1, sy: -1 },
+              { x: p.x + p.width + margin, y: p.y - margin, sx: 1, sy: -1 },
+              { x: p.x - margin, y: p.y + p.height + margin, sx: -1, sy: 1 },
+              { x: p.x + p.width + margin, y: p.y + p.height + margin, sx: 1, sy: 1 },
             ];
             const hitCorner = corners.find(
               (c) =>
@@ -1999,19 +2008,19 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             } else {
               const tol = 10 / zoom;
               const onTop =
-                Math.abs(point.y - p.y) <= tol &&
+                Math.abs(point.y - (p.y - margin)) <= tol &&
                 point.x >= p.x - tol &&
                 point.x <= p.x + p.width + tol;
               const onBottom =
-                Math.abs(point.y - (p.y + p.height)) <= tol &&
+                Math.abs(point.y - (p.y + p.height + margin)) <= tol &&
                 point.x >= p.x - tol &&
                 point.x <= p.x + p.width + tol;
               const onLeft =
-                Math.abs(point.x - p.x) <= tol &&
+                Math.abs(point.x - (p.x - margin)) <= tol &&
                 point.y >= p.y - tol &&
                 point.y <= p.y + p.height + tol;
               const onRight =
-                Math.abs(point.x - (p.x + p.width)) <= tol &&
+                Math.abs(point.x - (p.x + p.width + margin)) <= tol &&
                 point.y >= p.y - tol &&
                 point.y <= p.y + p.height + tol;
 
@@ -2377,124 +2386,18 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         setCursorStyle(nextCursor);
       }
 
-      // Anchor Detection for Arrows
+      // Anchor Detection for Arrows - find the closest predefined node
       let nearest: any = null;
       if (tool === "Arrow" && !isDragging) {
-        const {
-          rectangles,
-          images,
-          texts,
-          frames,
-          polygons,
-          circles,
-          anchorHandles,
-        } = stateRef.current;
         const tolerance = 14 / zoom;
-        const borderTolerance = 20 / zoom;
         let bestDist = tolerance;
 
+        // Use direct anchorHandles from prop to avoid ref sync delay
         for (const h of anchorHandles) {
           const d = Math.hypot(point.x - h.point.x, point.y - h.point.y);
           if (d <= bestDist) {
             bestDist = d;
             nearest = h;
-          }
-        }
-
-        if (!nearest) {
-          const allShapes = [
-            ...rectangles.map((s) => ({ ...s, kind: "rect" as const })),
-            ...images.map((s) => ({ ...s, kind: "image" as const })),
-            ...texts.map((s) => ({ ...s, kind: "text" as const })),
-            ...frames.map((s) => ({ ...s, kind: "frame" as const })),
-            ...polygons.map((s) => ({ ...s, kind: "poly" as const })),
-          ];
-
-          for (const s of allShapes) {
-            const distTop = Math.abs(point.y - s.y);
-            const distBottom = Math.abs(point.y - (s.y + s.height));
-            const distLeft = Math.abs(point.x - s.x);
-            const distRight = Math.abs(point.x - (s.x + s.width));
-            const inX =
-              point.x >= s.x - borderTolerance &&
-              point.x <= s.x + s.width + borderTolerance;
-            const inY =
-              point.y >= s.y - borderTolerance &&
-              point.y <= s.y + s.height + borderTolerance;
-
-            if (inX && distTop <= borderTolerance) {
-              const p = Math.max(0, Math.min(1, (point.x - s.x) / s.width));
-              nearest = {
-                kind: s.kind,
-                shapeId: s.id,
-                anchor: "top",
-                percent: p,
-                point: { x: s.x + s.width * p, y: s.y },
-              };
-              break;
-            }
-            if (inX && distBottom <= borderTolerance) {
-              const p = Math.max(0, Math.min(1, (point.x - s.x) / s.width));
-              nearest = {
-                kind: s.kind,
-                shapeId: s.id,
-                anchor: "bottom",
-                percent: p,
-                point: { x: s.x + s.width * p, y: s.y + s.height },
-              };
-              break;
-            }
-            if (inY && distLeft <= borderTolerance) {
-              const p = Math.max(0, Math.min(1, (point.y - s.y) / s.height));
-              nearest = {
-                kind: s.kind,
-                shapeId: s.id,
-                anchor: "left",
-                percent: p,
-                point: { x: s.x, y: s.y + s.height * p },
-              };
-              break;
-            }
-            if (inY && distRight <= borderTolerance) {
-              const p = Math.max(0, Math.min(1, (point.y - s.y) / s.height));
-              nearest = {
-                kind: s.kind,
-                shapeId: s.id,
-                anchor: "right",
-                percent: p,
-                point: { x: s.x + s.width, y: s.y + s.height * p },
-              };
-              break;
-            }
-          }
-        }
-
-        if (!nearest) {
-          for (const c of circles) {
-            const dx = point.x - c.x;
-            const dy = point.y - c.y;
-            const distFromCenter = Math.hypot(dx, dy);
-            const toleranceSq = 20 / zoom;
-            const avgR = (c.rx + c.ry) / 2;
-            if (Math.abs(distFromCenter - avgR) <= toleranceSq) {
-              const angle = Math.atan2(dy, dx);
-              const deg = (angle * 180) / Math.PI;
-              let side: AnchorSide = "right";
-              if (deg > -45 && deg <= 45) side = "right";
-              else if (deg > 45 && deg <= 135) side = "bottom";
-              else if (deg > 135 || deg <= -135) side = "left";
-              else side = "top";
-              nearest = {
-                kind: "circle",
-                shapeId: c.id,
-                anchor: side,
-                point: {
-                  x: c.x + c.rx * Math.cos(angle),
-                  y: c.y + c.ry * Math.sin(angle),
-                },
-              };
-              break;
-            }
           }
         }
 
@@ -3393,6 +3296,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
       isHandPanning,
       zoom,
       pendingConnector,
+      anchorHandles,
       setHoverAnchor,
       setRectangles,
       setCircles,

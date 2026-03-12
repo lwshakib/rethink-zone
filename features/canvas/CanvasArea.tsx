@@ -278,9 +278,33 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   const themeFrameBg = resolvedTheme === "dark" ? "#1e1e1e" : "#ffffff"; // Solid frame background color
 
   // Bound helper functions to find points and bounds relative to current shape state
+  const margin = 2 / zoom;
   const getAnchorPointLocal = useCallback(
-    (a: ConnectorAnchor) =>
-      getAnchorPoint(a, {
+    (a: ConnectorAnchor) => {
+      // For corner anchors, always align with the padded selection border
+      if (typeof a.anchor === "string" && a.anchor.includes("-")) {
+        const b = getShapeBounds(a, {
+          rectangles,
+          circles,
+          images,
+          texts,
+          frames,
+          polygons,
+          figures,
+          codes,
+        });
+        if (!b) return null;
+        const paddedBox = {
+          x: b.x - margin,
+          y: b.y - margin,
+          width: b.width + margin * 2,
+          height: b.height + margin * 2,
+        };
+        return getRectAnchor(paddedBox, a.anchor as AnchorSide);
+      }
+
+      // Fallback to standard anchor resolution for sides or custom points
+      return getAnchorPoint(a, {
         rectangles,
         circles,
         images,
@@ -289,12 +313,13 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
         polygons,
         figures,
         codes,
-      }),
-    [rectangles, circles, images, texts, frames, polygons, figures, codes]
+      });
+    },
+    [rectangles, circles, images, texts, frames, polygons, figures, codes, margin]
   );
   const getShapeBoundsLocal = useCallback(
-    (a: ConnectorAnchor) =>
-      getShapeBounds(a, {
+    (a: ConnectorAnchor) => {
+      const b = getShapeBounds(a, {
         rectangles,
         circles,
         images,
@@ -303,8 +328,16 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
         polygons,
         figures,
         codes,
-      }),
-    [rectangles, circles, images, texts, frames, polygons, figures, codes]
+      });
+      if (!b) return null;
+      return {
+        x: b.x - margin,
+        y: b.y - margin,
+        width: b.width + margin * 2,
+        height: b.height + margin * 2,
+      };
+    },
+    [rectangles, circles, images, texts, frames, polygons, figures, codes, margin]
   );
   const getContentBoundsLocal = useCallback(
     () =>
@@ -354,7 +387,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
 
   // Dynamically calculates where connector handles should appear based on current shapes and active tool
   const anchorHandles = useMemo(() => {
-    if (activeTool !== "Arrow" && activeTool !== "Select") return []; // Only show handles when relevant
+    if (activeTool !== "Arrow" && activeTool !== "Select") return [];
     const handles: {
       kind: ShapeKind;
       shapeId: string;
@@ -365,52 +398,95 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
 
     const isArrow = activeTool === "Arrow";
     const selectedIds = new Set(selectedShape.map((s) => s.id));
+    const margin = 2 / zoom;
 
-    // Helper to add handles for rectangular-bounded shapes
-    const addRectHandles = (
-      r: { id: string; x: number; y: number; width: number; height: number },
-      kind: ShapeKind
-    ) => {
-      if (!isArrow && !selectedIds.has(r.id)) return;
-      (
-        ["top-left", "top-right", "bottom-left", "bottom-right"] as AnchorSide[]
-      ).forEach((side) => {
-        handles.push({
-          kind,
-          shapeId: r.id,
-          anchor: side,
-          point: getRectAnchor(r, side), // Calculates the coordinates for the side
-          percent: 0.5, // Default to center of the side
+    // SCENARIO 1: Selection Handles - collective or individual dashed border corners
+    if (activeTool === "Select" && selectedShape.length > 0) {
+      const bounds = getSelectionBounds(selectedShape, {
+        rectangles,
+        circles,
+        images,
+        texts,
+        frames,
+        polygons,
+        lines,
+        arrows,
+        figures,
+        codes,
+      });
+      if (bounds) {
+        const paddedBox = {
+          x: bounds.x - margin,
+          y: bounds.y - margin,
+          width: bounds.width + margin * 2,
+          height: bounds.height + margin * 2,
+        };
+        (["top-left", "top-right", "bottom-left", "bottom-right"] as AnchorSide[]).forEach((side) => {
+          handles.push({
+            kind: "rect",
+            shapeId: "selection",
+            anchor: side,
+            point: getRectAnchor(paddedBox, side),
+          });
+        });
+      }
+      return handles;
+    }
+
+    // SCENARIO 2: Arrow Snapping - nodes for all shapes to allow connections
+    if (isArrow) {
+      // Helper for all standard rectangular shapes
+      const addPaddedRectHandles = (
+        r: { id: string; x: number; y: number; width: number; height: number },
+        kind: ShapeKind
+      ) => {
+        const paddedBox = {
+          x: r.x - margin,
+          y: r.y - margin,
+          width: r.width + margin * 2,
+          height: r.height + margin * 2,
+        };
+        (["top-left", "top-right", "bottom-left", "bottom-right"] as AnchorSide[]).forEach((side) => {
+          handles.push({
+            kind,
+            shapeId: r.id,
+            anchor: side,
+            point: getRectAnchor(paddedBox, side),
+            percent: 0.5,
+          });
+        });
+      };
+
+      rectangles.forEach((r) => addPaddedRectHandles(r, "rect"));
+      images.forEach((im) => addPaddedRectHandles(im, "image"));
+      texts.forEach((t) => addPaddedRectHandles(t, "text"));
+      frames.forEach((f) => addPaddedRectHandles(f, "frame"));
+      polygons.forEach((p) => addPaddedRectHandles(p, "poly"));
+      figures.forEach((f) => addPaddedRectHandles(f, "figure"));
+      codes.forEach((c) => addPaddedRectHandles(c, "code"));
+
+      circles.forEach((c) => {
+        const paddedBox = {
+          x: c.x - c.rx - margin,
+          y: c.y - c.ry - margin,
+          width: c.rx * 2 + margin * 2,
+          height: c.ry * 2 + margin * 2,
+        };
+        (["top-left", "top-right", "bottom-left", "bottom-right"] as AnchorSide[]).forEach((side) => {
+          handles.push({
+            kind: "circle",
+            shapeId: c.id,
+            anchor: side,
+            point: getRectAnchor(paddedBox, side),
+          });
         });
       });
-    };
+    }
 
-    // Iterate through all shape types to generate handles
-    rectangles.forEach((r) => addRectHandles(r, "rect"));
-    images.forEach((im) => addRectHandles(im, "image"));
-    texts.forEach((t) => addRectHandles(t, "text"));
-    frames.forEach((f) => addRectHandles(f, "frame"));
-    polygons.forEach((p) => addRectHandles(p, "poly"));
-    figures.forEach((f) => addRectHandles(f, "figure"));
-    codes.forEach((c) => addRectHandles(c, "code"));
-
-    // Circles have specialized anchor calculation
-    circles.forEach((c) => {
-      if (!isArrow && !selectedIds.has(c.id)) return;
-      (
-        ["top-left", "top-right", "bottom-left", "bottom-right"] as AnchorSide[]
-      ).forEach((side) => {
-        handles.push({
-          kind: "circle",
-          shapeId: c.id,
-          anchor: side,
-          point: getCircleAnchor(c, side),
-        });
-      });
-    });
     return handles;
   }, [
     activeTool,
+    zoom,
     circles,
     rectangles,
     images,

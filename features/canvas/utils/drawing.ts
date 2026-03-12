@@ -48,26 +48,8 @@ export const drawSelectionOverlay = (
     height + 4 / zoom
   );
 
-  // Revert dash settings for the solid corner handles
+  // Revert dash settings
   ctx.setLineDash([]);
-  ctx.fillStyle = "white"; // White fill for high contrast against the blue stroke
-  const hs = 6 / zoom; // Handle size
-
-  // Identify key points (corners) where handles should be drawn
-  let handles: [number, number][] = [
-    [x, y],
-    [x + width, y],
-    [x, y + height],
-    [x + width, y + height],
-  ];
-
-  // Draw each handle as a small stroked circle
-  handles.forEach(([hx, hy]) => {
-    ctx.beginPath();
-    ctx.arc(hx, hy, hs / 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-  });
   ctx.restore();
 };
 
