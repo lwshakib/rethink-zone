@@ -9,15 +9,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserMenu } from "@/components/user-menu";
 
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
@@ -182,48 +174,7 @@ export default function WorkspacesPage() {
           <span className="hidden text-[11px] sm:inline">Limited credits</span>
           
           {/* User Profile dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <Avatar className="h-8 w-8 border border-border">
-                  <AvatarImage
-                    src={session?.user?.image || ""}
-                    alt={session?.user?.name || "User"}
-                  />
-                  <AvatarFallback className="bg-muted text-muted-foreground">
-                    {session?.user?.name?.[0] || "U"}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 bg-card border-border text-foreground" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">
-                    {session?.user?.name}
-                  </p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {session?.user?.email}
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-border" />
-              <DropdownMenuItem
-                className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive"
-                onClick={async () => {
-                  await authClient.signOut({
-                    fetchOptions: {
-                      onSuccess: () => {
-                        router.push("/sign-in");
-                      },
-                    },
-                  });
-                }}
-              >
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <UserMenu />
 
           {/* Dialog for creating a new workspace */}
           <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
