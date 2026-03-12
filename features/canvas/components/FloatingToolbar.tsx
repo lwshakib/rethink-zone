@@ -552,12 +552,12 @@ const FloatingToolbar = React.memo(({
         <div className="flex items-center gap-1">
            <div className={`flex items-center gap-2 px-3 border-r ${separatorColor} mr-1`}>
             <Layers className="h-4 w-4 text-primary" />
-            <span className="text-[11px] font-bold text-foreground/90 uppercase tracking-widest">{selectedShape.length} selected</span>
+            <span className="text-[11px] font-bold text-foreground/90">{selectedShape.length} selected</span>
           </div>
-          <button onClick={onDuplicate} className={`h-9 w-9 flex items-center justify-center rounded-lg ${bgHover} transition-all`}>
+          <button onClick={onDuplicate} className={`h-9 w-9 flex items-center justify-center rounded-sm ${bgHover} transition-all duration-200`}>
             <Copy className="h-4 w-4" />
           </button>
-          <button onClick={onDelete} className="h-9 w-9 flex items-center justify-center rounded-lg hover:bg-destructive/10 text-destructive transition-all">
+          <button onClick={onDelete} className="h-9 w-9 flex items-center justify-center rounded-sm hover:bg-destructive/10 text-destructive transition-all duration-200">
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
