@@ -1094,6 +1094,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
           selectedShape.some((s) => s.kind === "figure" && s.index === idx),
         {
           hideTitleText: textEditor?.kind === "figure" && textEditor?.index === idx,
+          titleOverride: (textEditor?.kind === "figure" && textEditor?.index === idx) ? textEditor.value : undefined,
         }
       )
     );
@@ -1287,6 +1288,8 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     getShapeBoundsLocal,
     imageCacheRef,
     textEditor?.index,
+    textEditor?.value,
+    textEditor?.kind,
     hoverAnchor,
   ]);
 

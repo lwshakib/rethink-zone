@@ -794,7 +794,7 @@ export const drawFigure = (
   themeBg: string,
   zoom: number,
   isSelected = false,
-  options?: { hideTitleText?: boolean }
+  options?: { hideTitleText?: boolean; titleOverride?: string }
 ) => {
   ctx.save();
   ctx.globalAlpha = f.opacity ?? 1;
@@ -819,7 +819,7 @@ export const drawFigure = (
   const hX = f.x;
   const hY = f.y - headerHeight - headerGap;
 
-  const text = f.title || `Figure ${f.figureNumber}`;
+  const text = options?.titleOverride !== undefined ? options.titleOverride : (f.title || `Figure ${f.figureNumber}`);
   ctx.font = `600 ${12 / zoom}px sans-serif`;
   const textWidth = ctx.measureText(text).width;
   const iconSize = 10 / zoom; // Reduced size
