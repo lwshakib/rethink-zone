@@ -21,45 +21,7 @@ const FrameButtons: React.FC<FrameButtonsProps> = ({
     <>
       {/* Loop through each frame to position a button above its top-right corner */}
       {frames.map((frame, idx) => {
-        const buttonX = frame.x + frame.width; // Far right edge of frame
-        const buttonY = frame.y;              // Top edge of frame
-        const clientPos = canvasToClient(buttonX, buttonY); // Convert to UI pixels
-        return (
-          <div
-            key={`frame-button-${idx}`}
-            // Overlaying div positioned absolutely
-            className="absolute pointer-events-auto z-50"
-            style={{
-              left: `${clientPos.x}px`,
-              top: `${clientPos.y}px`,
-              // Transform to align the button container properly relative to the frame corner
-              transform: `translate(-100%, -100%) scale(${zoom})`,
-              transformOrigin: "bottom right",
-              paddingBottom: "8px", // Visual spacing from the frame border
-            }}
-            onClick={(e) => {
-              e.stopPropagation(); // Prevent clicks from selecting the canvas
-            }}
-          >
-            {/* The actual clickable action button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                // Placeholder for future AI integration
-                console.log(
-                  "Generate Design clicked for frame",
-                  frame.frameNumber
-                );
-              }}
-              // Premium styling using Glassmorphism (blur + subtle border)
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-white/90 bg-white/8 backdrop-blur-xl border border-white/12 hover:bg-white/12 transition-colors whitespace-nowrap"
-              style={{ pointerEvents: "auto" }}
-            >
-              <Brush size={12} />
-              Generate with AI
-            </button>
-          </div>
-        );
+        return null; // Buttons removed as per user request
       })}
     </>
   );

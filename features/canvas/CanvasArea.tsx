@@ -152,7 +152,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   const { resolvedTheme } = useTheme();
   const themeText = resolvedTheme === "dark" ? "white" : "black";                                     // Text color based on theme
   const themeStroke = resolvedTheme === "dark" ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)";         // Default stroke color
-  const themeFrameBg = resolvedTheme === "dark" ? "rgba(30,30,30,0.5)" : "rgba(240,240,240,0.5)";     // Frame background color
+  const themeFrameBg = resolvedTheme === "dark" ? "#1e1e1e" : "#ffffff";     // Solid frame background color
 
   // Bound helper functions to find points and bounds relative to current shape state
   const getAnchorPointLocal = useCallback((a: ConnectorAnchor) => getAnchorPoint(a, { rectangles, circles, images, texts, frames, polygons, figures, codes }), [rectangles, circles, images, texts, frames, polygons, figures, codes]);
