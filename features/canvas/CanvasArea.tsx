@@ -61,6 +61,7 @@ import { ConnectorHandles } from "./components/ConnectorHandles"; // Interactive
 import FloatingToolbar from "./components/FloatingToolbar";       // Context-sensitive toolbar for selected shapes
 import { PencilToolbar } from "./components/PencilToolbar";       // Toolbar for freehand drawing settings
 import CodeBlock from "./components/CodeBlock";                   // Component to render and edit code snippets
+import { LineActions } from "./components/LineActions";           // Context actions for lines and arrows
 
 /**
  * Main CanvasArea component - provides a rich, interactive infinite canvas experience.
@@ -715,6 +716,27 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
           <FrameButtons
             frames={frames}
             canvasToClient={canvasToClient}
+            zoom={zoom}
+          />
+
+          {/* Delete icon at the center of selected lines/connectors */}
+          <LineActions
+            selectedShape={selectedShape}
+            connectors={connectors}
+            lines={lines}
+            arrows={arrows}
+            rectangles={rectangles}
+            circles={circles}
+            images={images}
+            texts={texts}
+            frames={frames}
+            polygons={polygons}
+            figures={figures}
+            codes={codes}
+            getAnchorPoint={getAnchorPointLocal}
+            getShapeBounds={getShapeBoundsLocal}
+            canvasToClient={canvasToClient}
+            onDelete={deleteSelected}
             zoom={zoom}
           />
 
