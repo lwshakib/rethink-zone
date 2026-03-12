@@ -1421,6 +1421,44 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         else if (hitCode !== null)
           picked = { kind: "code", index: hitCode, id: codes[hitCode].id };
 
+        // STICKY SELECTION BORDER: If no direct shape hit, check if we clicked the interactive border of the current selection
+        if (!picked && selectedShape.length > 0) {
+          const b = getSelectionBounds(selectedShape, {
+            rectangles,
+            circles,
+            images,
+            texts,
+            frames,
+            polygons,
+            lines,
+            arrows,
+            figures,
+            codes,
+          });
+          if (b) {
+            const margin = 2 / zoom;
+            const tol = 12 / zoom;
+            const bx = b.x - margin;
+            const by = b.y - margin;
+            const bw = b.width + margin * 2;
+            const bh = b.height + margin * 2;
+
+            const onLeft = Math.abs(point.x - bx) <= tol;
+            const onRight = Math.abs(point.x - (bx + bw)) <= tol;
+            const onTop = Math.abs(point.y - by) <= tol;
+            const onBottom = Math.abs(point.y - (by + bh)) <= tol;
+
+            const inX = point.x >= bx - tol && point.x <= bx + bw + tol;
+            const inY = point.y >= by - tol && point.y <= by + bh + tol;
+
+            if (inX && inY && (onLeft || onRight || onTop || onBottom)) {
+              // User clicked the padded border of the current selection. 
+              // We pick the first selected item to ensure the resizing logic below is triggered.
+              picked = selectedShape[0];
+            }
+          }
+        }
+
         if (picked) {
           let workingPicked = picked;
           let workingState: HistoryEntry | null = null;
@@ -1584,6 +1622,34 @@ export const useCanvasInteraction = (props: InteractionProps) => {
               };
               dragModeRef.current = "resize-selection";
               return;
+            } else {
+              // Edge Detection for collective border
+              const tol = 12 / zoom;
+              const onTop =
+                Math.abs(point.y - (b.y - margin)) <= tol &&
+                point.x >= b.x - tol &&
+                point.x <= b.x + b.width + tol;
+              const onBottom =
+                Math.abs(point.y - (b.y + b.height + margin)) <= tol &&
+                point.x >= b.x - tol &&
+                point.x <= b.x + b.width + tol;
+              const onLeft =
+                Math.abs(point.x - (b.x - margin)) <= tol &&
+                point.y >= b.y - tol &&
+                point.y <= b.y + b.height + tol;
+              const onRight =
+                Math.abs(point.x - (b.x + b.width + margin)) <= tol &&
+                point.y >= b.y - tol &&
+                point.y <= b.y + b.height + tol;
+
+              if (onTop || onBottom || onLeft || onRight) {
+                dragRectCornerRef.current = {
+                  sx: onLeft ? -1 : onRight ? 1 : 0,
+                  sy: onTop ? -1 : onBottom ? 1 : 0,
+                };
+                dragModeRef.current = "resize-selection";
+                return;
+              }
             }
           }
 
@@ -1666,28 +1732,22 @@ export const useCanvasInteraction = (props: InteractionProps) => {
               dragModeRef.current = "resize-circle";
             } else {
               const tol = 10 / zoom;
-              const b = {
-                x: c.x - c.rx,
-                y: c.y - c.ry,
-                w: c.rx * 2,
-                h: c.ry * 2,
-              };
               const onTop =
-                Math.abs(point.y - b.y) <= tol &&
-                point.x >= b.x - tol &&
-                point.x <= b.x + b.w + tol;
+                Math.abs(point.y - (c.y - c.ry - margin)) <= tol &&
+                point.x >= c.x - c.rx - tol &&
+                point.x <= c.x + c.rx + tol;
               const onBottom =
-                Math.abs(point.y - (b.y + b.h)) <= tol &&
-                point.x >= b.x - tol &&
-                point.x <= b.x + b.w + tol;
+                Math.abs(point.y - (c.y + c.ry + margin)) <= tol &&
+                point.x >= c.x - c.rx - tol &&
+                point.x <= c.x + c.rx + tol;
               const onLeft =
-                Math.abs(point.x - b.x) <= tol &&
-                point.y >= b.y - tol &&
-                point.y <= b.y + b.h + tol;
+                Math.abs(point.x - (c.x - c.rx - margin)) <= tol &&
+                point.y >= c.y - c.ry - tol &&
+                point.y <= c.y + c.ry + tol;
               const onRight =
-                Math.abs(point.x - (b.x + b.w)) <= tol &&
-                point.y >= b.y - tol &&
-                point.y <= b.y + b.h + tol;
+                Math.abs(point.x - (c.x + c.rx + margin)) <= tol &&
+                point.y >= c.y - c.ry - tol &&
+                point.y <= c.y + c.ry + tol;
 
               if (onTop || onBottom) {
                 dragCircleCornerRef.current = {
@@ -2275,9 +2335,21 @@ export const useCanvasInteraction = (props: InteractionProps) => {
       } else if (dragModeRef.current !== "none") {
         if (dragModeRef.current === "move") {
           nextCursor = "move";
-        } else if (dragModeRef.current.includes("-h")) nextCursor = "ew-resize";
-        else if (dragModeRef.current.includes("-v")) nextCursor = "ns-resize";
-        else nextCursor = "nwse-resize";
+        } else {
+          // Determine orientation for any interactive resize (individual or collective)
+          const corner = dragRectCornerRef.current || dragCircleCornerRef.current;
+          if (corner) {
+            if (corner.sx !== 0 && corner.sy !== 0) {
+              nextCursor = corner.sx * corner.sy > 0 ? "nwse-resize" : "nesw-resize";
+            } else if (corner.sx !== 0) {
+              nextCursor = "ew-resize";
+            } else if (corner.sy !== 0) {
+              nextCursor = "ns-resize";
+            }
+          } else if (dragModeRef.current.includes("-h")) nextCursor = "ew-resize";
+          else if (dragModeRef.current.includes("-v")) nextCursor = "ns-resize";
+          else nextCursor = "nwse-resize";
+        }
       } else {
         const {
           rectangles,
@@ -2292,51 +2364,33 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           codes,
         } = stateRef.current;
         if (selectedShapeRef.current.length > 0) {
-          const { kind, index } = selectedShapeRef.current[0];
-          let s: any = null;
-          if (kind === "rect") s = rectangles[index];
-          else if (kind === "circle") s = circles[index];
-          else if (kind === "image") s = images[index];
-          else if (kind === "text") s = texts[index];
-          else if (kind === "frame") s = frames[index];
-          else if (kind === "poly") s = polygons[index];
-          else if (kind === "line") s = lines[index];
-          else if (kind === "arrow") s = arrows[index];
-          else if (kind === "figure") s = figures[index];
-          else if (kind === "code") s = codes[index];
+          const margin = 2 / zoom;
+          const tol = 10 / zoom;
+          const b = getSelectionBounds(selectedShapeRef.current, stateRef.current);
 
-          if (s) {
-            let b = { x: 0, y: 0, w: 0, h: 0 };
-            if (kind === "circle") {
-              b = { x: s.x - s.rx, y: s.y - s.ry, w: s.rx * 2, h: s.ry * 2 };
-            } else if (kind === "line" || kind === "arrow") {
-              const x = Math.min(s.x1, s.x2);
-              const y = Math.min(s.y1, s.y2);
-              b = {
-                x,
-                y,
-                w: Math.max(1, Math.abs(s.x2 - s.x1)),
-                h: Math.max(1, Math.abs(s.y2 - s.y1)),
-              };
-            } else {
-              b = { x: s.x, y: s.y, w: s.width, h: s.height };
-            }
+          if (b) {
+            const bx = b.x - margin;
+            const by = b.y - margin;
+            const bw = b.width + margin * 2;
+            const bh = b.height + margin * 2;
 
-            const tol = 10 / zoom;
-            const onLeft = Math.abs(point.x - b.x) <= tol;
-            const onRight = Math.abs(point.x - (b.x + b.w)) <= tol;
-            const onTop = Math.abs(point.y - b.y) <= tol;
-            const onBottom = Math.abs(point.y - (b.y + b.h)) <= tol;
-            const inX = point.x >= b.x - tol && point.x <= b.x + b.w + tol;
-            const inY = point.y >= b.y - tol && point.y <= b.y + b.h + tol;
+            const onLeft = Math.abs(point.x - bx) <= tol;
+            const onRight = Math.abs(point.x - (bx + bw)) <= tol;
+            const onTop = Math.abs(point.y - by) <= tol;
+            const onBottom = Math.abs(point.y - (by + bh)) <= tol;
+            const inX = point.x >= bx - tol && point.x <= bx + bw + tol;
+            const inY = point.y >= by - tol && point.y <= by + bh + tol;
 
             if (inX && inY) {
-              if (kind === "code") {
+              const onlyOne = selectedShapeRef.current.length === 1;
+              const firstKind = selectedShapeRef.current[0].kind;
+              
+              if (onlyOne && firstKind === "code") {
                 // Code Block: only horizontal resizing
                 if ((onLeft || onRight) && !(onTop || onBottom)) {
                   nextCursor = "ew-resize";
-                } else {
-                  nextCursor = "move"; // Don't show resize cursor for corners or top/bottom
+                } else if (point.x >= bx && point.x <= bx + bw && point.y >= by && point.y <= by + bh) {
+                  nextCursor = "move";
                 }
               } else {
                 if ((onLeft && onTop) || (onRight && onBottom))
@@ -2345,7 +2399,9 @@ export const useCanvasInteraction = (props: InteractionProps) => {
                   nextCursor = "nesw-resize";
                 else if (onLeft || onRight) nextCursor = "ew-resize";
                 else if (onTop || onBottom) nextCursor = "ns-resize";
-                else nextCursor = "move";
+                else if (point.x >= bx && point.x <= bx + bw && point.y >= by && point.y <= by + bh) {
+                  nextCursor = "move";
+                }
               }
             }
           }
