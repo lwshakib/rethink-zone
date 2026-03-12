@@ -250,6 +250,7 @@ export interface ShapeCollection {
   paths?: PathShape[];
   figures?: FigureShape[];
   codes?: CodeShape[];
+  connectors?: Connector[];
 }
 
 /**
@@ -289,7 +290,18 @@ export type PlusMenuView =
   | "icon"
   | "cloud-icon"
   | "provider-icons"
-  | "device-frame";
+  | "device-frame"
+  | "diagram-catalog";
+
+/**
+ * DiagramTemplate - A pre-defined collection of shapes representing a diagram (e.g., system design)
+ */
+export interface DiagramTemplate {
+  name: string;
+  description: string;
+  thumbnail: string; // URL or icon name
+  shapes: ShapeCollection;
+}
 
 /**
  * SelectedShapeInfo - Metadata about a shape currently targeted by the selection tool

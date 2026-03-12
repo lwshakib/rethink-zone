@@ -29,6 +29,7 @@ import {
   FrameShape,
   FigureShape,
   CodeShape,
+  DiagramTemplate,
 } from "../types";
 import { makeId } from "../utils";
 import {
@@ -110,6 +111,8 @@ type InteractionProps = {
   setPendingAddIcon: (i: any) => void;
   pendingAddShapeLabel: string | null;
   setPendingAddShapeLabel: (l: string | null) => void;
+  pendingAddDiagram: DiagramTemplate | null;
+  setPendingAddDiagram: (d: DiagramTemplate | null) => void;
   isPlusMenuOpen: boolean;
   setIsPlusMenuOpen: (b: boolean) => void;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -200,6 +203,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     setPendingAddIcon,
     pendingAddShapeLabel,
     setPendingAddShapeLabel,
+    pendingAddDiagram,
+    setPendingAddDiagram,
     isPlusMenuOpen,
     setIsPlusMenuOpen,
     canvasRef,
@@ -642,6 +647,143 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
   const cancelTextEditor = useCallback(() => setTextEditor(null), []);
 
+  const addDiagramToCanvas = useCallback(
+    (template: DiagramTemplate, centerX: number, centerY: number) => {
+      const allShapes = [
+        ...(template.shapes.rectangles || []),
+        ...(template.shapes.circles || []),
+        ...(template.shapes.polygons || []),
+        ...(template.shapes.images || []),
+        ...(template.shapes.texts || []),
+        ...(template.shapes.frames || []),
+        ...(template.shapes.lines || []),
+        ...(template.shapes.arrows || []),
+        ...(template.shapes.figures || []),
+        ...(template.shapes.codes || []),
+      ];
+
+      if (allShapes.length === 0) return;
+
+      let minX = Infinity,
+        minY = Infinity,
+        maxX = -Infinity,
+        maxY = -Infinity;
+      allShapes.forEach((s) => {
+        const x = (s as any).x ?? (s as any).x1 ?? 0;
+        const y = (s as any).y ?? (s as any).y1 ?? 0;
+        const w =
+          (s as any).width ||
+          Math.abs(((s as any).x2 || 0) - ((s as any).x1 || 0)) ||
+          ((s as any).rx || 0) * 2 ||
+          0;
+        const h =
+          (s as any).height ||
+          Math.abs(((s as any).y2 || 0) - ((s as any).y1 || 0)) ||
+          ((s as any).ry || 0) * 2 ||
+          0;
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x + w);
+        maxY = Math.max(maxY, y + h);
+      });
+
+      const diagramWidth = maxX - minX;
+      const diagramHeight = maxY - minY;
+      const offsetX = centerX - diagramWidth / 2 - minX;
+      const offsetY = centerY - diagramHeight / 2 - minY;
+
+      const idMap = new Map<string, string>();
+      const processShape = (s: any) => {
+        const newId = makeId();
+        idMap.set(s.id, newId);
+        return {
+          ...s,
+          id: newId,
+          x: (s.x ?? 0) + offsetX,
+          y: (s.y ?? 0) + offsetY,
+        };
+      };
+
+      const processLine = (s: any) => {
+        const newId = makeId();
+        idMap.set(s.id, newId);
+        return {
+          ...s,
+          id: newId,
+          x1: s.x1 + offsetX,
+          y1: s.y1 + offsetY,
+          x2: s.x2 + offsetX,
+          y2: s.y2 + offsetY,
+        };
+      };
+
+      const newRects = (template.shapes.rectangles || []).map(processShape);
+      const newCircles = (template.shapes.circles || []).map((s) => {
+        const newId = makeId();
+        idMap.set(s.id, newId);
+        return { ...s, id: newId, x: s.x + offsetX, y: s.y + offsetY };
+      });
+      const newPolys = (template.shapes.polygons || []).map(processShape);
+      const newImages = (template.shapes.images || []).map(processShape);
+      const newTexts = (template.shapes.texts || []).map(processShape);
+      const newFrames = (template.shapes.frames || []).map(processShape);
+      const newLines = (template.shapes.lines || []).map(processLine);
+      const newArrows = (template.shapes.arrows || []).map(processLine);
+      const newFigures = (template.shapes.figures || []).map(processShape);
+      const newCodes = (template.shapes.codes || []).map(processShape);
+
+      const newConnectors = (template.shapes.connectors || []).map((c) => ({
+        ...c,
+        id: makeId(),
+        from: {
+          ...c.from,
+          shapeId: idMap.get(c.from.shapeId) || c.from.shapeId,
+        },
+        to: { ...c.to, shapeId: idMap.get(c.to.shapeId) || c.to.shapeId },
+      }));
+
+      setRectangles((prev) => [...prev, ...newRects]);
+      setCircles((prev) => [...prev, ...newCircles]);
+      setPolygons((prev) => [...prev, ...newPolys]);
+      setImages((prev) => [...prev, ...newImages]);
+      setTexts((prev) => [...prev, ...newTexts]);
+      setFrames((prev) => [...prev, ...newFrames]);
+      setLines((prev) => [...prev, ...newLines]);
+      setArrows((prev) => [...prev, ...newArrows]);
+      setFigures((prev) => [...prev, ...newFigures]);
+      setCodes((prev) => [...prev, ...newCodes]);
+      setConnectors((prev) => [...prev, ...newConnectors]);
+
+      pushHistory({
+        rectangles: [...stateRef.current.rectangles, ...newRects],
+        circles: [...stateRef.current.circles, ...newCircles],
+        polygons: [...stateRef.current.polygons, ...newPolys],
+        images: [...stateRef.current.images, ...newImages],
+        texts: [...stateRef.current.texts, ...newTexts],
+        frames: [...stateRef.current.frames, ...newFrames],
+        lines: [...stateRef.current.lines, ...newLines],
+        arrows: [...stateRef.current.arrows, ...newArrows],
+        figures: [...stateRef.current.figures, ...newFigures],
+        codes: [...stateRef.current.codes, ...newCodes],
+        connectors: [...stateRef.current.connectors, ...newConnectors],
+      });
+    },
+    [
+      setRectangles,
+      setCircles,
+      setPolygons,
+      setImages,
+      setTexts,
+      setFrames,
+      setLines,
+      setArrows,
+      setFigures,
+      setCodes,
+      setConnectors,
+      pushHistory,
+    ]
+  );
+
   const handlePointerDown = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
       event.preventDefault();
@@ -661,6 +803,13 @@ export const useCanvasInteraction = (props: InteractionProps) => {
       }
 
       const point = toCanvasPointFromClient(event.clientX, event.clientY);
+
+      if (tool === "PlusAdd" && pendingAddDiagram) {
+        addDiagramToCanvas(pendingAddDiagram, point.x, point.y);
+        setPendingAddDiagram(null);
+        setActiveTool("Select");
+        return;
+      }
 
       if (tool === "PlusAdd" && pendingAddShapeLabel) {
         const label = pendingAddShapeLabel;

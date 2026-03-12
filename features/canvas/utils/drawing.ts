@@ -88,8 +88,8 @@ export const drawImageItem = (
   // Multiply personal opacity with global override alpha
   ctx.globalAlpha = (im.opacity ?? 1) * alpha;
 
-  // Verify image availability and completion status
-  if (img && img.complete) {
+  // Verify image availability and completion status (ensure it's not in a broken state)
+  if (img && img.complete && img.naturalWidth !== 0) {
     ctx.drawImage(img, im.x, im.y, im.width, im.height);
   } else {
     // Placeholder rendering

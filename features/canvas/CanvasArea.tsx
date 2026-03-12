@@ -18,6 +18,7 @@ import {
   PlusMenuView, // Type for the state of the 'Plus' menu navigation
   ConnectorAnchor, // Type for connector attachment points
   Tool, // Type for currently active drawing tool
+  DiagramTemplate,
 } from "./types";
 import {
   getRectAnchor, // Helper to find anchor points on a rectangle
@@ -104,6 +105,8 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   const [pendingAddShapeLabel, setPendingAddShapeLabel] = useState<
     string | null
   >(null); // Shape awaiting placement
+  const [pendingAddDiagram, setPendingAddDiagram] =
+    useState<DiagramTemplate | null>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 }); // Track canvas container size for UI positioning
   const [isMiniMapOpen, setIsMiniMapOpen] = useState(false); // Controls visibility of the navigation mini-map
 
@@ -742,6 +745,8 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     setPendingAddIcon,
     pendingAddShapeLabel,
     setPendingAddShapeLabel,
+    pendingAddDiagram,
+    setPendingAddDiagram,
     isPlusMenuOpen,
     setIsPlusMenuOpen,
     canvasRef,
@@ -1432,10 +1437,12 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
             setIsLoading={() => {}} // Hook manages its own state
             onAddIcon={(name, src) => setPendingAddIcon({ name, src })}
             onAddShape={(label) => setPendingAddShapeLabel(label)}
+            onAddDiagram={(template) => setPendingAddDiagram(template)}
             icons={filteredLibraryIcons}
             setActiveTool={setActiveTool}
             pendingAddIcon={pendingAddIcon}
             pendingAddShapeLabel={pendingAddShapeLabel}
+            pendingAddDiagram={pendingAddDiagram}
           />
 
           {/* Main 'Add' button to toggle the PlusMenu */}

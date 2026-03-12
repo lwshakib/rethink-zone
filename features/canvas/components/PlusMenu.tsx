@@ -34,8 +34,10 @@ import {
   Tablet,
   Globe,
 } from "lucide-react";
-import { PlusMenuView, Tool } from "../types"; // Type definitions for the menu view state and canvas tools
+import { PlusMenuView, Tool, DiagramTemplate } from "../types"; // Type definitions for the menu view state and canvas tools
 import { GENERAL_ICONS } from "../constants"; // Pre-defined list of general purpose icons
+import { DIAGRAM_CATALOG } from "../constants/diagram-catalog";
+import * as LucideIcons from "lucide-react";
 
 // Interface defining the state and callbacks needed by the Plus Menu overlay
 interface PlusMenuProps {
@@ -54,10 +56,12 @@ interface PlusMenuProps {
   setIsLoading: (loading: boolean) => void;
   onAddIcon: (name: string, src: string) => void; // Callback to place an icon on canvas
   onAddShape: (label: string) => void; // Callback to place a shape on canvas
+  onAddDiagram: (template: DiagramTemplate) => void; // Callback to prepare a diagram for placement
   icons: string[]; // List of icon file paths/URLs
   setActiveTool: (tool: Tool) => void; // Update canvas interaction mode
   pendingAddIcon?: { name: string; src: string } | null; // Preview of icon about to be placed
   pendingAddShapeLabel?: string | null; // Preview of shape about to be placed
+  pendingAddDiagram?: DiagramTemplate | null;
 }
 
 /**
@@ -80,10 +84,12 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
   setIsLoading: _setIsLoading,
   onAddIcon,
   onAddShape,
+  onAddDiagram,
   icons,
   setActiveTool,
   pendingAddIcon,
   pendingAddShapeLabel,
+  pendingAddDiagram,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -270,6 +276,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                         if (item.id === "shape") setView("shape");
                         if (item.id === "icon") setView("icon");
                         if (item.id === "frame") setView("device-frame");
+                        if (item.id === "catalog") setView("diagram-catalog");
                       }}
                       className="flex items-center gap-3 w-full px-3 py-2.5 rounded-sm hover:bg-accent transition-all text-left group"
                     >
@@ -644,6 +651,56 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                   </div>
                 </div>
               </div>
+            ) : view === "diagram-catalog" ? (
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold tracking-widest">
+                    <button
+                      onClick={() => setView("categories")}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      All Categories
+                    </button>
+                    <span className="text-muted-foreground/30">/</span>
+                    <span className="text-foreground">Diagram Catalog</span>
+                  </div>
+
+                  <div className="flex flex-col gap-2 px-2 pb-6">
+                    {DIAGRAM_CATALOG.map((diagram, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          onAddDiagram(diagram);
+                          setActiveTool("PlusAdd");
+                        }}
+                        className="flex items-start gap-3 p-3 rounded-sm hover:bg-accent transition-all group group-active:scale-[0.98] w-full text-left"
+                      >
+                        <div className="h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-sm bg-accent/50 border border-border group-hover:bg-primary/10 group-hover:border-primary/30 transition-all">
+                          {(() => {
+                            const IconComp = (LucideIcons as any)[
+                              diagram.thumbnail
+                            ];
+                            return IconComp ? (
+                              <IconComp className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                            ) : (
+                              <LayoutGrid className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                            );
+                          })()}
+                        </div>
+                        <div className="flex-1 flex flex-col min-w-0 pt-0.5">
+                          <span className="text-[13px] font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                            {diagram.name}
+                          </span>
+                          <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground/80 transition-colors line-clamp-2 leading-relaxed">
+                            {diagram.description}
+                          </span>
+                        </div>
+                        <Plus className="h-3.5 w-3.5 text-muted-foreground/20 group-hover:text-primary transition-all mt-1" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             ) : (
               // VIEW G: Cloud Provider Category list (Top-level)
               <div className="space-y-4">
@@ -745,9 +802,9 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                 <span className="text-primary flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
                   Ready to place: {pendingAddIcon.name}
                 </span>
-              ) : pendingAddShapeLabel ? (
+              ) : pendingAddDiagram ? (
                 <span className="text-primary flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
-                  Ready to place: {pendingAddShapeLabel}
+                  Ready to place: {pendingAddDiagram.name}
                 </span>
               ) : (
                 "All Categories"
