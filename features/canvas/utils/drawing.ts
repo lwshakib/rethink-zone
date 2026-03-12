@@ -367,11 +367,13 @@ export const drawFrame = (
     }
   }
 
-  // Render the Frame title label above the top-left corner
-  ctx.fillStyle = themeText;
-  ctx.font = `${11 / zoom}px sans-serif`;
-  ctx.textBaseline = "bottom";
-  ctx.fillText(`Frame ${f.frameNumber}${f.deviceType ? ` (${f.deviceType})` : ''}`, f.x, f.y - 4 / zoom);
+  if (isSelected) {
+    // Render the Frame title label above the top-left corner
+    ctx.fillStyle = themeText;
+    ctx.font = `${11 / zoom}px sans-serif`;
+    ctx.textBaseline = "bottom";
+    ctx.fillText(`Frame ${f.frameNumber}${f.deviceType ? ` (${f.deviceType})` : ''}`, f.x, f.y - 4 / zoom);
+  }
   
   ctx.restore();
 
@@ -733,19 +735,21 @@ export const drawFigure = (
     ctx.strokeRect(f.x, f.y, f.width, f.height);
   }
   
-  // Header bar containing the title
   const headerHeight = 30 / zoom;
-  ctx.fillStyle = "rgba(0,0,0,0.05)";
-  ctx.fillRect(f.x, f.y - headerHeight, f.width, headerHeight);
-  ctx.strokeStyle = strokeColor;
-  ctx.strokeRect(f.x, f.y - headerHeight, f.width, headerHeight); // Outline the header independently
-  
-  if (!options?.hideTitle) {
-    // Dynamic title rendering at the top of the figure
-    ctx.fillStyle = themeText;
-    ctx.font = `bold ${12 / zoom}px sans-serif`;
-    ctx.textBaseline = "middle";
-    ctx.fillText(f.title || `Figure ${f.figureNumber}`, f.x + 8 / zoom, f.y - headerHeight / 2);
+  if (isSelected) {
+    // Header bar containing the title
+    ctx.fillStyle = "rgba(0,0,0,0.05)";
+    ctx.fillRect(f.x, f.y - headerHeight, f.width, headerHeight);
+    ctx.strokeStyle = strokeColor;
+    ctx.strokeRect(f.x, f.y - headerHeight, f.width, headerHeight); // Outline the header independently
+    
+    if (!options?.hideTitle) {
+      // Dynamic title rendering at the top of the figure
+      ctx.fillStyle = themeText;
+      ctx.font = `bold ${12 / zoom}px sans-serif`;
+      ctx.textBaseline = "middle";
+      ctx.fillText(f.title || `Figure ${f.figureNumber}`, f.x + 8 / zoom, f.y - headerHeight / 2);
+    }
   }
   
   ctx.restore();

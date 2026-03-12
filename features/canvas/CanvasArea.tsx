@@ -168,8 +168,12 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       percent?: number;
     }[] = [];
 
+    const isArrow = activeTool === "Arrow";
+    const selectedIds = new Set(selectedShape.map(s => s.id));
+
     // Helper to add handles for rectangular-bounded shapes
     const addRectHandles = (r: { id: string; x: number; y: number; width: number; height: number }, kind: ShapeKind) => {
+      if (!isArrow && !selectedIds.has(r.id)) return;
       (["top", "right", "bottom", "left"] as AnchorSide[]).forEach((side) => {
         handles.push({
           kind,
@@ -192,6 +196,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
 
     // Circles have specialized anchor calculation
     circles.forEach((c) => {
+      if (!isArrow && !selectedIds.has(c.id)) return;
       (["top", "right", "bottom", "left"] as AnchorSide[]).forEach((side) => {
         handles.push({
           kind: "circle",
@@ -202,7 +207,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       });
     });
     return handles;
-  }, [activeTool, circles, rectangles, images, texts, frames, polygons, figures, codes]);
+  }, [activeTool, circles, rectangles, images, texts, frames, polygons, figures, codes, selectedShape]);
 
   // Generic function to update properties of an existing shape and record history
   const onUpdateShape = useCallback((kind: string, index: number, updates: Record<string, any>) => {
