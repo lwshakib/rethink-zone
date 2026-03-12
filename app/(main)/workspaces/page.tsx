@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useWorkspaceStore, Workspace } from "@/context";
+import { useWorkspaceStore, Workspace } from "@/hooks/use-workspace-store";
 import {
   Dialog,
   DialogContent,

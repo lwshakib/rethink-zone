@@ -45,7 +45,7 @@ import {
   Edit2,
   Loader2,
 } from "lucide-react";
-import { Workspace } from "@/context";
+import { Workspace } from "@/hooks/use-workspace-store";
 import DocumentTab from "@/features/document/document-tab";
 import CanvasTab from "@/features/canvas/canvas-tab";
 import KanbanTab from "@/features/kanban/kanban-tab";

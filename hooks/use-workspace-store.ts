@@ -1,9 +1,4 @@
-/**
- * This module defines the global application state using Zustand.
- * It primarily manages the list of 'Workspaces' available to the user.
- */
-
-import {create} from 'zustand'
+import { create } from 'zustand'
 
 /**
  * Workspace Schema
