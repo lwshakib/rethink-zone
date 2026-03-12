@@ -117,7 +117,7 @@ const PopoverContainer = React.memo(({ children, active, className = "", style =
       className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-4 flex flex-col gap-2 ${
         transparent 
           ? "p-0" 
-          : "p-3 bg-background/95 backdrop-blur-xl rounded-sm border border-border/40 shadow-2xl"
+          : "p-3 bg-background rounded-sm border border-border/40 shadow-2xl"
       } animate-in fade-in slide-in-from-bottom-2 duration-200 z-[1001] ${className}`}
       style={style}
       onPointerDown={e => e.stopPropagation()} // Prevent canvas from capturing clicks inside popovers

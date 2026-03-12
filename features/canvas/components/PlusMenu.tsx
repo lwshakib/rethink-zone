@@ -121,7 +121,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
           onPointerDown={(e) => e.stopPropagation()}
           onPointerUp={(e) => e.stopPropagation()}
           // Positioned floating near the left toolbar
-          className="fixed left-20 top-27 flex flex-col rounded-sm bg-background/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-border w-80 max-h-[85vh] overflow-hidden z-[1001] animate-in fade-in slide-in-from-left-2 duration-300"
+          className="fixed left-20 top-27 flex flex-col rounded-sm bg-background shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-border w-80 max-h-[85vh] overflow-hidden z-[1001] animate-in fade-in slide-in-from-left-2 duration-300"
         >
           {/* TOP SECTION: Integrated Search Bar */}
           <div 

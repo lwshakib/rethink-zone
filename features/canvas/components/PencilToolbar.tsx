@@ -81,7 +81,7 @@ const PopoverContainer = React.memo(({ children, active, className = "" }: { chi
   return (
     <div 
       // Positions above the trigger button with an upward slide animation
-      className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex flex-col gap-2 p-2 bg-background/95 backdrop-blur-md rounded-sm border border-border shadow-xl animate-in fade-in slide-in-from-bottom-1 duration-200 min-w-[140px] z-[1001] ${className}`}
+      className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex flex-col gap-2 p-2 bg-background rounded-sm border border-border shadow-xl animate-in fade-in slide-in-from-bottom-1 duration-200 min-w-[140px] z-[1001] ${className}`}
       onPointerDown={e => e.stopPropagation()} // Stop canvas selection when using sub-menu
     >
       {children}
