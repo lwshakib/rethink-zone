@@ -30,9 +30,12 @@ import {
   Loader2,
   Mail,
   Key,
+  Camera,
+  Upload,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { UserMenu } from "@/components/user-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Session {
   id: string;
@@ -71,6 +74,7 @@ export default function AccountPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -115,6 +119,61 @@ export default function AccountPage() {
       toast.error("Failed to update profile");
     } finally {
       setUpdatingProfile(false);
+    }
+  };
+
+  const uploadFileToCloudinary = async (file: File, signal?: AbortSignal) => {
+    const sigRes = await fetch("/api/cloudinary-signature");
+    if (!sigRes.ok) {
+      throw new Error("Failed to get upload signature");
+    }
+    const signature = await sigRes.json();
+    const uploadApi = `https://api.cloudinary.com/v1_1/${signature.cloudName}/upload`;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("api_key", signature.apiKey);
+    formData.append("timestamp", signature.timestamp.toString());
+    formData.append("signature", signature.signature);
+    formData.append("folder", signature.folder ?? "rethink-zone");
+
+    const uploadRes = await fetch(uploadApi, {
+      method: "POST",
+      body: formData,
+      signal,
+    });
+
+    if (!uploadRes.ok) {
+      throw new Error("Cloudinary upload failed");
+    }
+
+    const data = await uploadRes.json();
+    return {
+      secureUrl: data.secure_url as string,
+      publicId: data.public_id as string,
+      resourceType: data.resource_type as string,
+    };
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingImage(true);
+      const { secureUrl } = await uploadFileToCloudinary(file);
+
+      const { error } = await authClient.updateUser({
+        image: secureUrl,
+      });
+
+      if (error) throw error;
+      toast.success("Profile picture updated");
+    } catch (error) {
+      console.error("Upload failed:", error);
+      toast.error("Failed to upload image");
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -214,7 +273,53 @@ export default function AccountPage() {
           </div>
 
           <Card className="bg-card/50 border-border/50 shadow-sm overflow-hidden">
-            <CardContent className="p-6">
+            <CardContent className="p-6 space-y-8">
+              {/* Profile Image Section */}
+              <div className="flex flex-col sm:flex-row items-center gap-6 pb-2">
+                <div className="relative group">
+                  <Avatar className="h-24 w-24 border-2 border-border/50 shadow-md">
+                    <AvatarImage src={session.user.image || ""} />
+                    <AvatarFallback className="text-2xl font-bold bg-primary/5 text-primary">
+                      {session.user.name?.[0] || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  {uploadingImage && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-background/60 backdrop-blur-sm">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col items-center sm:items-start gap-2">
+                  <h3 className="text-sm font-semibold">Profile Picture</h3>
+                  <p className="text-[11px] text-muted-foreground max-w-[200px] text-center sm:text-left">
+                    We recommend an image of at least 400x400. PNG or JPG only.
+                  </p>
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploadingImage}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      asChild
+                      className="h-8 rounded-full border-border/50 text-xs font-bold gap-2 hover:bg-accent/50 transition-all active:scale-95 disabled:opacity-50"
+                    >
+                      <span>
+                        <Camera className="h-3.5 w-3.5" />
+                        {uploadingImage ? "Uploading..." : "Change Image"}
+                      </span>
+                    </Button>
+                  </label>
+                </div>
+              </div>
+
+              <Separator className="bg-border/30" />
+
               <form onSubmit={handleUpdateProfile} className="space-y-6">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">

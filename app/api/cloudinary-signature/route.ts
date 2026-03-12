@@ -1,21 +1,10 @@
-import { v2 as cloudinary } from "cloudinary";
 import { NextResponse } from "next/server";
+import { generateCloudinarySignature } from "@/lib/cloudinary";
 
 export async function GET() {
   try {
-    const timestamp = Math.floor(Date.now() / 1000);
-    const folder = "rethink-zone";
-    const signature = cloudinary.utils.api_sign_request(
-      { timestamp, folder },
-      process.env.CLOUDINARY_API_SECRET!
-    );
-    return NextResponse.json({
-      signature,
-      cloudName: process.env.CLOUDINARY_CLOUD_NAME!,
-      timestamp,
-      folder,
-      apiKey: process.env.CLOUDINARY_API_KEY!,
-    });
+    const signatureData = generateCloudinarySignature("rethink-zone");
+    return NextResponse.json(signatureData);
   } catch (error) {
     console.error("Error in cloudinary-signature GET:", error);
     return NextResponse.json(
