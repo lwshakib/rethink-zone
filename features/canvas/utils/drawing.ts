@@ -800,9 +800,11 @@ export const drawFigure = (
   const strokeColor = f.stroke || themeStroke;
   const fill = f.fill || "transparent";
 
-  // Background and primary border
+  // Body background
   ctx.fillStyle = fill;
   ctx.fillRect(f.x, f.y, f.width, f.height);
+
+  // Body border
   ctx.strokeStyle = strokeColor;
   const sw = f.strokeWidth !== undefined ? f.strokeWidth : 2;
   if (sw > 0) {
@@ -810,38 +812,64 @@ export const drawFigure = (
     ctx.strokeRect(f.x, f.y, f.width, f.height);
   }
 
-  const headerHeight = 30 / zoom;
-  if (isSelected) {
-    // Header bar containing the title
-    ctx.fillStyle = "rgba(0,0,0,0.05)";
-    ctx.fillRect(f.x, f.y - headerHeight, f.width, headerHeight);
-    ctx.strokeStyle = strokeColor;
-    ctx.strokeRect(f.x, f.y - headerHeight, f.width, headerHeight); // Outline the header independently
+  // Header/Label (Always visible unless editing)
+  const headerHeight = 26 / zoom;
+  const headerGap = 8 / zoom; // Increased gap
+  const hX = f.x;
+  const hY = f.y - headerHeight - headerGap;
 
-    if (!options?.hideTitle) {
-      // Dynamic title rendering at the top of the figure
-      ctx.fillStyle = themeText;
-      ctx.font = `bold ${12 / zoom}px sans-serif`;
-      ctx.textBaseline = "middle";
-      ctx.fillText(
-        f.title || `Figure ${f.figureNumber}`,
-        f.x + 8 / zoom,
-        f.y - headerHeight / 2
-      );
+  const text = f.title || `Figure ${f.figureNumber}`;
+  ctx.font = `600 ${12 / zoom}px sans-serif`;
+  const textWidth = ctx.measureText(text).width;
+  const iconSize = 10 / zoom; // Reduced size
+  const hPadding = 10 / zoom; // More padding
+  const iconGap = 8 / zoom; // More gap
+  const hWidth = textWidth + iconSize + iconGap + hPadding * 2;
+
+  if (!options?.hideTitle) {
+    // Draw Rounded Header Background (Solid Black with white outline)
+    const radius = 3 / zoom; // Sharper radius as requested
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(hX, hY, hWidth, headerHeight, radius);
+    } else {
+      ctx.rect(hX, hY, hWidth, headerHeight);
     }
+    ctx.fill();
+    
+    // Thin white outline for the pill
+    ctx.strokeStyle = "rgba(255,255,255,0.4)";
+    ctx.lineWidth = 0.5 / zoom;
+    ctx.stroke();
+
+    // Draw "Frame/Corners" Icon
+    const iX = hX + hPadding;
+    const iY = hY + (headerHeight - iconSize) / 2;
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 1.0 / zoom;
+    const cs = 2.5 / zoom;
+    ctx.beginPath();
+    // Top-left
+    ctx.moveTo(iX, iY + cs); ctx.lineTo(iX, iY); ctx.lineTo(iX + cs, iY);
+    // Top-right
+    ctx.moveTo(iX + iconSize - cs, iY); ctx.lineTo(iX + iconSize, iY); ctx.lineTo(iX + iconSize, iY + cs);
+    // Bottom-left
+    ctx.moveTo(iX, iY + iconSize - cs); ctx.lineTo(iX, iY + iconSize); ctx.lineTo(iX + cs, iY + iconSize);
+    // Bottom-right
+    ctx.moveTo(iX + iconSize - cs, iY + iconSize); ctx.lineTo(iX + iconSize, iY + iconSize); ctx.lineTo(iX + iconSize, iY + iconSize - cs);
+    ctx.stroke();
+
+    // Draw Text (White)
+    ctx.fillStyle = "white";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, iX + iconSize + iconGap, hY + headerHeight / 2);
   }
 
   ctx.restore();
-  // Larger selection overlay spanning both body and header
+
+  // Selection Overlay (Only around the body)
   if (isSelected) {
-    drawSelectionOverlay(
-      ctx,
-      f.x,
-      f.y - headerHeight,
-      f.width,
-      f.height + headerHeight,
-      zoom,
-      "figure"
-    );
+    drawSelectionOverlay(ctx, f.x, f.y, f.width, f.height, zoom, "figure");
   }
 };

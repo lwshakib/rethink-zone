@@ -604,6 +604,10 @@ export const getShapeBounds = (
     s = frames.find((i) => i.id === anchor.shapeId);
   else if (anchor.kind === "poly")
     s = polygons.find((i) => i.id === anchor.shapeId);
+  else if (anchor.kind === "figure")
+    s = figures.find((i) => i.id === anchor.shapeId);
+  else if (anchor.kind === "code")
+    s = codes.find((i) => i.id === anchor.shapeId);
 
   return s ? { x: s.x, y: s.y, width: s.width, height: s.height } : null;
 };

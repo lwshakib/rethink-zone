@@ -1242,13 +1242,37 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         const hitFigure = (() => {
           for (let i = figures.length - 1; i >= 0; i--) {
             const f = figures[i];
-            if (
+            const headerHeight = 26 / zoom;
+            const headerGap = 8 / zoom;
+            
+            // Hit Test Body
+            const inBody = (
               point.x >= f.x &&
               point.x <= f.x + f.width &&
               point.y >= f.y &&
               point.y <= f.y + f.height
-            )
-              return i;
+            );
+            
+            // Hit Test Header
+            const inHeader = (
+              point.x >= f.x &&
+              point.x <= f.x + f.width && 
+              point.y >= f.y - headerHeight - headerGap &&
+              point.y <= f.y - headerGap
+            );
+
+            // Hit Test Body Perimeter (Borders) - 10px tolerance
+            const bodyTol = 10 / zoom;
+            const inBodyBorder = (
+              (Math.abs(point.x - f.x) <= bodyTol || Math.abs(point.x - (f.x + f.width)) <= bodyTol) &&
+              point.y >= f.y - bodyTol && point.y <= f.y + f.height + bodyTol
+            ) || (
+              (Math.abs(point.y - f.y) <= bodyTol || Math.abs(point.y - (f.y + f.height)) <= bodyTol) &&
+              point.x >= f.x - bodyTol && point.x <= f.x + f.width + bodyTol
+            );
+
+            if (inHeader || inBodyBorder) return i;
+
             if (
               selectedShape.some((s) => s.kind === "figure" && s.index === i)
             ) {
@@ -3784,23 +3808,32 @@ export const useCanvasInteraction = (props: InteractionProps) => {
       const tool = resolveTool(event as any);
 
       if (tool === "Select" || tool === "Hand") {
-        const hitFigIndex = figures.findIndex(
-          (f) =>
+        const hitFigIndex = figures.findIndex((f) => {
+          const hH = 26 / zoom;
+          const hG = 4 / zoom;
+          return (
             point.x >= f.x &&
             point.x <= f.x + f.width &&
-            point.y >= f.y - 30 / zoom &&
-            point.y <= f.y + 10 / zoom
-        );
+            point.y >= f.y - hH - hG &&
+            point.y <= f.y - hG
+          );
+        });
         if (hitFigIndex !== -1) {
           const f = figures[hitFigIndex];
           const initialText = f.title || `Figure ${f.figureNumber}`;
           const measured = measureText(initialText, 12 / zoom);
+          const hH = 26 / zoom;
+          const hG = 8 / zoom;
+          const iS = 10 / zoom;
+          const hP = 10 / zoom;
+          const iG = 8 / zoom;
+
           setTextEditor({
-            canvasX: f.x,
-            canvasY: f.y - 20 / zoom,
+            canvasX: f.x + hP + iS + iG,
+            canvasY: f.y - hH - hG + hH / 2,
             value: initialText,
             fontSize: 12 / zoom,
-            fill: theme === "dark" ? "white" : "black",
+            fill: "white",
             boxWidth: measured.width,
             boxHeight: measured.height,
             index: hitFigIndex,
