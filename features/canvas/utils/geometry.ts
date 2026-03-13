@@ -49,7 +49,7 @@ export const getConnectorPoints = (
   const toDir = getAnchorDir(toAnchor);
 
   // Define initial protrusion distance from the shape boundary
-  const offset = 24 / zoom;
+  const offset = 24; // Use fixed world units for stable routing
 
   const p0 = from; // start
   // p1 is the point slightly outside the source shape
@@ -67,7 +67,7 @@ export const getConnectorPoints = (
     b?: { x: number; y: number; width: number; height: number }
   ) => {
     if (!b) return false;
-    const pad = 2 / zoom; // Small tolerance
+    const pad = 2; // Small tolerance
     return (
       p.x > b.x - pad &&
       p.x < b.x + b.width + pad &&
@@ -90,7 +90,7 @@ export const getConnectorPoints = (
       height: number;
     }) => {
       if (!box) return false;
-      const epsilon = 1 / zoom;
+      const epsilon = 1;
       const bx1 = box.x + epsilon;
       const by1 = box.y + epsilon;
       const bx2 = box.x + box.width - epsilon;
@@ -175,7 +175,7 @@ export const getConnectorPoints = (
 
   // 4. Around-Shapes: Routes that intentionally circle around both bounding boxes
   if (fromBounds && toBounds) {
-    const margin = 40 / zoom;
+    const margin = 40;
     const b1 = fromBounds;
     const b2 = toBounds;
     const minX = Math.min(b1.x, b2.x) - margin;
@@ -201,61 +201,7 @@ export const getConnectorPoints = (
     ]); // Around Top
   }
 
-  // Extra Z-Shapes (using gap midpoints if boxes are provided)
-  if (fromBounds && toBounds) {
-    const b1 = fromBounds;
-    const b2 = toBounds;
-    // Horizontal gap
-    if (b1.x + b1.width < b2.x || b2.x + b2.width < b1.x) {
-      const gapMidX =
-        b1.x + b1.width < b2.x
-          ? (b1.x + b1.width + b2.x) / 2
-          : (b2.x + b2.width + b1.x) / 2;
-      candidates.push([
-        { x: gapMidX, y: p1.y },
-        { x: gapMidX, y: p3.y },
-      ]);
-    }
-    // Vertical gap
-    if (b1.y + b1.height < b2.y || b2.y + b2.height < b1.y) {
-      const gapMidY =
-        b1.y + b1.height < b2.y
-          ? (b1.y + b1.height + b2.y) / 2
-          : (b2.y + b2.height + b1.y) / 2;
-      candidates.push([
-        { x: p1.x, y: gapMidY },
-        { x: p3.x, y: gapMidY },
-      ]);
-    }
-  }
-
-  // 3. Around-Shapes (Go around the bounding box of both)
-  if (fromBounds && toBounds) {
-    const margin = 40 / zoom;
-    const b1 = fromBounds;
-    const b2 = toBounds;
-    const minX = Math.min(b1.x, b2.x) - margin;
-    const maxX = Math.max(b1.x + b1.width, b2.x + b2.width) + margin;
-    const minY = Math.min(b1.y, b2.y) - margin;
-    const maxY = Math.max(b1.y + b1.height, b2.y + b2.height) + margin;
-
-    candidates.push([
-      { x: maxX, y: p1.y },
-      { x: maxX, y: p3.y },
-    ]);
-    candidates.push([
-      { x: minX, y: p1.y },
-      { x: minX, y: p3.y },
-    ]);
-    candidates.push([
-      { x: p1.x, y: maxY },
-      { x: p3.x, y: maxY },
-    ]);
-    candidates.push([
-      { x: p1.x, y: minY },
-      { x: p3.x, y: minY },
-    ]);
-  }
+  // Evaluation loop finds the bestScore among candidates...
 
   let bestPath: { x: number; y: number }[] | null = null;
   let bestScore = Infinity;
@@ -329,7 +275,7 @@ export const getConnectorPoints = (
         fullPath[i + 1].x - fullPath[i].x,
         fullPath[i + 1].y - fullPath[i].y
       );
-      if (d < 15 / zoom) score += 500;
+      if (d < 15) score += 500;
     }
 
     return score;

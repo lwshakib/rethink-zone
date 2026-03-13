@@ -1,71 +1,75 @@
 export const ARCHITECTURE_EXAMPLES = [
   // --- AWS ---
-  { title: "AWS E-commerce", prompt: "A scalable AWS e-commerce site with CloudFront, WAF, ALB, Auto Scaling EC2s, and RDS Aurora Multi-AZ." },
-  { title: "AWS Serverless API", prompt: "Client > API Gateway > Lambda (with VPC) > DynamoDB. Use SNS/SQS for async processing." },
-  { title: "AWS Data Lake", prompt: "S3 Data Lake with AWS Glue for ETL, Amazon Athena for querying, and QuickSight for visualization." },
-  { title: "AWS Static Site", prompt: "Route 53 > CloudFront > S3 Bucket (Private) with OAC. S3 holds React/Next.js static build." },
-  { title: "AWS ML Ops", prompt: "SageMaker training pipeline: S3 data > SageMaker Jobs > Model Registry > Inference Endpoints on ECS." },
-  { title: "AWS Transit Gateway", prompt: "Centralized networking with Transit Gateway connecting multiple VPCs and an On-Prem VPN." },
-  { title: "AWS Disaster Recovery", prompt: "Pilot Light DR: Active region (Primary) syncing RDS to Standby region via Aurora Global Database." },
-  { title: "AWS Event-Driven", prompt: "S3 Event -> EventBridge -> Multiple Lambda targets for image processing and notifications." },
-  { title: "AWS Hybrid Cloud", prompt: "AWS Direct Connect linking a Corporate Data Center to a VPC via a Virtual Private Gateway." },
-  { title: "AWS Analytics Stack", prompt: "Kinesis Data Firehose streaming logs from EC2 to OpenSearch Service and S3." },
+  { 
+    title: "AWS E-commerce (High-Availability)", 
+    prompt: "A robust multi-tier AWS e-commerce. Design an 'Edge Security' perimeter with CloudFront and WAF. Place the entry point in a 'Public Subnet' with an ALB. Create a 'Compute Fleet' group with Auto Scaling EC2 nodes. Finally, a 'Storage Tier' with RDS Aurora Multi-AZ and ElastiCache. Connect Edge > ALB > Compute > Storage." 
+  },
+  { 
+    title: "AWS Serverless API (Event-Driven)", 
+    prompt: "Advanced serverless architecture. Include an 'API Layer' with API Gateway. A 'Processing Engine' with Lambda functions inside a VPC. A 'State Layer' with DynamoDB and S3 for media. Integrate an 'Async Messaging' block with SQS and SNS for fan-out. Connect API > Processing > State and Processing > Async." 
+  },
+  { 
+    title: "AWS Modern Data Lake", 
+    prompt: "Enterprise Data Lake. Include an 'Ingestion' zone with Kinesis Firehose. A 'Bronze Lake' in S3 for raw data. A 'Processing' layer with AWS Glue and EMR. A 'Gold Lake' in S3 for curated data. Add an 'Analytics' block with Amazon Athena and QuickSight. Connect Ingestion > Raw > Processing > Curated > Analytics." 
+  },
+  { 
+    title: "AWS Global Edge Static Site", 
+    prompt: "Secure Static Hosting. Use Route 53 for DNS. A CloudFront distribution with Origin Access Control (OAC). A private S3 bucket in the 'Origin Storage' group. Add a 'Security' group with Lambda@Edge for headers and WAF for filtering. Connect Route 53 > CloudFront > Origin." 
+  },
+  { 
+    title: "AWS Enterprise ML Ops", 
+    prompt: "Production ML Lifecycle. Include a 'Data Prep' group with S3 and Glue. A 'Training Cluster' with SageMaker training jobs. A 'Model Management' block with SageMaker Model Registry. An 'Inference Tier' with ECS-hosted endpoints. Add a 'Monitoring' group with CloudWatch. Connect Prep > Training > Registry > Inference." 
+  },
 
   // --- GCP ---
-  { title: "GCP Modern Web", prompt: "Cloud DNS > Cloud Load Balancing > Cloud Run (Serverless). Use Cloud SQL for the relational DB." },
-  { title: "GCP Big Data", prompt: "Pub/Sub streaming data to Dataflow, then sink to BigQuery for analytics and Vertex AI for ML." },
-  { title: "GCP Global Content", prompt: "Cloud CDN caching static assets from Cloud Storage buckets across global edge locations." },
-  { title: "GCP Anthos Hybrid", prompt: "Anthos managing clusters both on-premises and in GCP for consistent Kubernetes operations." },
-  { title: "GCP AI Workspace", prompt: "Vertex AI Pipelines with Notebooks, Feature Store, and online prediction endpoints." },
-  { title: "GCP Microservices", prompt: "GKE Cluster with Istio Service Mesh, Cloud SQL Proxy, and Internal Load Balancers." },
-  { title: "GCP Firebase App", prompt: "Flutter app using Firebase Auth, Firestore NO-SQL, and Cloud Storage for assets." },
-  { title: "GCP VPC Peering", prompt: "Two distinct VPC networks sharing resources via high-bandwidth VPC Network Peering." },
-  { title: "GCP DevOps Stack", prompt: "Cloud Build triggering from GitHub, pushing to Artifact Registry, and deploying to Cloud Run." },
-  { title: "GCP Serverless DB", prompt: "Cloud Functions connected to Firestore with Real-time listeners for a chat application." },
+  { 
+    title: "GCP Modern Serverless Web", 
+    prompt: "Modern GCP web app. Use Cloud DNS and Cloud Load Balancing for global entry. An 'App Tier' with Cloud Run services and Cloud Functions. A 'Persistence' layer with Cloud SQL (Postgres) and Memorystore. Include 'Secret Management' with Secret Manager. Connect Load Balancing > App > Persistence." 
+  },
+  { 
+    title: "GCP Big Data Analytics", 
+    prompt: "Real-time GCP data stack. Use Pub/Sub for messaging. A 'Processing' layer with Dataflow jobs. A 'Warehouse' layer with BigQuery. Add a 'Machine Learning' block with Vertex AI for real-time predictions. Connect Pub/Sub > Dataflow > BigQuery > Vertex AI." 
+  },
+  { 
+    title: "GCP GKE Service Mesh", 
+    prompt: "Production K8s on GCP. Use a GKE Cluster inside a 'Private VPC'. Implement 'Anthos Service Mesh' (Istio) for internal traffic. Use 'Cloud SQL Auth Proxy' for secure DB access. Add a 'Monitoring' stack with Cloud Logging and Monitoring. Connect Entry > GKE > Database." 
+  },
 
   // --- Azure ---
-  { title: "Azure Enterprise", prompt: "Azure Front Door > App Gateway > App Service Environment (ASE) with SQL Database Managed Instance." },
-  { title: "Azure Global Data", prompt: "Cosmos DB with Multi-region replication, Front Door for global routing, and Redis Cache." },
-  { title: "Azure AI Vision", prompt: "Azure Computer Vision API processing images stored in Blob Storage via Azure Functions." },
-  { title: "Azure Hub & Spoke", prompt: "Virtual WAN with Hub VNet (Firewall) and several Spoke VNets containing App Services." },
-  { title: "Azure Hybrid Identity", prompt: "On-premises Active Directory syncing to Microsoft Entra ID (Azure AD) via Connect." },
-  { title: "Azure Kubernetes", prompt: "AKS Cluster with Azure CNI, Key Vault for secrets, and Container Registry (ACR)." },
-  { title: "Azure Data Bricks", prompt: "ADLS Gen2 storage feeding into Azure Databricks for processing, then to Synapse Analytics." },
-  { title: "Azure IoT Central", prompt: "IoT devices sending telemetry via IoT Hub to Azure Stream Analytics and Power BI." },
-  { title: "Azure Serverless MQ", prompt: "Service Bus Queue triggering a Function to update an Azure Table Storage record." },
-  { title: "Azure Backup/DR", prompt: "Azure Site Recovery replicating On-prem VMs to Azure for business continuity." },
+  { 
+    title: "Azure Enterprise Hub-and-Spoke", 
+    prompt: "Complex Azure network. Create a 'Hub VNet' with Azure Firewall and VPN Gateway. Create multiple 'Spoke VNets' for production. In the Hub, add an 'Azure Front Door' entry point. In the Spokes, place 'App Service Environments'. Connect Front Door > Hub Firewall > Spokes." 
+  },
+  { 
+    title: "Azure Global Data Mesh", 
+    prompt: "Highly available Azure data. Use Cosmos DB with Multi-region writes. An 'Identity' tier with Microsoft Entra ID. A 'Caching' layer with Azure Cache for Redis. Add 'Key Vault' for secure secrets. Connect App Service > Global DB and App Service > Redis." 
+  },
+  { 
+    title: "Azure IoT Edge AI", 
+    prompt: "Azure IoT Pipeline. 'Edge Devices' sending telemetry to 'IoT Hub'. A 'Stream Analytics' block for processing. Use 'Azure Functions' for real-time alerting. Store cold data in 'Blob Storage' and hot data in 'Cosmos DB'. Connect Devices > IoT Hub > Analytics > Storage." 
+  },
 
   // --- Kubernetes Specific ---
-  { title: "K8s Microservices", prompt: "Kubernetes cluster with Ingress NGINX, multiple service deployments, and HPA enabled." },
-  { title: "K8s GitOps Flux", prompt: "Flux CD syncing a GitHub repo with a K8s namespace, managing Helm releases automatically." },
-  { title: "K8s Monitoring Stack", prompt: "Prometheus gathering metrics from Pods, Grafana dashboards, and Alertmanager for notifications." },
-  { title: "K8s Service Mesh", prompt: "Linkerd or Istio managing mTLS between services, traffic splitting, and observability." },
-  { title: "K8s Edge Computing", prompt: "K3s lightweight cluster on edge devices syncing state back to a central cloud cluster." },
+  { 
+    title: "K8s Microservices Grid", 
+    prompt: "Detailed K8s architecture. Include an 'Ingress Layer' with NGINX Ingress Controller. A 'Service Mesh' (Istio) group managing 'Pod Sidecars'. Multiple 'Deployment' sets for Frontend, Backend, and Auth. Add a 'StatefulSet' group for Redis. Connect Ingress > Services > Pods > Redis." 
+  },
+  { 
+    title: "K8s GitOps & Observability", 
+    prompt: "Modern DevOps K8s. Include a 'GitOps Control' block with Flux CD or ArgoCD. A 'Monitoring' group with Prometheus, Grafana, and Alertmanager. A 'Worker Fleet' with multiple namespaces. Add 'Vault' for secret injection. Connect Repo > GitOps > Cluster and Cluster > Monitoring." 
+  },
   
   // --- High Level / Conceptual ---
-  { title: "Standard 3-Tier", prompt: "Web application with Presentation Layer (ALB), Logic Layer (EC2), and Data Layer (RDS)." },
-  { title: "Micro-Frontend", prompt: "Multiple independently deployed frontend apps routed via a CloudFront/Nginx proxy." },
-  { title: "Event Sourcing", prompt: "A system using Kafka as a central event log with multiple microservices consuming events." },
-  { title: "Zero Trust Network", prompt: "Architecture using Identity-Aware Proxy (IAP) where every request is authenticated/authorized." },
-  { title: "Multi-Cloud Strategy", prompt: "AWS for compute (EC2), GCP for data analytics (BigQuery), connected via VPN or Interconnect." },
-  { title: "Fintech Core Banking", prompt: "Highly secure environment: Isolated Private Subnets, HSM for crypto, and Audit Logging." },
-  { title: "Streaming Platform", prompt: "Live video transcoding: RTMP Ingest -> Transcoder Nodes -> S3 -> CDN Edge." },
-  { title: "AdTech Real-time", prompt: "Low latency Bidder: Redis for fast lookups, high-concurrency Go services on K8s." },
-  { title: "HealthCare SaaS", prompt: "HIPAA Compliant: Encryption at rest/transit, BAA, CloudTrail, and IAM least privilege." },
-  { title: "Gaming Backend", prompt: "MMO Backend: Game Servers on EC2 (G4 instances), Agones on K8s, Global Accel." },
-  { title: "AI Image Gen", prompt: "Stable Diffusion on GPU Nodes (Akash/AWS G5), S3 for weights, and FastAPI for API." },
-  { title: "Search Engine", prompt: "Web Crawler -> S3 -> Spark/Databricks -> OpenSearch Index -> Search API." },
-  { title: "DevSecOps Pipeline", prompt: "GitHub Actions -> Snyk Scan -> Terraform Plan -> Infracost -> AWS Deployment." },
-  { title: "Blockchain Node", prompt: "Ethereum RPC node behind a Load Balancer with optimized volumes (gp3) for block sync." },
-  { title: "Observability Hub", prompt: "VictoriaMetrics for long-term storage, OpenTelemetry collectors, and Jaeger for tracing." },
-  { title: "Corporate Intranet", prompt: "Internal VPN -> AD Auth -> SharePoint/Teams/Custom Hub on Azure." },
-  { title: "Social Feed", prompt: "Fan-out architecture: User posts to DB -> Background Job -> Push to Redis followers." },
-  { title: "E-learning LMS", prompt: "Vimeo/S3 video hosting, Quiz engine on Lambda, and PostgreSQL for student records." },
-  { title: "Logistic Tracking", prompt: "Real-time fleet GPS tracking: MQTT Broker -> Lambda -> PostGIS Spatial DB." },
-  { title: "Legal Case Mgmt", prompt: "Document management on SharePoint, Search via Azure Cognitive Search, and Teams integration." },
-  { title: "Real Estate App", prompt: "Map-based search via Mapbox, SQL spatial queries, and Image hosting on Cloudinary." },
-  { title: "Crypto Exchange", prompt: "Order matching engine (C++/Rust), Cold wallet storage, and Hot wallet API in AWS." },
-  { title: "Climate Modeling", prompt: "HPC Cluster with Lustre FS, hundreds of Compute nodes (C7g), and S3 for long-term data." },
-  { title: "Collaborative Whiteboard", prompt: "WebSockets (Socket.io) on AWS Fargate, Redis Pub/Sub, and DynamoDB for persistence." },
-  { title: "Newsletter Platform", prompt: "Stripe for billing, Amazon SES for mail, and Go microservices for subscription logic." }
+  { 
+    title: "Standard 3-Tier Enterprise", 
+    prompt: "A strictly isolated 3-tier app. 'Presentation-Tier' with Load Balancers. 'App-Tier' with containerized API services. 'Data-Tier' with clustered Databases. Add a 'Security Ops' group with IAM, Logging, and Intrusion Detection. Connect Pres > App > Data." 
+  },
+  { 
+    title: "Zero Trust AI Inference", 
+    prompt: "Secure AI Pipeline. Use an 'Identity Gateway' (IAP). A 'Model Service' tier with GPU-backed nodes. A 'Vector Store' group with Pinecone or Milvus. A 'Caching' layer with Redis. Connect Users > Gateway > Identity > Model > Vector Store." 
+  },
+  { 
+    title: "Financial Core Banking Mesh", 
+    prompt: "Highly secure FinTech architecture. Build an 'Isolated Network' with strict ACLs. A 'Transaction Engine' with high-concurrency Rust/Go services. A 'Mainframe Sync' block. A 'Fraud Detection' layer with real-time AI. Connect Gateway > Engine > Sync and Engine > Fraud." 
+  }
 ];
