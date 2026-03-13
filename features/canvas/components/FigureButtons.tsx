@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Edit3, X, Terminal } from "lucide-react";
+import { X, SquareCode } from "lucide-react";
 import { FigureShape, SelectedShape } from "../types";
 import { measureText } from "../utils/canvas-helpers";
 
@@ -33,22 +33,21 @@ const FigureButtons: React.FC<FigureButtonsProps> = ({
         // Hide buttons if not selected and not currently editing
         if (!isSelected && !isEditing) return null;
         
-        // Match the sizing logic from drawing.ts (now constant screen size)
-        const headerHeight = 20 / zoom;
-        const headerGap = 10 / zoom; // Increased vertical gap to separate from the body
+        // Match drawing.ts precisely
+        const headerHeight = 24 / zoom; // Matches drawing.ts
+        const headerGap = 10 / zoom; 
         
-        // Precise title width calculation matching drawing.ts
         const text = figure.title || `Figure ${figure.figureNumber}`;
-        const measured = measureText(text, 11 / zoom, "sans-serif", 600); 
+        const measured = measureText(text, 10 / zoom, "sans-serif", 600); 
         const textWidth = measured.width;
         
         const iconSize = 10 / zoom;
-        const hPadding = 8 / zoom; 
-        const iconGap = 4 / zoom; 
+        const hPadding = 10 / zoom; 
+        const iconGap = 6 / zoom; 
         const hWidth = textWidth + iconSize + iconGap + hPadding * 2;
         
-        // Position to the right of the title pill - increased horizontal gap
-        const buttonXOffset = hWidth + (8 / zoom); 
+        // Position to the right of the title pill
+        const buttonXOffset = hWidth + (12 / zoom); 
         const buttonYOffset = -headerHeight - headerGap; 
         
         const pos = canvasToClient(figure.x + buttonXOffset, figure.y + buttonYOffset);
@@ -56,11 +55,11 @@ const FigureButtons: React.FC<FigureButtonsProps> = ({
         return (
           <div
             key={figure.id}
-            className="absolute pointer-events-auto z-40 flex items-center h-auto"
+            className="absolute pointer-events-auto z-40 flex items-center"
             style={{
               left: `${pos.x}px`,
               top: `${pos.y}px`,
-              height: `20px` // Balanced constant screen height
+              height: "24px",
             }}
           >
             <Button
@@ -71,7 +70,7 @@ const FigureButtons: React.FC<FigureButtonsProps> = ({
                 e.stopPropagation();
                 onOpenEditor(figure.id);
               }}
-              className={`h-full flex items-center gap-1.5 px-3 py-0 text-[11px] font-bold tracking-widest rounded-[3px] border transition-all shadow-xl active:scale-95 bg-black text-white hover:bg-zinc-900 border-white/20`}
+              className={`h-[24px] flex items-center gap-2 px-4 py-0 text-[10px] font-semibold rounded-[3px] border transition-all shadow-xl active:scale-95 bg-black text-white hover:bg-zinc-900 border-white/30`}
             >
               {isEditing ? (
                 <>
@@ -80,7 +79,7 @@ const FigureButtons: React.FC<FigureButtonsProps> = ({
                 </>
               ) : (
                 <>
-                  <Terminal size={12} className="text-blue-400" />
+                  <SquareCode size={12} className="text-white" />
                   Open Editor
                 </>
               )}

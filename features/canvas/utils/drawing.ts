@@ -814,19 +814,20 @@ export const drawFigure = (
   }
 
   // Header/Label (Constant screen size - zoom dependent canvas units)
-  const headerHeight = 20 / zoom;
+  const headerHeight = 24 / zoom;
   const headerGap = 10 / zoom; 
   const hX = f.x;
   const hY = f.y - headerHeight - headerGap;
 
   const text = options?.titleOverride !== undefined ? options.titleOverride : (f.title || `Figure ${f.figureNumber}`);
-  const fontSize = 11 / zoom;
-  ctx.font = `600 ${fontSize}px sans-serif`;
+  const fontSize = 10 / zoom;
+  const fontWeight = 600;
+  ctx.font = `${fontWeight} ${fontSize}px sans-serif`;
   
   const textWidth = ctx.measureText(text).width;
   const iconSize = 10 / zoom;
-  const hPadding = 8 / zoom; 
-  const iconGap = 4 / zoom;  
+  const hPadding = 10 / zoom; 
+  const iconGap = 6 / zoom;  
   const hWidth = textWidth + iconSize + iconGap + hPadding * 2;
 
   // Draw Rounded Header Background
@@ -845,18 +846,30 @@ export const drawFigure = (
   ctx.lineWidth = 0.5 / zoom;
   ctx.stroke();
 
-  // Draw Icon
+  // Draw Flow Icon (Branching nodes)
   const iX = hX + hPadding;
   const iY = hY + (headerHeight - iconSize) / 2;
   ctx.strokeStyle = "white";
   ctx.lineWidth = 1.0 / zoom;
-  const cs = 2.5 / zoom;
+  
+  const dotS = iconSize * 0.35;
+  // Top center dot
+  ctx.strokeRect(iX + (iconSize - dotS)/2, iY, dotS, dotS);
+  
+  // Branching lines
   ctx.beginPath();
-  ctx.moveTo(iX, iY + cs); ctx.lineTo(iX, iY); ctx.lineTo(iX + cs, iY);
-  ctx.moveTo(iX + iconSize - cs, iY); ctx.lineTo(iX + iconSize, iY); ctx.lineTo(iX + iconSize, iY + cs);
-  ctx.moveTo(iX, iY + iconSize - cs); ctx.lineTo(iX, iY + iconSize); ctx.lineTo(iX + cs, iY + iconSize);
-  ctx.moveTo(iX + iconSize - cs, iY + iconSize); ctx.lineTo(iX + iconSize, iY + iconSize); ctx.lineTo(iX + iconSize, iY + iconSize - cs);
+  ctx.moveTo(iX + iconSize/2, iY + dotS);
+  ctx.lineTo(iX + iconSize/2, iY + iconSize/2);
+  ctx.moveTo(iX + dotS/2, iY + iconSize/2);
+  ctx.lineTo(iX + iconSize - dotS/2, iY + iconSize/2);
+  ctx.lineTo(iX + iconSize - dotS/2, iY + iconSize - dotS);
+  ctx.moveTo(iX + dotS/2, iY + iconSize/2);
+  ctx.lineTo(iX + dotS/2, iY + iconSize - dotS);
   ctx.stroke();
+
+  // Bottom dots
+  ctx.strokeRect(iX, iY + iconSize - dotS, dotS, dotS);
+  ctx.strokeRect(iX + iconSize - dotS, iY + iconSize - dotS, dotS, dotS);
 
   if (!options?.hideTitleText) {
     ctx.fillStyle = "white";
