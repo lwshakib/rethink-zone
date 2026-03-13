@@ -70,6 +70,18 @@ export const ARCHITECTURE_EXAMPLES = [
   },
   { 
     title: "Financial Core Banking Mesh", 
-    prompt: "Highly secure FinTech architecture. Build an 'Isolated Network' with strict ACLs. A 'Transaction Engine' with high-concurrency Rust/Go services. A 'Mainframe Sync' block. A 'Fraud Detection' layer with real-time AI. Connect Gateway > Engine > Sync and Engine > Fraud." 
+    prompt: "Highly secure FinTech architecture. Build an 'Isolated Network' with strict ACLs. A 'Transaction Engine' with high-concurrency Rust/Go services. A 'Mainframe Sync' block. A 'Fraud Detection' layer with real-time AI. Connect Gateway > Engine > Sync and Engine > Fraud."
+  },
+  { 
+    title: "Global VOD Pipeline", 
+    prompt: "High-scale video delivery. Use S3 for 'Source Assets'. A 'Processing' tier with Lambda and Elemental MediaConvert. A 'Distribution' group with CloudFront and multiple edge origins. Add 'EventBridge' for job status sync to a 'Dashboard' group. Connect Source > Processing > Distribution and Processing > EventBridge." 
+  },
+  { 
+    title: "HIPAA Compliant Health-SaaS", 
+    prompt: "Secure Medical Data Platform. Build a 'High-Trust' isolated VPC. A 'KMS/CloudTrail' security group for auditing. Use a 'Fargate API' tier behind an internal ALB. A 'Locked-down DB' with RDS Encryption-at-rest. Connect Users > WAF > ALB > API > Database." 
+  },
+  { 
+    title: "Real-time Gaming Mesh", 
+    prompt: "Low-latency multiplayer backend. Use G5 GPU nodes for 'Game Simulation'. A 'Global Accelerator' entry point. A 'Player Identity' group with Cognito. A 'Leaderboard' tier with Redis. Connect Multi-regional Users > Global Accelerator > Game Simulation > Leaderboard." 
   }
 ];

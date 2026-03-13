@@ -119,7 +119,43 @@ export const getConnectorPoints = (
     };
 
     const blockedByBoxes = allBounds?.filter(b => b !== fromBounds && b !== toBounds) || [];
-    return check(fromBounds) || check(toBounds) || blockedByBoxes.some(b => check(b));
+    return check(fromBounds) || check(toBounds) || blockedByBoxes.some(box => {
+      // Precise check: actual intersection with a slightly padded box
+      return check(box);
+    });
+  };
+
+  /**
+   * Reward/Penalty for proximity to other shapes
+   */
+  const getProximityPenalty = (a: { x: number; y: number }, b: { x: number; y: number }) => {
+    if (!allBounds) return 0;
+    let penalty = 0;
+    const margin = 10;
+    
+    allBounds.forEach(box => {
+      if (box === fromBounds || box === toBounds) return;
+      
+      // Calculate if the segment is near this box
+      const bx1 = box.x - margin;
+      const by1 = box.y - margin;
+      const bx2 = box.x + box.width + margin;
+      const by2 = box.y + box.height + margin;
+      
+      const minX = Math.min(a.x, b.x);
+      const maxX = Math.max(a.x, b.x);
+      const minY = Math.min(a.y, b.y);
+      const maxY = Math.max(a.y, b.y);
+      
+      if (Math.abs(a.x - b.x) < 0.1) {
+         // Vertical segment near box
+         if (a.x > bx1 && a.x < bx2 && minY < by2 && maxY > by1) penalty += 100;
+      } else {
+         // Horizontal segment near box
+         if (a.y > by1 && a.y < by2 && minX < bx2 && maxX > bx1) penalty += 100;
+      }
+    });
+    return penalty;
   };
 
   // Center-point between the two padded exit/entry points
@@ -204,11 +240,6 @@ export const getConnectorPoints = (
     ]); // Around Top
   }
 
-  // Evaluation loop finds the bestScore among candidates...
-
-  let bestPath: { x: number; y: number }[] | null = null;
-  let bestScore = Infinity;
-
   /**
    * Evaluates the "cost" of a candidate path based on length, turns, and collisions.
    */
@@ -254,9 +285,13 @@ export const getConnectorPoints = (
 
     if (blocked) return Infinity; // Hard failure for collisions
 
-    // SCORING HEURISTICS:
     // 1. Base Score: Length + significant penalty for each turn (prefer straight line)
+    // Add proximity penalty to keep lines away from shape edges
     let score = length + turns * 200;
+    
+    for (let i = 0; i < fullPath.length - 1; i++) {
+        score += getProximityPenalty(fullPath[i], fullPath[i+1]);
+    }
 
     // 2. Center Bonus: Reward Z-shapes that are equidistantly split between shapes
     const isCentered = cand === z1 || cand === z2;
@@ -284,6 +319,9 @@ export const getConnectorPoints = (
     return score;
   };
 
+  let bestPath: { x: number; y: number }[] | null = null;
+  let bestScore = Infinity;
+
   // Iterate through all candidates and find the one with the lowest heuristic score
   for (const cand of candidates) {
     const score = getScore(cand);
@@ -297,13 +335,13 @@ export const getConnectorPoints = (
   const pts: { x: number; y: number }[] = [p0];
   if (fromDir.x !== 0 || fromDir.y !== 0) pts.push(p1);
 
-  if (bestPath) {
-    pts.push(...bestPath);
-  } else if (waypoints && waypoints.length > 0) {
-    // If waypoints are provided, we use them. 
-    // For now, we connect them with straight lines, but still keep the orthogonal entry/exit
+  if (waypoints && waypoints.length > 0) {
+    // Manual Waypoints take precedence over automatic routing
     pts.push(...waypoints);
+  } else if (bestPath) {
+    pts.push(...bestPath);
   } else {
+    // Ultimate fallback: Use a centered vertical-first Z-path
     pts.push(...z1);
   }
 

@@ -331,7 +331,7 @@ export function parseDSL(code: string, iconRegistry: string[] = []): ShapeCollec
   const MARGIN = 40;
   const HEADER_HEIGHT = 60;
   const NODE_SIZE = 80;
-  const GRID_GAP = 60;
+  const GRID_GAP = 80;
 
   function layoutNode(node: DSLNode, startX: number, startY: number): { width: number, height: number } {
     const isRoot = node.id === 'root';
