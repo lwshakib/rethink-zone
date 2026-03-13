@@ -26,6 +26,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
 
 interface FigureEditorPanelProps {
   isOpen: boolean;
@@ -115,7 +116,7 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
       onPointerDown={(e) => e.stopPropagation()}
     >
       {/* Header - Tabs Toggle */}
-      <div className="flex h-20 items-center justify-center px-8 border-b border-white/5">
+      <div className="flex h-20 items-center justify-center px-8 border-b border-white/5 shrink-0">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 bg-white/5 rounded-lg h-10 p-1">
             <TabsTrigger 
@@ -135,7 +136,7 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
       </div>
 
       {/* Breadcrumb / Section Info - Refined per feedback */}
-      <div className="flex items-center gap-4 px-8 py-6">
+      <div className="flex items-center gap-4 px-8 py-6 shrink-0">
         <div className="text-white/60">
           <CloudIcon size={22} strokeWidth={1.5} />
         </div>
@@ -152,35 +153,22 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
       </div>
 
       {/* Editor Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-white/10">
         {activeTab === "ai" ? (
-          <div className="flex-1 flex flex-col p-8 gap-6 animate-in fade-in duration-300">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Sparkles size={14} className="text-blue-400" />
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
-                  Agentic AI Prompt
-                </label>
-              </div>
-              <p className="text-[12px] text-white/60 leading-relaxed font-medium">
-                Describe the infrastructure changes you want to see. The agent will rewrite the DSL logic for you.
-              </p>
-            </div>
-            
-            <div className="flex-1 flex flex-col gap-4">
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="e.g. 'Add an AWS Aurora database cluster connected to the lambda function and set it to a VPC group'..."
-                className="flex-1 bg-white/[0.03] border border-white/5 rounded-xl p-6 text-sm font-medium leading-relaxed text-white/90 outline-none focus:ring-1 focus:ring-blue-500/20 placeholder:text-white/10 resize-none transition-all shadow-inner"
-              />
-              <Button 
-                onClick={() => {}} // Placeholder for AI logic
-                className="h-14 bg-blue-600 hover:bg-blue-500 text-white font-bold tracking-widest text-[11px] rounded-xl shadow-lg shadow-blue-900/20"
-              >
-                GENERATE WITH AI
-              </Button>
-            </div>
+          <div className="flex flex-col p-8 gap-6 animate-in fade-in duration-300">
+            <Textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Describe infrastructure changes..."
+              className="h-[160px] resize-none border-white/10 bg-white/5 text-white placeholder:text-white/20 text-sm py-4 px-5 rounded-md border field-sizing-fixed"
+            />
+            <Button 
+              onClick={() => {}} // Placeholder for AI logic
+              variant="default"
+              className="h-11 font-bold tracking-[0.2em] text-[10px] rounded-md px-10 shadow-lg shadow-white/5"
+            >
+              Generate
+            </Button>
           </div>
         ) : (
           <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-300">
@@ -216,7 +204,7 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
             </div>
 
             {/* Bottom Toolbar & Footer */}
-            <div className="mt-auto border-t border-white/5 bg-black/20 pb-8">
+            <div className="mt-auto border-t border-white/5 bg-black/20 pb-8 shrink-0">
               <div className="flex items-center justify-between px-6 h-16">
                 <div className="flex items-center gap-1">
                   <button className="p-2 text-white/40 hover:text-white/80 transition-colors" title="Syntax Help">
