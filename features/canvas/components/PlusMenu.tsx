@@ -92,6 +92,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
   pendingAddDiagram,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
+  const [hoveredItemName, setHoveredItemName] = React.useState<string | null>(null);
 
   // EFFECT: Handle outside clicks and wheel event locking
   useEffect(() => {
@@ -195,11 +196,14 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                       <div
                         key={i}
                         className="flex flex-col items-center gap-1.5 group"
+                        onMouseEnter={() => setHoveredItemName(name)}
+                        onMouseLeave={() => setHoveredItemName(null)}
                       >
                         <button
                           onClick={() => {
                             onAddIcon(name, path);
                             setActiveTool("IconAdd"); // Prepare the canvas for placement
+                            onClose();
                           }}
                           className="h-10 w-10 flex items-center justify-center rounded-sm transition-all shadow-none overflow-hidden group active:scale-90"
                         >
@@ -265,6 +269,8 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                   ].map((item, i) => (
                     <button
                       key={i}
+                      onMouseEnter={() => setHoveredItemName(item.title)}
+                      onMouseLeave={() => setHoveredItemName(null)}
                       onClick={() => {
                         // Switch menu view based on selection
                         if (item.id === "shape") setView("shape");
@@ -345,6 +351,8 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                   ].map((action, i) => (
                     <button
                       key={i}
+                      onMouseEnter={() => setHoveredItemName(action.label)}
+                      onMouseLeave={() => setHoveredItemName(null)}
                       onClick={action.onClick}
                       className="flex flex-col items-center gap-1.5 p-3 rounded-sm bg-accent/20 border border-border/50 hover:border-border transition-all group shadow-sm active:scale-95"
                     >
@@ -389,9 +397,12 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                     ].map((shape, i) => (
                       <button
                         key={i}
+                        onMouseEnter={() => setHoveredItemName(shape.label)}
+                        onMouseLeave={() => setHoveredItemName(null)}
                         onClick={() => {
                           onAddShape(shape.label);
                           setActiveTool("PlusAdd"); // Switch to placement pointer
+                          onClose();
                         }}
                         className="flex flex-col items-center gap-1.5 group p-1"
                       >
@@ -498,6 +509,8 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                         <div
                           key={i}
                           className="flex flex-col items-center gap-1.5 group p-1"
+                          onMouseEnter={() => setHoveredItemName(icon.name)}
+                          onMouseLeave={() => setHoveredItemName(null)}
                         >
                           <button
                             onClick={() => {
@@ -510,6 +523,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                               )}`;
                               onAddIcon(icon.name, src);
                               setActiveTool("IconAdd");
+                              onClose();
                             }}
                             className="h-10 w-10 flex items-center justify-center rounded-sm transition-all shadow-none active:scale-90 group"
                           >
@@ -579,11 +593,14 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                             <div
                               key={i}
                               className="flex flex-col items-center gap-1.5 group"
+                              onMouseEnter={() => setHoveredItemName(name)}
+                              onMouseLeave={() => setHoveredItemName(null)}
                             >
                               <button
                                 onClick={() => {
                                   onAddIcon(name, path);
                                   setActiveTool("IconAdd");
+                                  onClose();
                                 }}
                                 className="h-10 w-10 flex items-center justify-center rounded-sm transition-all shadow-none overflow-hidden group active:scale-90"
                               >
@@ -628,9 +645,12 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                     ].map((device, i) => (
                       <button
                         key={i}
+                        onMouseEnter={() => setHoveredItemName(device.label)}
+                        onMouseLeave={() => setHoveredItemName(null)}
                         onClick={() => {
                           onAddShape(`Device:${device.type}`);
                           setActiveTool("PlusAdd");
+                          onClose();
                         }}
                         className="flex flex-col items-center gap-2 group"
                       >
@@ -663,9 +683,12 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                     {DIAGRAM_CATALOG.map((diagram, i) => (
                       <button
                         key={i}
+                        onMouseEnter={() => setHoveredItemName(diagram.name)}
+                        onMouseLeave={() => setHoveredItemName(null)}
                         onClick={() => {
                           onAddDiagram(diagram);
                           setActiveTool("PlusAdd");
+                          onClose();
                         }}
                         className="flex items-start gap-3 p-3 rounded-sm hover:bg-accent transition-all group group-active:scale-[0.98] w-full text-left"
                       >
@@ -752,6 +775,8 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                     ].map((cloud, i) => (
                       <button
                         key={i}
+                        onMouseEnter={() => setHoveredItemName(cloud.name)}
+                        onMouseLeave={() => setHoveredItemName(null)}
                         onClick={() => {
                           setSubView(cloud.name);
                           setView("provider-icons");
@@ -789,14 +814,18 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
           {/* MENU FOOTER: Contextual Status and Shortcuts */}
           <div className="flex items-center justify-between px-4 py-3 bg-muted/40 border-t border-border/50 h-11 shrink-0">
             <div className="text-[11px] font-bold text-foreground/80 tracking-tight">
-              {view === "device-frame" ? (
+              {hoveredItemName ? (
+                <span className="text-primary flex items-center gap-1.5 animate-in fade-in slide-in-from-left-1 duration-200">
+                  {hoveredItemName}
+                </span>
+              ) : view === "device-frame" ? (
                 "Phone"
               ) : pendingAddIcon ? (
-                <span className="text-primary flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
+                <span className="text-primary flex items-center gap-1.5 opacity-80">
                   {pendingAddIcon.name}
                 </span>
               ) : pendingAddDiagram ? (
-                <span className="text-primary flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
+                <span className="text-primary flex items-center gap-1.5 opacity-80">
                   {pendingAddDiagram.name}
                 </span>
               ) : (
