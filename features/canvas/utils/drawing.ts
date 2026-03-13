@@ -800,28 +800,28 @@ export const drawConnector = (
 
     // Subtle nudge: If horizontal segment, move label slightly above the line
     const isHorizontal = Math.abs(p2.y - p1.y) < 1;
-    if (isHorizontal) midY -= 4 / zoom;
+    if (isHorizontal) midY -= 6; // Fixed world units
 
     // Glassmorphism Label with Collision Avoidance
-    const fontSize = 10 / zoom;
+    // We use fixed world units now so they zoom in/out with the diagram
+    const fontSize = 12; 
     ctx.font = `600 ${fontSize}px Inter, sans-serif`;
     const textWidth = ctx.measureText(options.label).width;
     const textHeight = fontSize;
-    const paddingH = 8 / zoom;
-    const paddingV = 4 / zoom;
+    const paddingH = 10;
+    const paddingV = 6;
     
     const labelW = textWidth + paddingH * 2;
     const labelH = textHeight + paddingV * 2;
 
     // Collision Resolution Loop
-    // We try to find a clear spot by sliding along the segment or trying other segments
     let finalX = midX;
     let finalY = midY;
     let foundSpot = false;
     
     const checkCollision = (cx: number, cy: number) => {
       if (!options.drawnLabels) return false;
-      const margin = 4 / zoom;
+      const margin = 4; // Fixed world units
       const rect = { 
         x: cx - labelW/2 - margin, 
         y: cy - labelH/2 - margin, 
@@ -837,9 +837,9 @@ export const drawConnector = (
     };
 
     if (checkCollision(finalX, finalY)) {
-      // Try sliding along the segment in 10 small steps in both directions
+      // Try sliding along the segment
       const segmentLen = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-      const stepLimit = Math.floor(segmentLen / (labelW / 2)) || 5; 
+      const stepLimit = Math.floor(segmentLen / (labelW / 3)) || 5; 
       const dx = (p2.x - p1.x) / (stepLimit * 2);
       const dy = (p2.y - p1.y) / (stepLimit * 2);
       
@@ -864,10 +864,10 @@ export const drawConnector = (
     }
 
     ctx.save();
-    // Glassmorphism effect
+    // Glassmorphism effect - slightly higher opacity for better scaling readability
     ctx.fillStyle = "rgba(15, 23, 42, 0.95)"; 
     ctx.beginPath();
-    const r = 4 / zoom;
+    const r = 4; // Fixed world units
     const rx = finalX - labelW / 2;
     const ry = finalY - labelH / 2;
     
