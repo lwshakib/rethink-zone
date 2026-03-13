@@ -140,7 +140,10 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
       const response = await fetch("/api/generate-architecture", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt })
+        body: JSON.stringify({ 
+          prompt,
+          existingCode: code.trim() ? code : undefined
+        })
       });
 
       const data = await response.json();

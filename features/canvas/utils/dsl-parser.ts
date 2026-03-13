@@ -192,19 +192,19 @@ export function parseDSL(code: string, iconRegistry: string[] = []): ShapeCollec
       return `${base}/${key}.svg`;
     }
 
-    // 5. General/Misc & Common SaaS
-    if (raw === 'laptop') return '/icons-library/seti-icons/config.svg';
-    if (raw === 'mobile' || raw === 'phone') return '/icons-library/seti-icons/favicon.svg';
+    // 5. General/Misc & Common SaaS (Architecture Grade)
+    if (raw === 'laptop') return '/icons-library/azure-icons/general/10783-icon-service-Browser.svg';
+    if (raw === 'mobile' || raw === 'phone') return '/icons-library/azure-icons/general/10822-icon-service-Mobile.svg';
     if (raw === 'user' || raw === 'users') return '/icons-library/kubernetes-icons/svg/resources/unlabeled/user.svg';
-    if (raw === 'cloudinary') return '/icons-library/seti-icons/image.svg';
-    if (raw === 'mapbox') return '/icons-library/seti-icons/search.svg';
-    if (raw === 'stripe') return '/icons-library/seti-icons/salesforce.svg';
-    if (raw === 'database' || raw === 'db') return '/icons-library/seti-icons/db.svg';
-    if (raw === 'github') return '/icons-library/seti-icons/github.svg';
-    if (raw === 'docker') return '/icons-library/seti-icons/docker.svg';
-    if (raw === 'react') return '/icons-library/seti-icons/react.svg';
+    if (raw === 'cloudinary') return '/icons-library/azure-icons/general/10812-icon-service-Image.svg';
+    if (raw === 'mapbox') return '/icons-library/azure-icons/general/10834-icon-service-Search.svg';
+    if (raw === 'stripe') return '/icons-library/azure-icons/general/10008-icon-service-Marketplace.svg';
+    if (raw === 'database' || raw === 'db') return '/icons-library/azure-icons/databases/10130-icon-service-SQL-Database.svg';
+    if (raw === 'github') return '/icons-library/azure-icons/general/10782-icon-service-Branch.svg';
+    if (raw === 'docker') return '/icons-library/kubernetes-icons/svg/resources/unlabeled/pod.svg';
+    if (raw === 'react') return '/icons-library/azure-icons/general/10783-icon-service-Browser.svg';
 
-    return '/icons-library/seti-icons/default.svg'; // Final fallback
+    return '/icons-library/azure-icons/general/10001-icon-service-All-Resources.svg'; // Final fallback
   };
 
   // 1. Simple Tokenization & Hierarchy Building
