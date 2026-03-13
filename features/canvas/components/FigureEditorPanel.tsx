@@ -123,19 +123,44 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
     toast.success('Architecture code exported to .txt');
   };
 
-  // Shuffle and pick 4 examples on mount
+  // Reshuffle examples when panel opens
   useEffect(() => {
     const shuffled = [...ARCHITECTURE_EXAMPLES].sort(() => 0.5 - Math.random());
     setDisplayExamples(shuffled.slice(0, 4));
-  }, [isOpen]); // Reshuffle when panel opens for fresh inspiration
+  }, [isOpen]);
+
+  // Safeguard: Abort generation if the panel is closed
+  useEffect(() => {
+    if (!isOpen && isGenerating && abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsGenerating(false);
+    }
+  }, [isOpen, isGenerating]);
+
+  const abortControllerRef = React.useRef<AbortController | null>(null);
 
   const handleGenerate = async () => {
+    if (isGenerating) {
+      // Abort the ongoing request if the button is clicked while generating
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      setIsGenerating(false);
+      toast.info("Synthesis aborted.");
+      return;
+    }
+
     if (!prompt.trim()) {
       toast.error("Please enter a description first.");
       return;
     }
 
     setIsGenerating(true);
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
       const response = await fetch("/api/generate-architecture", {
         method: "POST",
@@ -143,7 +168,8 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
         body: JSON.stringify({ 
           prompt,
           existingCode: code.trim() ? code : undefined
-        })
+        }),
+        signal: controller.signal
       });
 
       const data = await response.json();
@@ -160,10 +186,15 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
         toast.success("Architecture generated successfully!");
       }
     } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log("Synthesis request aborted by user");
+        return;
+      }
       console.error("AI Generation Error:", error);
       toast.error(error.message || "Cloud engine failed to generate diagram.");
     } finally {
       setIsGenerating(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -290,14 +321,14 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
               />
               <Button 
                 onClick={handleGenerate}
-                disabled={isGenerating || !prompt.trim()}
+                disabled={!isGenerating && !prompt.trim()}
                 variant="default"
                 className="h-10 font-semibold text-xs rounded-md px-10 border border-white/10 bg-white text-black hover:bg-zinc-200 transition-all"
               >
                 {isGenerating ? (
                   <>
                     <Loader2 size={14} className="animate-spin mr-2" />
-                    Synthesizing...
+                    Cancel Synthesis
                   </>
                 ) : (
                   <>
