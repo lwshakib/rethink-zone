@@ -239,12 +239,6 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                   {/* List of sub-menus (Code, Catalog, Shapes, Icons, Frames) */}
                   {[
                     {
-                      id: "code",
-                      icon: Binary,
-                      title: "Diagram as Code",
-                      desc: "Create diagrams using code",
-                    },
-                    {
                       id: "catalog",
                       icon: LayoutGrid,
                       title: "Diagram Catalog",
@@ -793,36 +787,21 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
           </div>
 
           {/* MENU FOOTER: Contextual Status and Shortcuts */}
-          <div className="flex items-center justify-between px-4 py-3 bg-muted/40 border-t border-border/50">
+          <div className="flex items-center justify-between px-4 py-3 bg-muted/40 border-t border-border/50 h-11 shrink-0">
             <div className="text-[11px] font-bold text-foreground/80 tracking-tight">
               {view === "device-frame" ? (
                 "Phone"
               ) : pendingAddIcon ? (
-                // Alert the user that they have an item currently "on their cursor" for placement
                 <span className="text-primary flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
-                  Ready to place: {pendingAddIcon.name}
+                  {pendingAddIcon.name}
                 </span>
               ) : pendingAddDiagram ? (
                 <span className="text-primary flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
-                  Ready to place: {pendingAddDiagram.name}
+                  {pendingAddDiagram.name}
                 </span>
               ) : (
                 "All Categories"
               )}
-            </div>
-            {/* Keyboard shortcut hints */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground/50">
-                <div className="flex items-center gap-0.5">
-                  <ArrowUp className="h-2.5 w-2.5" />
-                  <ArrowDown className="h-2.5 w-2.5" />
-                </div>
-                <span>to navigate</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground/50">
-                <span className="text-foreground/60">enter</span>
-                <span>to insert</span>
-              </div>
             </div>
           </div>
         </div>

@@ -12,7 +12,11 @@ import {
   ArrowRight,
   Database,
   CloudIcon,
-  Layout
+  Layout,
+  Loader2,
+  Trash2,
+  Copy,
+  Zap
 } from "lucide-react";
 import Editor from "react-simple-code-editor";
 import Prism from "prismjs";
@@ -27,6 +31,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 interface FigureEditorPanelProps {
   isOpen: boolean;
@@ -77,7 +82,50 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<string>("code");
   const [prompt, setPrompt] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
   const sidebarRef = React.useRef<HTMLDivElement>(null);
+
+  const EXAMPLE_PROMPTS = [
+    { title: "Serverless Web", prompt: "A serverless web app on AWS with CloudFront, S3, API Gateway, and Lambda functions connecting to DynamoDB." },
+    { title: "K8s Microservices", prompt: "A Kubernetes cluster with 3 worker nodes, a control plane, and an external load balancer." },
+    { title: "Data Pipeline", prompt: "A GCP data pipeline with Cloud Scheduler triggering Cloud Run, which tasks Cloud Storage and BigQuery." },
+    { title: "Global CDN", prompt: "Global Edge network with Route 53, WAF, and CloudFront distributing content from multi-region S3 buckets." }
+  ];
+
+  const handleGenerate = async () => {
+    if (!prompt.trim()) {
+      toast.error("Please enter a description first.");
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const response = await fetch("/api/generate-architecture", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to generate architecture");
+      }
+
+      const result = data.result;
+
+      if (result) {
+        onCodeChange(result);
+        setActiveTab("code");
+        toast.success("Architecture generated successfully!");
+      }
+    } catch (error: any) {
+      console.error("AI Generation Error:", error);
+      toast.error(error.message || "Cloud engine failed to generate diagram.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   // Auto-sync effect: applies changes as the user types (debounced)
   useEffect(() => {
@@ -121,15 +169,15 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
           <TabsList className="grid w-full grid-cols-2 bg-white/5 rounded-lg h-10 p-1">
             <TabsTrigger 
               value="ai" 
-              className="rounded-md text-[11px] font-bold tracking-[0.15em] transition-all data-[state=active]:bg-[#222] data-[state=active]:text-white uppercase"
+              className="rounded-md text-xs font-medium transition-all data-[state=active]:bg-[#222] data-[state=active]:text-white"
             >
-              AI
+              AI Architect
             </TabsTrigger>
             <TabsTrigger 
               value="code" 
-              className="rounded-md text-[11px] font-bold tracking-[0.15em] transition-all data-[state=active]:bg-[#222] data-[state=active]:text-white uppercase"
+              className="rounded-md text-xs font-medium transition-all data-[state=active]:bg-[#222] data-[state=active]:text-white"
             >
-              Code
+              DSL Editor
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -142,11 +190,11 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
         </div>
         <div className="flex flex-col min-w-0">
           <div className="flex items-baseline gap-2 flex-wrap">
-            <h3 className="text-[15px] font-bold text-white/90 tracking-tight leading-none">
+            <h3 className="text-sm font-semibold text-white/90 leading-none">
               Cloud Architecture
             </h3>
             <span className="text-[11px] text-white/30 font-medium tracking-tight">
-              Visualize your infrastructure
+              Diagram-as-Code
             </span>
           </div>
         </div>
@@ -155,20 +203,62 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
       {/* Editor Content Area */}
       <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-white/10">
         {activeTab === "ai" ? (
-          <div className="flex flex-col p-8 gap-6 animate-in fade-in duration-300">
-            <Textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe infrastructure changes..."
-              className="h-[160px] resize-none border-white/10 bg-white/5 text-white placeholder:text-white/20 text-sm py-4 px-5 rounded-md border field-sizing-fixed"
-            />
-            <Button 
-              onClick={() => {}} // Placeholder for AI logic
-              variant="default"
-              className="h-11 font-bold tracking-[0.2em] text-[10px] rounded-md px-10 shadow-lg shadow-white/5"
-            >
-              Generate
-            </Button>
+          <div className="flex flex-col p-8 gap-8 animate-in fade-in duration-300">
+            <div className="flex flex-col gap-3">
+              <label className="text-[11px] font-medium text-white/40">
+                AI Architect Instructions
+              </label>
+              <Textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Describe infrastructure changes (e.g. 'A serverless API with DynamoDB and S3')..."
+                className="h-[140px] resize-none border-white/5 bg-white/[0.03] text-white placeholder:text-white/10 text-sm py-4 px-5 rounded-md border focus:border-white/20 transition-all outline-none"
+                disabled={isGenerating}
+              />
+              <Button 
+                onClick={handleGenerate}
+                disabled={isGenerating || !prompt.trim()}
+                variant="default"
+                className="h-10 font-semibold text-xs rounded-md px-10 border border-white/10 bg-white text-black hover:bg-zinc-200 transition-all"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin mr-2" />
+                    Synthesizing...
+                  </>
+                ) : (
+                  <>
+                    <Zap size={14} className="mr-2 fill-current text-zinc-600" />
+                    Generate Architecture
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-white/5" />
+                <span className="text-[10px] font-medium text-white/20">Quick Examples</span>
+                <div className="h-px flex-1 bg-white/5" />
+              </div>
+              
+              <div className="grid grid-cols-1 gap-2">
+                {EXAMPLE_PROMPTS.map((ex, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setPrompt(ex.prompt)}
+                    className="group flex flex-col items-start gap-1 p-3.5 rounded-lg bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] hover:border-white/10 transition-all text-left"
+                  >
+                    <span className="text-[11px] font-semibold text-white/60 group-hover:text-white transition-colors">
+                      {ex.title}
+                    </span>
+                    <span className="text-[10px] text-white/20 line-clamp-1">
+                      {ex.prompt}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         ) : (
           <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-300">

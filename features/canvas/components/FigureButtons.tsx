@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { X, SquareCode } from "lucide-react";
+import { X, Terminal } from "lucide-react";
 import { FigureShape, SelectedShape } from "../types";
 import { measureText } from "../utils/canvas-helpers";
 
@@ -79,7 +79,7 @@ const FigureButtons: React.FC<FigureButtonsProps> = ({
                 </>
               ) : (
                 <>
-                  <SquareCode size={12} className="text-white" />
+                  <Terminal size={12} className="text-white" />
                   Open Editor
                 </>
               )}
