@@ -170,25 +170,26 @@ export function parseDSL(code: string, iconRegistry: string[] = []): ShapeCollec
 
     // 4. Kubernetes
     if (provider === 'k8s' || provider === 'kubernetes') {
-      const base = '/icons-library/kubernetes-icons/svg/resources/unlabeled';
+      const base = '/icons-library/kubernetes-icons/svg';
       const mapping: Record<string, string> = {
-        'pod': 'pod',
-        'svc': 'svc',
-        'service': 'svc',
-        'deploy': 'deploy',
-        'deployment': 'deploy',
-        'node': 'node',
-        'ing': 'ing',
-        'ingress': 'ing',
-        'ns': 'ns',
-        'namespace': 'ns',
-        'pv': 'pv',
-        'pvc': 'pvc',
-        'cm': 'cm',
-        'configmap': 'cm',
-        'secret': 'secret'
+        'pod': 'resources/unlabeled/pod',
+        'svc': 'resources/unlabeled/svc',
+        'service': 'resources/unlabeled/svc',
+        'deploy': 'resources/unlabeled/deploy',
+        'deployment': 'resources/unlabeled/deploy',
+        'node': 'infrastructure_components/unlabeled/node',
+        'control-plane': 'infrastructure_components/unlabeled/control-plane',
+        'ing': 'resources/unlabeled/ing',
+        'ingress': 'resources/unlabeled/ing',
+        'ns': 'resources/unlabeled/ns',
+        'namespace': 'resources/unlabeled/ns',
+        'pv': 'resources/unlabeled/pv',
+        'pvc': 'resources/unlabeled/pvc',
+        'cm': 'resources/unlabeled/cm',
+        'configmap': 'resources/unlabeled/cm',
+        'secret': 'resources/unlabeled/secret'
       };
-      const key = mapping[service] || service;
+      const key = mapping[service] || `resources/unlabeled/${service}`;
       return `${base}/${key}.svg`;
     }
 
@@ -210,7 +211,10 @@ export function parseDSL(code: string, iconRegistry: string[] = []): ShapeCollec
   // 1. Simple Tokenization & Hierarchy Building
   for (let line of lines) {
     line = line.trim();
-    if (!line || line.startsWith('//')) continue;
+    if (!line || line.startsWith('//') || line.startsWith('#')) continue;
+    
+    // Skip headers like "Connections:" or others that don't start a block
+    if (line.endsWith(':') && !line.includes('[')) continue;
 
     // Handle Closing Block
     if (line === '}') {

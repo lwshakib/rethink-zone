@@ -775,11 +775,31 @@ export const drawConnector = (
 
   // Draw Label
   if (options.label && points.length >= 2) {
-    const midIdx = Math.floor(points.length / 2);
-    const p1 = points[midIdx - 1];
-    const p2 = points[midIdx];
-    const midX = (p1.x + p2.x) / 2;
-    const midY = (p1.y + p2.y) / 2;
+    // Smart Label Positioning:
+    // Find the longest mid-segment to avoid overlapping with icons at the ends
+    let bestSegmentIdx = 0;
+    let maxDist = -1;
+    
+    // If we have more than 3 points, try to avoid the first and last segments
+    const rangeStart = points.length > 3 ? 1 : 0;
+    const rangeEnd = points.length > 3 ? points.length - 1 : points.length;
+    
+    for (let i = rangeStart; i < rangeEnd - 1; i++) {
+      const d = Math.hypot(points[i+1].x - points[i].x, points[i+1].y - points[i].y);
+      if (d > maxDist) {
+        maxDist = d;
+        bestSegmentIdx = i;
+      }
+    }
+
+    const p1 = points[bestSegmentIdx];
+    const p2 = points[bestSegmentIdx + 1];
+    let midX = (p1.x + p2.x) / 2;
+    let midY = (p1.y + p2.y) / 2;
+
+    // Subtle nudge: If horizontal segment, move label slightly above the line
+    const isHorizontal = Math.abs(p2.y - p1.y) < 1;
+    if (isHorizontal) midY -= 4 / zoom;
 
     ctx.save();
     const fontSize = 10 / zoom;
