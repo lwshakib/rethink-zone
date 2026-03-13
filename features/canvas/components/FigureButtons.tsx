@@ -1,5 +1,5 @@
-import React from "react";
-import { Edit3, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Edit3, X, Terminal } from "lucide-react";
 import { FigureShape } from "../types";
 
 interface FigureButtonsProps {
@@ -11,7 +11,7 @@ interface FigureButtonsProps {
 }
 
 /**
- * FigureButtons - Renders an "Open Editor" button above each Figure on the canvas.
+ * FigureButtons - Renders an "Open Editor" button next to each Figure title on the canvas.
  */
 const FigureButtons: React.FC<FigureButtonsProps> = ({
   figures,
@@ -23,43 +23,57 @@ const FigureButtons: React.FC<FigureButtonsProps> = ({
   return (
     <>
       {figures.map((figure) => {
-        // Calculate the screen position (client coordinates) for the button.
-        const pos = canvasToClient(figure.x + figure.width, figure.y);
         const isEditing = editingFigureId === figure.id;
+        
+        // Match the sizing logic from drawing.ts to position precisely
+        const headerHeight = 26 / zoom;
+        const headerGap = 8 / zoom;
+        
+        // Approximate the title width for positioning (12px font)
+        // figureTitle logic from drawing.ts: hX, hY, hWidth
+        const text = figure.title || `Figure ${figure.figureNumber}`;
+        const charWidth = 7 / zoom; // Approximation of 12px sans-serif avg char width
+        const iconSize = 10 / zoom;
+        const hPadding = 10 / zoom;
+        const iconGap = 8 / zoom;
+        const textWidth = text.length * charWidth;
+        const hWidth = textWidth + iconSize + iconGap + hPadding * 2;
+        
+        // Position to the right of the title pill
+        const pos = canvasToClient(figure.x + hWidth + (4 / zoom), figure.y - headerHeight - headerGap);
         
         return (
           <div
             key={figure.id}
-            className="absolute pointer-events-auto z-40"
+            className="absolute pointer-events-auto z-40 flex items-center gap-1.5 h-auto"
             style={{
               left: `${pos.x}px`,
-              top: `${pos.y - 34}px`, // Positioned above the body, near the header
-              transform: 'translateX(-100%)',
+              top: `${pos.y}px`,
+              height: `${headerHeight * zoom}px`
             }}
           >
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 onOpenEditor(figure.id);
               }}
-              className={`flex items-center gap-1.5 px-3 py-2 text-[10px] font-bold uppercase tracking-widest rounded-sm border transition-all shadow-2xl active:scale-95 ${
-                isEditing 
-                  ? "bg-red-500/90 text-white border-red-400/50 hover:bg-red-600" 
-                  : "bg-black/90 text-white border-white/20 hover:bg-zinc-800"
-              }`}
+              className={`h-full flex items-center gap-1.5 px-3 py-0 text-[10px] font-bold uppercase tracking-widest rounded-[3px] border transition-all shadow-xl active:scale-95 bg-black text-white hover:bg-zinc-900 border-white/20`}
             >
               {isEditing ? (
                 <>
-                  <X size={11} className="text-white" />
-                  CLOSE EDITOR
+                  <X size={12} className="text-red-400" />
+                  Close Editor
                 </>
               ) : (
                 <>
-                  <Edit3 size={11} className="text-blue-400" />
-                  OPEN EDITOR
+                  <Terminal size={12} className="text-blue-400" />
+                  Open Editor
                 </>
               )}
-            </button>
+            </Button>
           </div>
         );
       })}
