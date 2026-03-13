@@ -1173,6 +1173,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       )
     );
 
+    const drawnLabels: any[] = [];
     connectors.forEach((c, idx) => {
       const fromPt = getAnchorPointLocal(c.from);
       const toPt = getAnchorPointLocal(c.to);
@@ -1189,6 +1190,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
         stroke: c.stroke,
         strokeWidth: c.strokeWidth,
         strokeDashArray: c.strokeDashArray,
+        drawnLabels,
       });
     });
 

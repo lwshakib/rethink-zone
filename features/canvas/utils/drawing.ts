@@ -688,11 +688,12 @@ export const drawConnector = (
     toAnchor?: AnchorSide | "none";
     fromBounds?: { x: number; y: number; width: number; height: number };
     toBounds?: { x: number; y: number; width: number; height: number };
-    highlight?: boolean; // If true, renders a thicker, dashed line for hover feedback
+    highlight?: boolean;
     stroke?: string;
     strokeWidth?: number;
     strokeDashArray?: number[];
     label?: string;
+    drawnLabels?: { x: number; y: number; width: number; height: number }[];
   }
 ) => {
   ctx.save();
@@ -801,34 +802,96 @@ export const drawConnector = (
     const isHorizontal = Math.abs(p2.y - p1.y) < 1;
     if (isHorizontal) midY -= 4 / zoom;
 
-    ctx.save();
+    // Glassmorphism Label with Collision Avoidance
     const fontSize = 10 / zoom;
     ctx.font = `600 ${fontSize}px Inter, sans-serif`;
     const textWidth = ctx.measureText(options.label).width;
     const textHeight = fontSize;
     const paddingH = 8 / zoom;
     const paddingV = 4 / zoom;
+    
+    const labelW = textWidth + paddingH * 2;
+    const labelH = textHeight + paddingV * 2;
 
-    // Glassmorphism Label
-    ctx.fillStyle = "rgba(15, 23, 42, 0.9)"; // Deep slate
+    // Collision Resolution Loop
+    // We try to find a clear spot by sliding along the segment or trying other segments
+    let finalX = midX;
+    let finalY = midY;
+    let foundSpot = false;
+    
+    const checkCollision = (cx: number, cy: number) => {
+      if (!options.drawnLabels) return false;
+      const margin = 4 / zoom;
+      const rect = { 
+        x: cx - labelW/2 - margin, 
+        y: cy - labelH/2 - margin, 
+        w: labelW + margin * 2, 
+        h: labelH + margin * 2 
+      };
+      return options.drawnLabels.some(other => 
+        rect.x < other.x + other.width &&
+        rect.x + rect.w > other.x &&
+        rect.y < other.y + other.height &&
+        rect.y + rect.h > other.y
+      );
+    };
+
+    if (checkCollision(finalX, finalY)) {
+      // Try sliding along the segment in 10 small steps in both directions
+      const segmentLen = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+      const stepLimit = Math.floor(segmentLen / (labelW / 2)) || 5; 
+      const dx = (p2.x - p1.x) / (stepLimit * 2);
+      const dy = (p2.y - p1.y) / (stepLimit * 2);
+      
+      for (let step = 1; step <= stepLimit; step++) {
+        // Slide one way
+        if (!checkCollision(midX + dx * step, midY + dy * step)) {
+          finalX = midX + dx * step;
+          finalY = midY + dy * step;
+          foundSpot = true;
+          break;
+        }
+        // Slide the other way
+        if (!checkCollision(midX - dx * step, midY - dy * step)) {
+          finalX = midX - dx * step;
+          finalY = midY - dy * step;
+          foundSpot = true;
+          break;
+        }
+      }
+    } else {
+      foundSpot = true;
+    }
+
+    ctx.save();
+    // Glassmorphism effect
+    ctx.fillStyle = "rgba(15, 23, 42, 0.95)"; 
     ctx.beginPath();
     const r = 4 / zoom;
+    const rx = finalX - labelW / 2;
+    const ry = finalY - labelH / 2;
+    
     if (ctx.roundRect) {
-      ctx.roundRect(midX - textWidth / 2 - paddingH, midY - textHeight / 2 - paddingV, textWidth + paddingH * 2, textHeight + paddingV * 2, r);
+      ctx.roundRect(rx, ry, labelW, labelH, r);
     } else {
-      ctx.rect(midX - textWidth / 2 - paddingH, midY - textHeight / 2 - paddingV, textWidth + paddingH * 2, textHeight + paddingV * 2);
+      ctx.rect(rx, ry, labelW, labelH);
     }
     ctx.fill();
 
-    // Subtle outline for label
-    ctx.strokeStyle = "rgba(255,255,255,0.1)";
+    // Store in registry for future connectors in this frame
+    if (options.drawnLabels) {
+      options.drawnLabels.push({ x: rx, y: ry, width: labelW, height: labelH });
+    }
+
+    // Subtle outline
+    ctx.strokeStyle = "rgba(255,255,255,0.15)";
     ctx.lineWidth = 1 / zoom;
     ctx.stroke();
 
     ctx.fillStyle = "white";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(options.label, midX, midY);
+    ctx.fillText(options.label, finalX, finalY);
     ctx.restore();
   }
 
