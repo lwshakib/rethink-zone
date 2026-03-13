@@ -27,8 +27,8 @@ DSL SYNTAX:
 1. Groups: GroupName [color: "hex"] { ... }
 2. Nodes: Name [icon: "name", label: "Display", desc: "Detailed explanation", color: "hex"]
 3. Connections: 
-   - Node1 > Node2 [label: "Description", color: "#hex", dashed: true]
-   - Node1 <> Node2 [label: "Bi-directional Sync"]
+   - Node1 > Node2 [color: "#hex", dashed: true] (IMPORTANT: Never include labels on connections)
+   - Node1 <> Node2 (IMPORTANT: Never include labels on connections)
 
 TONE: Professional and technically accurate. Only return RAW DSL code.`;
 

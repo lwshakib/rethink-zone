@@ -50,17 +50,17 @@ Group: US-WEST-2 (Failover) [color: "#e67e22"] {
 }
 
 # Traffic Flows
-users > aws-route53 [label: "DNS Query"]
-aws-route53 > aws-cloudfront [label: "Request Traffic"]
-aws-cloudfront > aws-waf [label: "Traffic Inspection"]
+users > aws-route53
+aws-route53 > aws-cloudfront
+aws-cloudfront > aws-waf
 
-aws-waf > aws-alb-primary [label: "Healthy Path", color: "#27ae60"]
-aws-waf > aws-alb-failover [label: "Failover Path", color: "#e74c3c", dashed: true]
+aws-waf > aws-alb-primary [color: "#27ae60"]
+aws-waf > aws-alb-failover [color: "#e74c3c", dashed: true]
 
-aws-alb-primary > aws-asg-primary [label: "Load Balancing"]
-aws-asg-primary > aws-rds-primary [label: "SQL Persistence"]
+aws-alb-primary > aws-asg-primary
+aws-asg-primary > aws-rds-primary
 
-aws-rds-primary <> aws-rds-replica [label: "Cross-Region Replication", dashed: true]`
+aws-rds-primary <> aws-rds-replica [dashed: true]`
         }
       ]
     }
@@ -107,16 +107,16 @@ Group: Observability [color: "#7f8c8d"] {
 }
 
 # Mesh Connections
-aws-waf > k8s-ing [label: "Filtered Traffic"]
-k8s-ing > pod-web-1 [label: "HTTP Routing"]
-k8s-ing > pod-web-2 [label: "HTTP Routing"]
+aws-waf > k8s-ing
+k8s-ing > pod-web-1
+k8s-ing > pod-web-2
 
-pod-web-1 > pod-pay-1 [label: "mTLS Call"]
-pod-web-2 > pod-pay-1 [label: "mTLS Call"]
+pod-web-1 > pod-pay-1
+pod-web-2 > pod-pay-1
 
-k8s-master <> etcd [label: "State Management"]
-Worker Fleet > prometheus [label: "Metrics Scrape", dashed: true]
-prometheus > grafana [label: "Data Source"]`
+k8s-master <> etcd
+Worker Fleet > prometheus [dashed: true]
+prometheus > grafana`
         }
       ]
     }
@@ -152,12 +152,12 @@ Group: Data Persistence [color: "#27ae60"] {
 }
 
 # Event Flows
-users > aws-api [label: "Request"]
-aws-api > aws-lambda-ingest [label: "Trigger"]
-aws-lambda-ingest > aws-sqs [label: "Enqueue Msg"]
-aws-sqs > aws-lambda-worker [label: "Poll & Process"]
-aws-lambda-worker > aws-ddb [label: "Write DB"]
-aws-lambda-worker > aws-s3 [label: "Upload Asset", dashed: true]`
+users > aws-api
+aws-api > aws-lambda-ingest
+aws-lambda-ingest > aws-sqs
+aws-sqs > aws-lambda-worker
+aws-lambda-worker > aws-ddb
+aws-lambda-worker > aws-s3 [dashed: true]`
         }
       ]
     }
@@ -197,15 +197,69 @@ Group: Observability [color: "#e67e22"] {
 }
 
 # Machine Learning Lifecycle
-aws-msk > aws-emr [label: "Stream Data"]
-aws-s3-raw > aws-emr [label: "Batch Data"]
-aws-emr > aws-ddb-features [label: "Write Features"]
+aws-msk > aws-emr
+aws-s3-raw > aws-emr
+aws-emr > aws-ddb-features
 
-aws-ddb-features > aws-sm-infer [label: "Feature Lookup"]
-aws-sm-train > aws-sm-infer [label: "Deploy Model"]
+aws-ddb-features > aws-sm-infer
+aws-sm-train > aws-sm-infer
 
-aws-sm-infer > aws-cw [label: "Log Performance"]
-aws-cw > aws-drift [label: "Alerting"]`
+aws-sm-infer > aws-cw
+aws-cw > aws-drift`
+        }
+      ]
+    }
+  },
+  {
+    name: "Serverless Media Transcoding",
+    description: "Scalable video processing pipeline using AWS Elemental MediaConvert with automated Lambda-driven orchestration and event-based notifications.",
+    thumbnail: "Video",
+    shapes: {
+      figures: [
+        {
+          id: "fig-media-pipe",
+          x: 0,
+          y: 0,
+          width: 1100,
+          height: 850,
+          figureNumber: 1,
+          title: "Architecture: Automated Media Conversion & Delivery (VOD-101)",
+          code: `Group: Ingestion & Trigger [color: "#34495e"] {
+  s3-source [icon: "aws-s3", label: "S3 Source", desc: "Upload Video"]
+  lambda-submit [icon: "aws-lambda", label: "Job Submitter", desc: "Metadata & Validation"]
+}
+
+Group: Core Engine [color: "#e67e22"] {
+  aws-convert [icon: "aws-mediaconvert", label: "MediaConvert", desc: "Transcoding Pipeline"]
+}
+
+Group: Output & Storage [color: "#27ae60"] {
+  s3-dest [icon: "aws-s3", label: "S3 Destination", desc: "Optimized Media"]
+  aws-cf [icon: "aws-cloudfront", label: "CloudFront", desc: "Global Distribution"]
+}
+
+Group: Events & Notification [color: "#8e44ad"] {
+  aws-cw [icon: "aws-cloudwatch", label: "CloudWatch", desc: "Monitoring"]
+  aws-eb [icon: "aws-eventbridge", label: "EventBridge", desc: "State Change Bus"]
+  lambda-complete [icon: "aws-lambda", label: "Job Finisher", desc: "Finalize & Update"]
+  aws-sns [icon: "aws-sns", label: "Alerting (SNS)", desc: "SMS/Email Alerts"]
+}
+
+# Pipeline Flows
+s3-source > lambda-submit
+s3-source > aws-convert
+lambda-submit > aws-convert
+
+aws-convert > s3-dest
+aws-convert > aws-cw
+aws-convert > aws-eb
+
+s3-dest > aws-cf
+s3-dest > lambda-complete
+aws-eb > lambda-complete
+
+lambda-complete > aws-sns
+s3-source > lambda-complete [dashed: true]`
         }
       ]
     }

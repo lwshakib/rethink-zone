@@ -223,20 +223,53 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
         </Tabs>
       </div>
 
-      {/* Breadcrumb / Section Info - Refined per feedback */}
-      <div className="flex items-center gap-4 px-8 py-6 shrink-0">
-        <div className="text-white/60">
-          <CloudIcon size={22} strokeWidth={1.5} />
-        </div>
-        <div className="flex flex-col min-w-0">
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <h3 className="text-sm font-semibold text-white/90 leading-none">
-              Cloud Architecture
-            </h3>
-            <span className="text-[11px] text-white/30 font-medium tracking-tight">
-              Diagram-as-Code
-            </span>
+      {/* Breadcrumb / Section Info - Minimal Header */}
+      <div className="flex items-center justify-between px-8 py-6 shrink-0 bg-transparent">
+        <div className="flex items-center gap-4">
+          <div className="text-white/60">
+            <CloudIcon size={22} strokeWidth={1.5} />
           </div>
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <h3 className="text-sm font-semibold text-white/90 leading-none">
+                Cloud Architecture
+              </h3>
+              <span className="text-[11px] text-white/30 font-medium tracking-tight">
+                Diagram-as-Code
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-1.5 px-3 py-1.5 text-white/50 hover:text-white/90 transition-all rounded-md bg-white/5 hover:bg-white/10 border border-white/10">
+                <Download size={15} />
+                <span className="text-[11px] font-bold">Export</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-[#1a1a1a] border-white/10 text-white/80 z-[2100]">
+              <DropdownMenuItem 
+                onClick={handleExportPNG}
+                className="hover:bg-white/5 text-[11px] font-bold cursor-pointer"
+              >
+                Export as PNG
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={handleExportSVG}
+                className="hover:bg-white/5 text-[11px] font-bold cursor-pointer"
+              >
+                Export as SVG
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={handleExportCode}
+                className="hover:bg-white/5 text-[11px] font-bold cursor-pointer"
+              >
+                Export Code (.txt)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -330,61 +363,6 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
                   }}
                   className="prism-editor"
                 />
-              </div>
-            </div>
-
-            {/* Bottom Toolbar & Footer */}
-            <div className="mt-auto border-t border-white/5 bg-black/20 pb-8 shrink-0">
-              <div className="flex items-center justify-between px-6 h-16">
-                <div className="flex items-center gap-1">
-                  <button className="p-2 text-white/40 hover:text-white/80 transition-colors" title="Syntax Help">
-                    <HelpCircle size={16} />
-                  </button>
-                  <div className="w-px h-4 bg-white/10 mx-1" />
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white/40 hover:text-white/80 transition-colors">
-                    <span className="text-white/20 font-mono mr-1">&gt;</span>
-                    arrow
-                  </button>
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white/40 hover:text-white/80 transition-colors">
-                    <span className="text-white/20 font-mono mr-1">{"{}"}</span>
-                    group
-                  </button>
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white/40 hover:text-white/80 transition-colors">
-                    <span className="text-white/20 font-mono mr-1">{"[]"}</span>
-                    icon
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="flex items-center gap-1.5 p-2 text-white/40 hover:text-white/80 transition-colors rounded-lg hover:bg-white/5">
-                        <Download size={16} />
-                        <span className="sr-only">Download</span>
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-[#1a1a1a] border-white/10 text-white/80 z-[2100]">
-                      <DropdownMenuItem 
-                        onClick={handleExportPNG}
-                        className="hover:bg-white/5 text-[11px] font-bold cursor-pointer"
-                      >
-                        Export as PNG
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={handleExportSVG}
-                        className="hover:bg-white/5 text-[11px] font-bold cursor-pointer"
-                      >
-                        Export as SVG
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={handleExportCode}
-                        className="hover:bg-white/5 text-[11px] font-bold cursor-pointer"
-                      >
-                        Export Code (.txt)
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
               </div>
             </div>
           </div>

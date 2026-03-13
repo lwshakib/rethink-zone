@@ -88,7 +88,8 @@ export function parseDSL(code: string, iconRegistry: string[] = []): ShapeCollec
         'vpc': 'Arch_Networking-Content-Delivery', 'route53': 'Arch_Networking-Content-Delivery',
         'alb': 'Arch_Networking-Content-Delivery',
         'waf': 'Arch_Security-Identity-Compliance', 'iam': 'Arch_Security-Identity-Compliance',
-        'cloudwatch': 'Arch_Management-Governance'
+        'cloudwatch': 'Arch_Management-Governance',
+        'mediaconvert': 'Arch_Media-Services'
       };
 
       const cat = categories[service];
@@ -112,6 +113,9 @@ export function parseDSL(code: string, iconRegistry: string[] = []): ShapeCollec
       if (service === 'eks') fileName = 'Amazon-Elastic-Kubernetes-Service';
       if (service === 'cloudwatch') fileName = 'Amazon-CloudWatch';
       if (service === 'elasticache') fileName = 'Amazon-ElastiCache';
+      if (service === 'mediaconvert') fileName = 'AWS-Elemental-MediaConvert';
+      if (service === 'eventbridge') fileName = 'Amazon-EventBridge';
+      if (service === 'sns') fileName = 'Amazon-Simple-Notification-Service';
 
       // Special case: S3, RDS, VPC etc need strict casing in the heuristic
       let formattedName = fileName.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('-');
@@ -121,6 +125,9 @@ export function parseDSL(code: string, iconRegistry: string[] = []): ShapeCollec
       if (fileName.includes('EC2')) formattedName = fileName;
       if (fileName.includes('CloudWatch')) formattedName = fileName;
       if (fileName.includes('ElastiCache')) formattedName = fileName;
+      if (fileName.includes('MediaConvert')) formattedName = fileName;
+      if (fileName.includes('EventBridge')) formattedName = fileName;
+      if (fileName.includes('Notification-Service')) formattedName = fileName;
       if (fileName.includes('S3')) formattedName = 'Amazon-Simple-Storage-Service';
 
       if (cat) return `${base}/${cat}/48/Arch_${formattedName}_48.svg`;
