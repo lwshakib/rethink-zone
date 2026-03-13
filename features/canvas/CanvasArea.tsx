@@ -1437,7 +1437,13 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       {/* INTERACTION LAYER: Invisibile div that captures pointer events for tools logic */}
       <div
         className="absolute inset-0 z-20 touch-none"
-        onPointerDown={handlePointerDown as any}
+        onPointerDown={(e) => {
+          if (isFigureEditorOpen) {
+            setIsFigureEditorOpen(false);
+            setEditingFigureId(null);
+          }
+          handlePointerDown(e as any);
+        }}
         onPointerMove={handlePointerMove as any}
         onPointerUp={handlePointerUp as any}
         onPointerLeave={handlePointerUp as any}
