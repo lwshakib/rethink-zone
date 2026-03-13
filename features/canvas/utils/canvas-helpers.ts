@@ -23,7 +23,8 @@ import {
 export const measureText = (
   text: string,
   fontSize: number,
-  fontFamily?: string
+  fontFamily?: string,
+  fontWeight: string | number = "normal"
 ) => {
   // Create a hidden off-screen canvas element for measurement
   const canvas = document.createElement("canvas");
@@ -55,8 +56,8 @@ export const measureText = (
         ? "monospace"
         : "sans-serif";
 
-  // Apply the font settings to the context before measuring
-  ctx.font = `${fontSize}px ${font}`;
+  // Apply the font settings to the context before measuring (Standard order: weight size family)
+  ctx.font = `${fontWeight} ${fontSize}px ${font}`;
 
   // Use the native measureText method to get precise pixel widths for each line
   const widths = lines.map((l) => ctx.measureText(l).width);
