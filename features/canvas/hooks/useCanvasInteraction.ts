@@ -145,6 +145,7 @@ type InteractionProps = {
     percent?: number;
     point: { x: number; y: number };
   } | null;
+  iconRegistry: string[];
   setRerenderTick: React.Dispatch<React.SetStateAction<number>>;
   containerRef: React.RefObject<HTMLDivElement | null>;
   strokeColor: string;
@@ -216,6 +217,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     imageCacheRef,
     setHoverAnchor,
     hoverAnchor,
+    iconRegistry,
     setRerenderTick,
     containerRef,
     strokeColor,
@@ -656,7 +658,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
       // Parse DSL for any figures that contain code
       (shapes.figures || []).forEach(f => {
         if (f.code) {
-          const dslShapes = parseDSL(f.code) as any;
+          const dslShapes = parseDSL(f.code, iconRegistry) as any;
           
           // Auto-size the parent figure to fit its children
           f.width = dslShapes.width + 100;

@@ -188,7 +188,8 @@ export const drawText = (
       : t.fontFamily === "Mono"
         ? "monospace"
         : "sans-serif";
-  ctx.font = `${t.fontSize}px ${font}`;
+  const weight = t.fontWeight || "normal";
+  ctx.font = `${weight} ${t.fontSize}px ${font}`;
 
   ctx.fillStyle = t.fill || themeText;
   ctx.textBaseline = "top"; // Use top baseline for easier multi-line calculation
@@ -690,6 +691,8 @@ export const drawConnector = (
     highlight?: boolean; // If true, renders a thicker, dashed line for hover feedback
     stroke?: string;
     strokeWidth?: number;
+    strokeDashArray?: number[];
+    label?: string;
   }
 ) => {
   ctx.save();
@@ -697,7 +700,11 @@ export const drawConnector = (
     options.stroke || (options.highlight ? "rgba(83,182,255,1)" : themeStroke);
   ctx.strokeStyle = strokeColor;
   ctx.lineWidth = (options.strokeWidth || (options.highlight ? 2.5 : 2)) / zoom;
-  if (options.highlight) ctx.setLineDash([5 / zoom, 5 / zoom]);
+  if (options.strokeDashArray) {
+    ctx.setLineDash(options.strokeDashArray.map(v => v / zoom));
+  } else if (options.highlight) {
+    ctx.setLineDash([5 / zoom, 5 / zoom]);
+  }
   ctx.lineJoin = "round"; // Smoothens the sharp bends
   ctx.lineCap = "round";
 
@@ -754,6 +761,39 @@ export const drawConnector = (
   ctx.fillStyle = strokeColor;
   ctx.fill();
   ctx.restore();
+
+  // Draw label at the midpoint if provided
+  if (options.label && points.length >= 2) {
+    const midIdx = Math.floor(points.length / 2);
+    const p1 = points[midIdx - 1];
+    const p2 = points[midIdx];
+    const midX = (p1.x + p2.x) / 2;
+    const midY = (p1.y + p2.y) / 2;
+
+    ctx.save();
+    const fontSize = 9 / zoom;
+    ctx.font = `500 ${fontSize}px sans-serif`;
+    const textWidth = ctx.measureText(options.label).width;
+    const textHeight = fontSize;
+    const padding = 4 / zoom;
+
+    // Small background for the label to ensure readability
+    ctx.fillStyle = "rgba(0,0,0,0.7)";
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(midX - textWidth / 2 - padding, midY - textHeight / 2 - padding, textWidth + padding * 2, textHeight + padding * 2, 2 / zoom);
+    } else {
+      ctx.rect(midX - textWidth / 2 - padding, midY - textHeight / 2 - padding, textWidth + padding * 2, textHeight + padding * 2);
+    }
+    ctx.fill();
+
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(options.label, midX, midY);
+    ctx.restore();
+  }
+
   ctx.restore();
 };
 

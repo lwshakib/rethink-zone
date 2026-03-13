@@ -41,6 +41,7 @@ interface FigureEditorPanelProps {
   code: string;
   onCodeChange: (newCode: string) => void;
   onSync: () => void;
+  iconRegistry: string[];
 }
 
 // Custom Prism grammar for the Diagram DSL
@@ -67,6 +68,11 @@ const DSL_GRAMMAR = {
   'arrow': /->/,
 };
 
+import { ARCHITECTURE_EXAMPLES } from "../constants/architecture-examples";
+
+import { parseDSL } from "../utils/dsl-parser";
+import { exportToPNG, exportToSVG, exportCode } from "../utils/export-utils";
+
 /**
  * FigureEditorPanel - A premium slide-out panel for editing diagram logic.
  * Matches the design reference with a sleek dark aesthetic, syntax highlighting, and quick-action toolbar.
@@ -79,18 +85,49 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
   code,
   onCodeChange,
   onSync,
+  iconRegistry,
 }) => {
   const [activeTab, setActiveTab] = useState<string>("code");
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [displayExamples, setDisplayExamples] = useState<typeof ARCHITECTURE_EXAMPLES>([]);
   const sidebarRef = React.useRef<HTMLDivElement>(null);
 
-  const EXAMPLE_PROMPTS = [
-    { title: "Serverless Web", prompt: "A serverless web app on AWS with CloudFront, S3, API Gateway, and Lambda functions connecting to DynamoDB." },
-    { title: "K8s Microservices", prompt: "A Kubernetes cluster with 3 worker nodes, a control plane, and an external load balancer." },
-    { title: "Data Pipeline", prompt: "A GCP data pipeline with Cloud Scheduler triggering Cloud Run, which tasks Cloud Storage and BigQuery." },
-    { title: "Global CDN", prompt: "Global Edge network with Route 53, WAF, and CloudFront distributing content from multi-region S3 buckets." }
-  ];
+  // Determine current theme - defaulting to dark for the premium look of the editor
+  const theme = "dark"; 
+
+  const handleExportPNG = async () => {
+    const shapes = parseDSL(code, iconRegistry);
+    const fileName = figureName.replace(/\s+/g, "_") || "architecture";
+    toast.promise(exportToPNG(shapes as any, fileName, theme), {
+      loading: 'Preparing PNG...',
+      success: 'Architecture exported to PNG',
+      error: 'Failed to export PNG'
+    });
+  };
+
+  const handleExportSVG = () => {
+    const shapes = parseDSL(code, iconRegistry);
+    const fileName = figureName.replace(/\s+/g, "_") || "architecture";
+    try {
+      exportToSVG(shapes as any, fileName, theme);
+      toast.success('Architecture exported to SVG');
+    } catch (e) {
+      toast.error('Failed to export SVG');
+    }
+  };
+
+  const handleExportCode = () => {
+    const fileName = figureName.replace(/\s+/g, "_") || "architecture";
+    exportCode(code, fileName);
+    toast.success('Architecture code exported to .txt');
+  };
+
+  // Shuffle and pick 4 examples on mount
+  useEffect(() => {
+    const shuffled = [...ARCHITECTURE_EXAMPLES].sort(() => 0.5 - Math.random());
+    setDisplayExamples(shuffled.slice(0, 4));
+  }, [isOpen]); // Reshuffle when panel opens for fresh inspiration
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -243,7 +280,7 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
               </div>
               
               <div className="grid grid-cols-1 gap-2">
-                {EXAMPLE_PROMPTS.map((ex, idx) => (
+                {displayExamples.map((ex, idx) => (
                   <button
                     key={idx}
                     onClick={() => setPrompt(ex.prompt)}
@@ -323,10 +360,25 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
                         <span className="sr-only">Download</span>
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-[#1a1a1a] border-white/10 text-white/80">
-                      <DropdownMenuItem className="hover:bg-white/5 text-[11px] font-bold cursor-pointer">Export as SVG</DropdownMenuItem>
-                      <DropdownMenuItem className="hover:bg-white/5 text-[11px] font-bold cursor-pointer">Export as PNG</DropdownMenuItem>
-                      <DropdownMenuItem className="hover:bg-white/5 text-[11px] font-bold cursor-pointer">Copy to Clipboard</DropdownMenuItem>
+                    <DropdownMenuContent align="end" className="bg-[#1a1a1a] border-white/10 text-white/80 z-[2100]">
+                      <DropdownMenuItem 
+                        onClick={handleExportPNG}
+                        className="hover:bg-white/5 text-[11px] font-bold cursor-pointer"
+                      >
+                        Export as PNG
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={handleExportSVG}
+                        className="hover:bg-white/5 text-[11px] font-bold cursor-pointer"
+                      >
+                        Export as SVG
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={handleExportCode}
+                        className="hover:bg-white/5 text-[11px] font-bold cursor-pointer"
+                      >
+                        Export Code (.txt)
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>

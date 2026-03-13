@@ -102,6 +102,7 @@ export type TextShape = {
   y: number;
   text: string;
   fontSize: number;
+  fontWeight?: number | string;
   width: number; // Measured width of the text block
   height: number; // Measured height of the text block
   fill?: string;
@@ -231,6 +232,10 @@ export type Connector = {
   id: string;
   from: ConnectorAnchor;
   to: ConnectorAnchor;
+  label?: string;
+  stroke?: string;
+  strokeDashArray?: number[];
+  strokeWidth?: number;
 };
 
 /**

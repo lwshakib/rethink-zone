@@ -22,6 +22,9 @@ interface DSLNode {
   label?: string;
   color?: string;
   shape?: string;
+  description?: string;
+  strokeWidth?: number;
+  strokeDashArray?: number[];
   children: DSLNode[];
   parent?: DSLNode;
   isGroup: boolean;
@@ -32,84 +35,169 @@ interface DSLConnection {
   to: string;
   type: ">" | "<" | "<>";
   label?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  strokeDashArray?: number[];
 }
 
-export function parseDSL(code: string): ShapeCollection {
+export function parseDSL(code: string, iconRegistry: string[] = []): ShapeCollection {
   const lines = code.split('\n');
   const root: DSLNode = { id: 'root', name: 'root', children: [], isGroup: true };
   let current = root;
   const connections: DSLConnection[] = [];
   const nodeMap = new Map<string, DSLNode>();
 
-  // Helper to find icon path
-  const getIconPath = (iconName: string) => {
-    const name = iconName.toLowerCase();
+  // Fuzzy Search for Icon Registry
+  const fuzzySearchIcon = (slug: string, providerHint?: string): string | null => {
+    if (!iconRegistry || iconRegistry.length === 0) return null;
+    const parts = slug.split('-');
+    const searchTerms = parts.map(p => p.trim().toLowerCase()).filter(p => p.length > 0);
     
-    if (name.startsWith('aws-')) {
-      const service = name.replace('aws-', '');
-      const base = '/icons-library/aws-icons/Architecture-Service-Icons_07312025';
-      
-      if (service === 's3') return `${base}/Arch_Storage/48/Arch_Amazon-Simple-Storage-Service_48.svg`;
-      if (service === 'lambda') return `${base}/Arch_Compute/48/Arch_AWS-Lambda_48.svg`;
-      if (service === 'api-gateway') return `${base}/Arch_Networking-Content-Delivery/48/Arch_Amazon-API-Gateway_48.svg`;
-      if (service === 'cloudfront') return `${base}/Arch_Networking-Content-Delivery/48/Arch_Amazon-CloudFront_48.svg`;
-      if (service === 'dynamodb') return `${base}/Arch_Database/48/Arch_Amazon-DynamoDB_48.svg`;
-      if (service === 'vpc') return `${base}/Arch_Networking-Content-Delivery/48/Arch_Amazon-VPC_48.svg`;
-      if (service === 'ecs') return `${base}/Arch_Compute/48/Arch_Amazon-Elastic-Container-Service_48.svg`;
-      if (service === 'fargate') return `${base}/Arch_Compute/48/Arch_AWS-Fargate_48.svg`;
-      if (service === 'cognito') return `${base}/Arch_Security-Identity-Compliance/48/Arch_Amazon-Cognito_48.svg`;
-      if (service === 'iam') return `${base}/Arch_Security-Identity-Compliance/48/Arch_AWS-Identity-and-Access-Management_48.svg`;
-      if (service === 'iot-core') return `${base}/Arch_Internet-of-Things/48/Arch_AWS-IoT-Core_48.svg`;
-      if (service === 'cloudwatch') return `${base}/Arch_Management-Governance/48/Arch_Amazon-CloudWatch_48.svg`;
-      if (service === 'amplify') return `${base}/Arch_Front-End-Web-Mobile/48/Arch_AWS-Amplify_48.svg`;
-      if (service === 'app-runner') return `${base}/Arch_Compute/48/Arch_AWS-App-Runner_48.svg`;
-      if (service === 'elemental-mediaconvert') return `${base}/Arch_Media-Services/48/Arch_AWS-Elemental-MediaConvert_48.svg`;
-      if (service === 'eventbridge') return `${base}/Arch_App-Integration/48/Arch_Amazon-EventBridge_48.svg`;
-      if (service === 'simple-notification-service') return `${base}/Arch_App-Integration/48/Arch_Amazon-Simple-Notification-Service_48.svg`;
-      if (service === 'route-53') return `${base}/Arch_Networking-Content-Delivery/48/Arch_Amazon-Route-53_48.svg`;
-      if (service === 'waf') return `${base}/Arch_Security-Identity-Compliance/48/Arch_AWS-WAF_48.svg`;
-      if (service === 'alb') return `${base}/Arch_Networking-Content-Delivery/48/Arch_Elastic-Load-Balancing_48.svg`;
-      if (service === 'ec2') return `${base}/Arch_Compute/48/Arch_Amazon-EC2_48.svg`;
-      if (service === 'rds') return `${base}/Arch_Database/48/Arch_Amazon-RDS_48.svg`;
-      if (service === 'msk') return `${base}/Arch_Analytics/48/Arch_Amazon-Managed-Streaming-for-Apache-Kafka_48.svg`;
-      if (service === 'emr') return `${base}/Arch_Analytics/48/Arch_Amazon-EMR_48.svg`;
-      
-      return `${base}/Arch_Compute/48/Arch_AWS-Lambda_48.svg`; // Fallback
+    const matches = iconRegistry.filter(path => {
+      const lowerPath = path.toLowerCase();
+      return searchTerms.every(term => lowerPath.includes(term));
+    });
+
+    if (matches.length > 0) {
+      if (providerHint) {
+        const providerMatch = matches.find(m => m.toLowerCase().includes(providerHint.toLowerCase()));
+        if (providerMatch) return providerMatch;
+      }
+      return matches[0];
     }
-    
-    if (name.startsWith('gcp-')) {
-      const service = name.replace('gcp-', '');
-      const base = '/icons-library/gcp-icons/google-cloud-legacy-icons';
+    return null;
+  };
+
+  // Helper to find icon path - Production Implementation using Heuristics
+  const getIconPath = (slug: string) => {
+    const raw = slug.toLowerCase();
+    const parts = raw.split('-');
+    const provider = parts[0];
+    const service = parts.slice(1).join('-');
+
+    // 1. AWS Architecture (Tiered Heuristics)
+    if (provider === 'aws') {
+      const base = '/icons-library/aws-icons/Architecture-Service-Icons_07312025';
+      const categories: Record<string, string> = {
+        's3': 'Arch_Storage', 'ebs': 'Arch_Storage', 'efs': 'Arch_Storage',
+        'lambda': 'Arch_Compute', 'ec2': 'Arch_Compute', 'asg': 'Arch_Compute', 'fargate': 'Arch_Compute',
+        'ecs': 'Arch_Containers', 'eks': 'Arch_Containers',
+        'rds': 'Arch_Database', 'dynamodb': 'Arch_Database', 'aurora': 'Arch_Database', 'elasticache': 'Arch_Database',
+        'sqs': 'Arch_App-Integration', 'sns': 'Arch_App-Integration', 'eventbridge': 'Arch_App-Integration',
+        'api-gateway': 'Arch_Networking-Content-Delivery', 'cloudfront': 'Arch_Networking-Content-Delivery',
+        'vpc': 'Arch_Networking-Content-Delivery', 'route53': 'Arch_Networking-Content-Delivery',
+        'alb': 'Arch_Networking-Content-Delivery',
+        'waf': 'Arch_Security-Identity-Compliance', 'iam': 'Arch_Security-Identity-Compliance',
+        'cloudwatch': 'Arch_Management-Governance'
+      };
+
+      const cat = categories[service];
+      let fileName = service;
+      if (service === 's3') fileName = 'Amazon-Simple-Storage-Service';
+      if (service === 'lambda') fileName = 'AWS-Lambda';
+      if (service === 'api-gateway') fileName = 'Amazon-API-Gateway';
+      if (service === 'cloudfront') fileName = 'Amazon-CloudFront';
+      if (service === 'dynamodb') fileName = 'Amazon-DynamoDB';
+      if (service === 'vpc') fileName = 'Amazon-Virtual-Private-Cloud';
+      if (service === 'route53') fileName = 'Amazon-Route-53';
+      if (service === 'sqs') fileName = 'Amazon-Simple-Queue-Service';
+      if (service === 'sns') fileName = 'Amazon-Simple-Notification-Service';
+      if (service === 'rds') fileName = 'Amazon-RDS';
+      if (service === 'ec2') fileName = 'Amazon-EC2';
+      if (service === 'asg') fileName = 'Amazon-EC2-Auto-Scaling';
+      if (service === 'alb') fileName = 'Elastic-Load-Balancing';
+      if (service === 'iam') fileName = 'AWS-Identity-and-Access-Management';
+      if (service === 'waf') fileName = 'AWS-WAF';
+      if (service === 'ecs') fileName = 'Amazon-Elastic-Container-Service';
+      if (service === 'eks') fileName = 'Amazon-Elastic-Kubernetes-Service';
+      if (service === 'cloudwatch') fileName = 'Amazon-CloudWatch';
+      if (service === 'elasticache') fileName = 'Amazon-ElastiCache';
+
+      // Special case: S3, RDS, VPC etc need strict casing in the heuristic
+      let formattedName = fileName.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('-');
+      if (fileName.includes('RDS')) formattedName = fileName; 
+      if (fileName.includes('VPC')) formattedName = fileName;
+      if (fileName.includes('WAF')) formattedName = fileName;
+      if (fileName.includes('EC2')) formattedName = fileName;
+      if (fileName.includes('CloudWatch')) formattedName = fileName;
+      if (fileName.includes('ElastiCache')) formattedName = fileName;
+      if (fileName.includes('S3')) formattedName = 'Amazon-Simple-Storage-Service';
+
+      if (cat) return `${base}/${cat}/48/Arch_${formattedName}_48.svg`;
       
-      if (service === 'cloud-run') return `${base}/cloud_run/svg/cloud_run.svg`;
-      if (service === 'cloud-tasks') return `${base}/cloud_tasks/svg/cloud_tasks.svg`;
-      if (service === 'cloud-scheduler') return `${base}/cloud_scheduler/svg/cloud_scheduler.svg`;
-      if (service === 'datastore') return `${base}/datastore/svg/datastore.svg`;
-      if (service === 'cloud-storage') return `${base}/cloud_storage/svg/cloud_storage.svg`;
-      if (service === 'cloud-cdn') return `${base}/cloud_cdn/svg/cloud_cdn.svg`;
-      
-      return `${base}/cloud_run/svg/cloud_run.svg`; // Fallback
+      const fuzzy = fuzzySearchIcon(service, 'aws');
+      if (fuzzy) return fuzzy;
+      return `${base}/Arch_Compute/48/Arch_AWS-Lambda_48.svg`; 
     }
 
-    if (name.startsWith('azure-')) {
-      const service = name.replace('azure-', '');
+    // 2. Google Cloud Platform
+    if (provider === 'gcp') {
+      const base = '/icons-library/gcp-icons/google-cloud-legacy-icons';
+      const mapping: Record<string, string> = {
+        'run': 'cloud_run', 'functions': 'cloud_functions', 'storage': 'cloud_storage',
+        'sql': 'cloud_sql', 'cdn': 'cloud_cdn', 'pubsub': 'cloud_pubsub',
+        'gke': 'container_engine', 'compute': 'compute_engine'
+      };
+      const key = mapping[service] || service.replace(/-/g, '_');
+      const fuzzy = fuzzySearchIcon(service, 'gcp');
+      if (fuzzy) return fuzzy;
+      return `${base}/${key}/svg/${key}.svg`;
+    }
+
+    // --- Azure ---
+    if (provider === 'azure') {
       const base = '/icons-library/azure-icons';
       
-      if (service === 'app-services') return `${base}/web/app-services.svg`;
-      if (service === 'application-insights') return `${base}/management + governance/application-insights.svg`;
-      if (service === 'sql-database') return `${base}/databases/azure-sql-database.svg`;
-      if (service === 'monitor') return `${base}/monitor/monitor.svg`;
-      if (service === 'log-analytics-workspaces') return `${base}/monitor/log-analytics-workspaces.svg`;
-      if (service === 'dashboard') return `${base}/general/dashboard.svg`;
-      
-      return `${base}/general/azure-ecosystem.svg`; // Fallback
+      // Explicit mappings for primary Azure services (verified paths)
+      if (service === 'frontdoor' || service === 'cdn') return `${base}/networking/10073-icon-service-Front-Door-and-CDN-Profiles.svg`;
+      if (service === 'cosmos-db' || service === 'cosmos') return `${base}/databases/10121-icon-service-Azure-Cosmos-DB.svg`;
+      if (service === 'sql' || service === 'database') return `${base}/databases/10130-icon-service-SQL-Database.svg`;
+      if (service === 'vnet') return `${base}/networking/10061-icon-service-Virtual-Networks.svg`;
+      if (service === 'nsg') return `${base}/networking/10067-icon-service-Network-Security-Groups.svg`;
+      if (service === 'app' || service === 'web') return `${base}/web/10035-icon-service-App-Services.svg`;
+      if (service === 'functions') return `${base}/compute/10029-icon-service-Function-Apps.svg`;
+      if (service === 'redis') return `${base}/databases/10137-icon-service-Cache-Redis.svg`;
+      if (service === 'storage' || service === 'blob') return `${base}/storage/10086-icon-service-Storage-Accounts.svg`;
+      if (service === 'dns') return `${base}/networking/10064-icon-service-DNS-Zones.svg`;
+      if (service === 'subnet') return `${base}/networking/02742-icon-service-Subnet.svg`; 
+      if (service === 'log' || service === 'log-analytics') return `${base}/monitor/00474-icon-service-Log-Analytics-Workspaces.svg`;
+      if (service === 'appinsights') return `${base}/monitor/00475-icon-service-Application-Insights.svg`;
+
+      const fuzzy = fuzzySearchIcon(service, 'azure');
+      if (fuzzy) return fuzzy;
+      return `${base}/general/00001-icon-service-General.svg`;
     }
 
-    if (name === 'laptop') return '/icons-library/seti-icons/react.svg'; // Placeholder
-    if (name === 'mobile') return '/icons-library/seti-icons/react.svg'; // Placeholder
-    if (name === 'users') return '/icons-library/seti-icons/react.svg'; // Placeholder
+    // 4. Kubernetes
+    if (provider === 'k8s' || provider === 'kubernetes') {
+      const base = '/icons-library/kubernetes-icons/svg/resources/unlabeled';
+      const mapping: Record<string, string> = {
+        'pod': 'pod',
+        'svc': 'svc',
+        'service': 'svc',
+        'deploy': 'deploy',
+        'deployment': 'deploy',
+        'node': 'node',
+        'ing': 'ing',
+        'ingress': 'ing',
+        'ns': 'ns',
+        'namespace': 'ns',
+        'pv': 'pv',
+        'pvc': 'pvc',
+        'cm': 'cm',
+        'configmap': 'cm',
+        'secret': 'secret'
+      };
+      const key = mapping[service] || service;
+      return `${base}/${key}.svg`;
+    }
 
-    return `/icons-library/seti-icons/react.svg`; // Generic fallback
+    // 5. General/Misc
+    if (raw === 'laptop') return '/icons-library/seti-icons/config.svg';
+    if (raw === 'mobile' || raw === 'phone') return '/icons-library/seti-icons/favicon.svg';
+    if (raw === 'user' || raw === 'users') return '/icons-library/kubernetes-icons/svg/resources/unlabeled/user.svg';
+
+    return '/icons-library/seti-icons/default.svg'; // Final fallback
   };
 
   // 1. Simple Tokenization & Hierarchy Building
@@ -129,12 +217,41 @@ export function parseDSL(code: string): ShapeCollection {
       if (parts.length >= 3) {
         const froms = parts[0].trim().split(',').map(s => s.trim());
         const type = parts[1].trim() as any;
-        const tos = parts[2].split(':')[0].trim().split(',').map(s => s.trim());
-        const label = parts[2].includes(':') ? parts[2].split(':')[1].trim() : undefined;
+        const rest = parts[2].trim();
+        
+        let targetPart = rest;
+        let propsPart = '';
+        
+        if (rest.includes('[')) {
+          const m = rest.match(/(.*?)\[(.*?)\]/);
+          if (m) {
+            targetPart = m[1].trim();
+            propsPart = m[2].trim();
+          }
+        } else if (rest.includes(':')) {
+           // Legacy colon label support
+           const m = rest.split(':');
+           targetPart = m[0].trim();
+           propsPart = `label: "${m[1].trim()}"`;
+        }
+
+        const tos = targetPart.split(',').map(s => s.trim());
+        const connProps: any = {};
+        
+        if (propsPart) {
+          propsPart.split(',').forEach(p => {
+            const [k, v] = p.split(':').map(s => s.trim().replace(/["']/g, ''));
+            if (k === 'label') connProps.label = v;
+            if (k === 'color' || k === 'stroke') connProps.stroke = v;
+            if (k === 'width') connProps.strokeWidth = parseInt(v);
+            if (k === 'dashed') connProps.strokeDashArray = [5, 5];
+            if (k === 'dotted') connProps.strokeDashArray = [2, 2];
+          });
+        }
 
         froms.forEach(f => {
           tos.forEach(t => {
-            connections.push({ from: f, to: t, type, label });
+            connections.push({ from: f, to: t, type, ...connProps });
           });
         });
       }
@@ -142,7 +259,6 @@ export function parseDSL(code: string): ShapeCollection {
     }
 
     // Handle Node/Block Definition
-    // Name [props] { or Name [props]
     const blockStart = line.endsWith('{');
     const cleanLine = blockStart ? line.slice(0, -1).trim() : line;
     
@@ -167,6 +283,9 @@ export function parseDSL(code: string): ShapeCollection {
         if (k === 'label') node.label = v;
         if (k === 'color') node.color = v;
         if (k === 'shape') node.shape = v;
+        if (k === 'desc' || k === 'description') node.description = v;
+        if (k === 'width') node.strokeWidth = parseInt(v);
+        if (k === 'dashed') node.strokeDashArray = [5, 5];
       });
     }
 
@@ -256,9 +375,11 @@ export function parseDSL(code: string): ShapeCollection {
         y: startY,
         width: NODE_SIZE,
         height: NODE_SIZE,
-        fill: 'rgba(255,255,255,0.05)',
-        stroke: node.color || 'rgba(255,255,255,0.2)'
+        fill: node.shape === 'note' ? 'rgba(255, 235, 59, 0.15)' : 'rgba(255,255,255,0.05)',
+        stroke: node.shape === 'note' ? '#fbc02d' : (node.color || 'rgba(255,255,255,0.2)'),
+        strokeDashArray: node.shape === 'note' ? undefined : node.strokeDashArray
       };
+      if (node.strokeWidth !== undefined) rect.strokeWidth = node.strokeWidth;
       result.rectangles!.push(rect);
 
       if (node.icon) {
@@ -280,8 +401,23 @@ export function parseDSL(code: string): ShapeCollection {
         height: 20,
         text: node.label || node.name,
         fontSize: 10,
+        fontWeight: 600,
         textAlign: 'center'
       });
+
+      if ((node as any).description) {
+        result.texts!.push({
+          id: makeId(),
+          x: startX,
+          y: startY + 68,
+          width: NODE_SIZE,
+          height: 30,
+          text: (node as any).description,
+          fontSize: 7,
+          fill: 'rgba(255,255,255,0.4)',
+          textAlign: 'center'
+        });
+      }
 
       (node as any).bounds = { x: startX, y: startY, width: NODE_SIZE, height: NODE_SIZE };
       return { width: NODE_SIZE, height: NODE_SIZE };
@@ -326,7 +462,11 @@ export function parseDSL(code: string): ShapeCollection {
           kind: toNode.isGroup ? 'figure' : 'rect',
           shapeId: toNode.id,
           anchor: toAnchor
-        }
+        },
+        label: conn.label,
+        stroke: conn.stroke,
+        strokeWidth: conn.strokeWidth,
+        strokeDashArray: conn.strokeDashArray
       };
       result.connectors!.push(connector);
     }

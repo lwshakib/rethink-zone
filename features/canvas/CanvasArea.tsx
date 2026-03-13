@@ -196,6 +196,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
 
   const [isHandPanning, setIsHandPanning] = useState(false); // Tracks if the 'Hand' tool is active for panning
   const [isSpacePanning, setIsSpacePanning] = useState(false); // Tracks if Spacebar is held for panning mode
+  
 
   // Captures the current state of todos into a single HistoryEntry object
   const snapshot = useCallback(
@@ -286,7 +287,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   } = commands;
 
   // Logic to fetch and filter icons based on user input
-  const { filteredLibraryIcons, isLibraryLoading } = useCanvasIcons(
+  const { filteredLibraryIcons, isLibraryLoading, allIconsLibrary: iconRegistry } = useCanvasIcons(
     plusMenuView,
     plusMenuSubView,
     iconSearchQuery
@@ -859,6 +860,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     imageCacheRef,
     setHoverAnchor,
     hoverAnchor,
+    iconRegistry,
     setRerenderTick,
     containerRef: canvasContainerRef,
     strokeColor,
@@ -1183,6 +1185,10 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
         highlight:
           !isMulti &&
           selectedShape.some((s) => s.kind === "connector" && s.index === idx),
+        label: c.label,
+        stroke: c.stroke,
+        strokeWidth: c.strokeWidth,
+        strokeDashArray: c.strokeDashArray,
       });
     });
 
@@ -1697,6 +1703,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
             figureId={editingFigureId}
             figureName={figures.find(f => f.id === editingFigureId)?.title || "Diagram Engine"}
             code={figures.find(f => f.id === editingFigureId)?.code || ""}
+            iconRegistry={iconRegistry}
             onCodeChange={(newCode) => {
               if (editingFigureId) {
                 const index = figures.findIndex(f => f.id === editingFigureId);
@@ -1724,7 +1731,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
               }));
 
               // 2. Parse and generate new shapes
-              const generated = parseDSL(fig.code) as any;
+              const generated = parseDSL(fig.code, iconRegistry) as any;
               
               // Auto-size the editing figure
               const newWidth = generated.width + 100;
