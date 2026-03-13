@@ -1,22 +1,25 @@
 import { Button } from "@/components/ui/button";
 import { Edit3, X, Terminal } from "lucide-react";
-import { FigureShape } from "../types";
+import { FigureShape, SelectedShape } from "../types";
 
 interface FigureButtonsProps {
   figures: FigureShape[];
   canvasToClient: (x: number, y: number) => { x: number; y: number };
   zoom: number;
+  selectedShape: SelectedShape;
   editingFigureId: string | null;
   onOpenEditor: (figureId: string) => void;
 }
 
 /**
  * FigureButtons - Renders an "Open Editor" button next to each Figure title on the canvas.
+ * Now only appears when the figure itself is selected.
  */
 const FigureButtons: React.FC<FigureButtonsProps> = ({
   figures,
   canvasToClient,
   zoom,
+  selectedShape,
   editingFigureId,
   onOpenEditor,
 }) => {
@@ -24,23 +27,26 @@ const FigureButtons: React.FC<FigureButtonsProps> = ({
     <>
       {figures.map((figure) => {
         const isEditing = editingFigureId === figure.id;
+        const isSelected = selectedShape.some(s => s.kind === "figure" && s.id === figure.id);
+        
+        // Hide buttons if not selected and not currently editing
+        if (!isSelected && !isEditing) return null;
         
         // Match the sizing logic from drawing.ts to position precisely
         const headerHeight = 26 / zoom;
         const headerGap = 8 / zoom;
         
         // Approximate the title width for positioning (12px font)
-        // figureTitle logic from drawing.ts: hX, hY, hWidth
         const text = figure.title || `Figure ${figure.figureNumber}`;
-        const charWidth = 7 / zoom; // Approximation of 12px sans-serif avg char width
+        const charWidth = 7 / zoom; 
         const iconSize = 10 / zoom;
         const hPadding = 10 / zoom;
         const iconGap = 8 / zoom;
         const textWidth = text.length * charWidth;
         const hWidth = textWidth + iconSize + iconGap + hPadding * 2;
         
-        // Position to the right of the title pill
-        const pos = canvasToClient(figure.x + hWidth + (4 / zoom), figure.y - headerHeight - headerGap);
+        // Position to the right of the title pill - reduced gap to 1px
+        const pos = canvasToClient(figure.x + hWidth + (1 / zoom), figure.y - headerHeight - headerGap);
         
         return (
           <div

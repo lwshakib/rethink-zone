@@ -1492,6 +1492,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
             figures={figures}
             canvasToClient={canvasToClient}
             zoom={zoom}
+            selectedShape={selectedShape}
             editingFigureId={editingFigureId}
             onOpenEditor={(id: string) => {
               if (editingFigureId === id) {
