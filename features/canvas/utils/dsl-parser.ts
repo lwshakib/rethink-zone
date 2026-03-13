@@ -192,10 +192,17 @@ export function parseDSL(code: string, iconRegistry: string[] = []): ShapeCollec
       return `${base}/${key}.svg`;
     }
 
-    // 5. General/Misc
+    // 5. General/Misc & Common SaaS
     if (raw === 'laptop') return '/icons-library/seti-icons/config.svg';
     if (raw === 'mobile' || raw === 'phone') return '/icons-library/seti-icons/favicon.svg';
     if (raw === 'user' || raw === 'users') return '/icons-library/kubernetes-icons/svg/resources/unlabeled/user.svg';
+    if (raw === 'cloudinary') return '/icons-library/seti-icons/image.svg';
+    if (raw === 'mapbox') return '/icons-library/seti-icons/search.svg';
+    if (raw === 'stripe') return '/icons-library/seti-icons/salesforce.svg';
+    if (raw === 'database' || raw === 'db') return '/icons-library/seti-icons/db.svg';
+    if (raw === 'github') return '/icons-library/seti-icons/github.svg';
+    if (raw === 'docker') return '/icons-library/seti-icons/docker.svg';
+    if (raw === 'react') return '/icons-library/seti-icons/react.svg';
 
     return '/icons-library/seti-icons/default.svg'; // Final fallback
   };

@@ -697,18 +697,29 @@ export const drawConnector = (
 ) => {
   ctx.save();
   const strokeColor =
-    options.stroke || (options.highlight ? "rgba(83,182,255,1)" : themeStroke);
+    options.stroke || (options.highlight ? "#3b82f6" : themeStroke);
   ctx.strokeStyle = strokeColor;
   ctx.lineWidth = (options.strokeWidth || (options.highlight ? 2.5 : 2)) / zoom;
+  
+  // Premium Touch: Shadow for depth
+  if (!options.highlight) {
+    ctx.shadowColor = "rgba(0,0,0,0.1)";
+    ctx.shadowBlur = 4 / zoom;
+    ctx.shadowOffsetY = 2 / zoom;
+  }
+
   if (options.strokeDashArray) {
     ctx.setLineDash(options.strokeDashArray.map(v => v / zoom));
   } else if (options.highlight) {
-    ctx.setLineDash([5 / zoom, 5 / zoom]);
+    // Flowing Animation: Offset the dash based on current time
+    const flowSpeed = (Date.now() / 50) % 20;
+    ctx.setLineDash([8 / zoom, 4 / zoom]);
+    ctx.lineDashOffset = -flowSpeed / zoom;
   }
-  ctx.lineJoin = "round"; // Smoothens the sharp bends
+  
+  ctx.lineJoin = "round"; 
   ctx.lineCap = "round";
 
-  // Request the optimal orthogonal point sequence from the geometry engine
   const points = getConnectorPoints(
     from,
     to,
@@ -719,50 +730,50 @@ export const drawConnector = (
     zoom
   );
 
-  // Safety exit if no points could be computed
   if (points.length < 2) {
     ctx.restore();
     return;
   }
 
-  const cornerRadius = 10 / zoom; // Standard radius for connector bends
+  const cornerRadius = 12 / zoom; 
   ctx.beginPath();
-  // Move to start point
   ctx.moveTo(points[0].x, points[0].y);
 
-  // Iterate through calculated points and apply rounded turns using arcTo
   for (let i = 1; i < points.length - 1; i++) {
     const pPrev = points[i - 1];
     const pCurrent = points[i];
     const pNext = points[i + 1];
     const d1 = Math.hypot(pCurrent.x - pPrev.x, pCurrent.y - pPrev.y);
     const d2 = Math.hypot(pNext.x - pCurrent.x, pNext.y - pCurrent.y);
-    // Ensure the radius isn't larger than half the connecting segments
     const actualRadius = Math.min(cornerRadius, d1 / 2, d2 / 2);
     ctx.arcTo(pCurrent.x, pCurrent.y, pNext.x, pNext.y, actualRadius);
   }
-  // Connect to the final point
   ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
   ctx.stroke();
 
-  // Draw the arrowhead at the target end point
+  // Reset shadow for arrowhead and labels
+  ctx.shadowColor = "transparent";
+
+  // Draw the arrowhead
   const lastP = points[points.length - 1];
   const prevP = points[points.length - 2] || points[0];
-  const angle = Math.atan2(lastP.y - prevP.y, lastP.x - prevP.x); // Orientation angle
+  const angle = Math.atan2(lastP.y - prevP.y, lastP.x - prevP.x);
   const size = 10 / zoom;
+  
   ctx.save();
   ctx.translate(lastP.x, lastP.y);
   ctx.rotate(angle);
   ctx.beginPath();
-  ctx.moveTo(0, 0); // Tip of arrowhead
-  ctx.lineTo(-size, -size * 0.5); // base-left
-  ctx.lineTo(-size, size * 0.5); // base-right
+  ctx.moveTo(0, 0); 
+  ctx.lineTo(-size, -size * 0.4); 
+  ctx.lineTo(-size * 0.8, 0); // Notched back for sleeker look
+  ctx.lineTo(-size, size * 0.4);
   ctx.closePath();
   ctx.fillStyle = strokeColor;
   ctx.fill();
   ctx.restore();
 
-  // Draw label at the midpoint if provided
+  // Draw Label
   if (options.label && points.length >= 2) {
     const midIdx = Math.floor(points.length / 2);
     const p1 = points[midIdx - 1];
@@ -771,21 +782,28 @@ export const drawConnector = (
     const midY = (p1.y + p2.y) / 2;
 
     ctx.save();
-    const fontSize = 9 / zoom;
-    ctx.font = `500 ${fontSize}px sans-serif`;
+    const fontSize = 10 / zoom;
+    ctx.font = `600 ${fontSize}px Inter, sans-serif`;
     const textWidth = ctx.measureText(options.label).width;
     const textHeight = fontSize;
-    const padding = 4 / zoom;
+    const paddingH = 8 / zoom;
+    const paddingV = 4 / zoom;
 
-    // Small background for the label to ensure readability
-    ctx.fillStyle = "rgba(0,0,0,0.7)";
+    // Glassmorphism Label
+    ctx.fillStyle = "rgba(15, 23, 42, 0.9)"; // Deep slate
     ctx.beginPath();
+    const r = 4 / zoom;
     if (ctx.roundRect) {
-      ctx.roundRect(midX - textWidth / 2 - padding, midY - textHeight / 2 - padding, textWidth + padding * 2, textHeight + padding * 2, 2 / zoom);
+      ctx.roundRect(midX - textWidth / 2 - paddingH, midY - textHeight / 2 - paddingV, textWidth + paddingH * 2, textHeight + paddingV * 2, r);
     } else {
-      ctx.rect(midX - textWidth / 2 - padding, midY - textHeight / 2 - padding, textWidth + padding * 2, textHeight + padding * 2);
+      ctx.rect(midX - textWidth / 2 - paddingH, midY - textHeight / 2 - paddingV, textWidth + paddingH * 2, textHeight + paddingV * 2);
     }
     ctx.fill();
+
+    // Subtle outline for label
+    ctx.strokeStyle = "rgba(255,255,255,0.1)";
+    ctx.lineWidth = 1 / zoom;
+    ctx.stroke();
 
     ctx.fillStyle = "white";
     ctx.textAlign = "center";

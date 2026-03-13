@@ -26,7 +26,7 @@ Use: [provider]-[service]
 - GCP: gcp-run, gcp-functions, gcp-storage, gcp-sql, gcp-gke, gcp-pubsub.
 - Azure: azure-app, azure-functions, azure-vnet, azure-frontdoor, azure-cosmos-db, azure-sql, azure-storage, azure-dns, azure-nsg.
 - Kubernetes: k8s-pod, k8s-svc, k8s-deploy, k8s-node, k8s-ns, k8s-ing.
-- Generic: laptop, mobile, users.
+- Generic: laptop, mobile, users, cloudinary, mapbox, stripe, database, docker, github, react.
 
 DSL SYNTAX:
 1. Groups: GroupName [color: "hex"] { ... }
