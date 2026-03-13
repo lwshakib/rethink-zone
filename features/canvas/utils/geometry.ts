@@ -43,7 +43,9 @@ export const getConnectorPoints = (
   toAnchor?: AnchorSide | "none", // Entrance side
   fromBounds?: { x: number; y: number; width: number; height: number }, // Bounding box of the source shape
   toBounds?: { x: number; y: number; width: number; height: number }, // Bounding box of the target shape
-  zoom: number = 1 // Current zoom level for pixel-perfect offsets
+  zoom: number = 1, // Current zoom level
+  allBounds?: { x: number; y: number; width: number; height: number }[], // All shapes on canvas
+  waypoints?: { x: number; y: number }[] // Manual routing overrides
 ) => {
   const fromDir = getAnchorDir(fromAnchor);
   const toDir = getAnchorDir(toAnchor);
@@ -116,7 +118,8 @@ export const getConnectorPoints = (
       return false;
     };
 
-    return check(fromBounds) || check(toBounds);
+    const blockedByBoxes = allBounds?.filter(b => b !== fromBounds && b !== toBounds) || [];
+    return check(fromBounds) || check(toBounds) || blockedByBoxes.some(b => check(b));
   };
 
   // Center-point between the two padded exit/entry points
@@ -296,8 +299,11 @@ export const getConnectorPoints = (
 
   if (bestPath) {
     pts.push(...bestPath);
+  } else if (waypoints && waypoints.length > 0) {
+    // If waypoints are provided, we use them. 
+    // For now, we connect them with straight lines, but still keep the orthogonal entry/exit
+    pts.push(...waypoints);
   } else {
-    // Ultimate fallback: Use a centered vertical-first Z-path if no valid path was found
     pts.push(...z1);
   }
 

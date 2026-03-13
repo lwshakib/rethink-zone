@@ -694,6 +694,8 @@ export const drawConnector = (
     strokeDashArray?: number[];
     label?: string;
     drawnLabels?: { x: number; y: number; width: number; height: number }[];
+    allBounds?: { x: number; y: number; width: number; height: number }[];
+    waypoints?: { x: number; y: number }[];
   }
 ) => {
   ctx.save();
@@ -728,7 +730,9 @@ export const drawConnector = (
     options.toAnchor,
     options.fromBounds,
     options.toBounds,
-    zoom
+    zoom,
+    options.allBounds,
+    options.waypoints
   );
 
   if (points.length < 2) {

@@ -1174,6 +1174,13 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     );
 
     const drawnLabels: any[] = [];
+    // Collect all shape boundaries once to pass to connectors for obstacle avoidance
+    const allNodeBounds = [
+      ...rectangles.filter(r => !r.strokeDashArray).map(r => ({ x: r.x, y: r.y, width: r.width, height: r.height })),
+      ...images.map(i => ({ x: i.x, y: i.y, width: i.width, height: i.height })),
+      ...figures.map(f => ({ x: f.x, y: f.y, width: f.width, height: f.height })),
+    ];
+
     connectors.forEach((c, idx) => {
       const fromPt = getAnchorPointLocal(c.from);
       const toPt = getAnchorPointLocal(c.to);
@@ -1191,6 +1198,8 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
         strokeWidth: c.strokeWidth,
         strokeDashArray: c.strokeDashArray,
         drawnLabels,
+        allBounds: allNodeBounds,
+        waypoints: c.waypoints
       });
     });
 

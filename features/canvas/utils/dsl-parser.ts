@@ -38,6 +38,7 @@ interface DSLConnection {
   stroke?: string;
   strokeWidth?: number;
   strokeDashArray?: number[];
+  waypoints?: { x: number; y: number }[];
 }
 
 export function parseDSL(code: string, iconRegistry: string[] = []): ShapeCollection {
@@ -264,6 +265,12 @@ export function parseDSL(code: string, iconRegistry: string[] = []): ShapeCollec
             if (k === 'width') connProps.strokeWidth = parseInt(v);
             if (k === 'dashed') connProps.strokeDashArray = [5, 5];
             if (k === 'dotted') connProps.strokeDashArray = [2, 2];
+            if (k === 'via') {
+              connProps.waypoints = v.split(';').map(pt => {
+                const [x, y] = pt.split(',').map(s => parseFloat(s.trim()));
+                return { x, y };
+              }).filter(pt => !isNaN(pt.x) && !isNaN(pt.y));
+            }
           });
         }
 
@@ -484,7 +491,8 @@ export function parseDSL(code: string, iconRegistry: string[] = []): ShapeCollec
         label: conn.label,
         stroke: conn.stroke,
         strokeWidth: conn.strokeWidth,
-        strokeDashArray: conn.strokeDashArray
+        strokeDashArray: conn.strokeDashArray,
+        waypoints: conn.waypoints
       };
       result.connectors!.push(connector);
     }
