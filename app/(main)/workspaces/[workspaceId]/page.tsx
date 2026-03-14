@@ -403,8 +403,8 @@ export default function WorkspaceDetailPage() {
             value="canvas"
             className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
           >
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             <CanvasTab
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               initialData={canvasData as any}
               onChange={handleCanvasChange}
             />
@@ -415,8 +415,8 @@ export default function WorkspaceDetailPage() {
             value="kanban"
             className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
           >
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             <KanbanTab
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               board={kanbanBoard as any}
               onChange={handleKanbanChange}
             />
