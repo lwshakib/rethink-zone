@@ -28,12 +28,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  ChevronLeft,
-  Save,
-  Trash2,
-  Loader2,
-} from "lucide-react";
+import { ChevronLeft, Trash2, Loader2 } from "lucide-react";
 import { Workspace } from "@/hooks/use-workspace-store";
 import DocumentTab from "@/features/document/document-tab";
 import CanvasTab from "@/features/canvas/canvas-tab";
@@ -169,10 +164,10 @@ export default function WorkspaceDetailPage() {
       setWorkspace(data.workspace);
       setDirty(false); // Reset dirty flag after successful save
       setSavingStatus("saved");
-      
+
       // Return to idle/unsaved after showing "saved" for a bit
       setTimeout(() => {
-        setSavingStatus((current) => current === "saved" ? "idle" : current);
+        setSavingStatus((current) => (current === "saved" ? "idle" : current));
       }, 3000);
     } catch (err) {
       console.error(err);
@@ -182,12 +177,15 @@ export default function WorkspaceDetailPage() {
   }, [workspace, documentData, canvasData, kanbanBoard, dirty]);
 
   // Debounced auto-save effect
-  const debouncedPayload = useDebounce({
-    name: workspace?.name,
-    documentData,
-    canvasData,
-    kanbanBoard
-  }, 2000);
+  const debouncedPayload = useDebounce(
+    {
+      name: workspace?.name,
+      documentData,
+      canvasData,
+      kanbanBoard,
+    },
+    2000
+  );
 
   useEffect(() => {
     if (dirty && debouncedPayload) {
@@ -393,7 +391,6 @@ export default function WorkspaceDetailPage() {
             value="document"
             className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
           >
-
             <DocumentTab
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               initialContent={documentData as any}
@@ -407,7 +404,10 @@ export default function WorkspaceDetailPage() {
             className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
           >
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            <CanvasTab initialData={canvasData as any} onChange={handleCanvasChange} />
+            <CanvasTab
+              initialData={canvasData as any}
+              onChange={handleCanvasChange}
+            />
           </TabsContent>
 
           {/* Kanban Tab View */}
@@ -416,7 +416,10 @@ export default function WorkspaceDetailPage() {
             className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
           >
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            <KanbanTab board={kanbanBoard as any} onChange={handleKanbanChange} />
+            <KanbanTab
+              board={kanbanBoard as any}
+              onChange={handleKanbanChange}
+            />
           </TabsContent>
         </main>
       </Tabs>

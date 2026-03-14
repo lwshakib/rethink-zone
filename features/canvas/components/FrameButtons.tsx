@@ -11,9 +11,7 @@ interface FrameButtonsProps {
 /**
  * FrameButtons - Renders contextual action buttons on top of Frame shapes.
  */
-const FrameButtons: React.FC<FrameButtonsProps> = ({
-  frames,
-}) => {
+const FrameButtons: React.FC<FrameButtonsProps> = ({ frames }) => {
   return (
     <>
       {/* Loop through each frame to position a button above its top-right corner */}

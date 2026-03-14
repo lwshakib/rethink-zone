@@ -59,7 +59,12 @@ function isCodeFile(path: string) {
   );
 }
 
-async function fetchFile(owner: string, repo: string, branch: string, path: string) {
+async function fetchFile(
+  owner: string,
+  repo: string,
+  branch: string,
+  path: string
+) {
   const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
 
   const res = await fetch(url);

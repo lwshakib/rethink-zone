@@ -106,10 +106,11 @@ We follow the [Conventional Commits](https://www.conventionalcommits.org/) speci
 ## Pull Request Process
 
 1. **Sync with Main**: Ensure your branch is up-to-date with `upstream/main`.
-2. **Standard Checks**: Run `npm run lint` and ensure there are no errors.
-3. **Detail Your Work**: Provide a clear description of what the PR does and why.
-4. **UI Changes**: Include screenshots or GIFs for any visual modifications.
-5. **Review**: Address feedback from maintainers promptly.
+2. **Standard Checks**: Run `npm run lint` to check for formatting and linting errors.
+3. **Run Tests**: Ensure all tests pass by running `npm run test` (Unit) and `npm run test:e2e` (E2E).
+4. **Detail Your Work**: Provide a clear description of what the PR does and why.
+5. **UI Changes**: Include screenshots or GIFs for any visual modifications.
+6. **Review**: Address feedback from maintainers promptly.
 
 ## Project Structure
 

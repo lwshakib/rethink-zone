@@ -111,7 +111,10 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     useState<DiagramTemplate | null>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 }); // Track canvas container size for UI positioning
   const [isMiniMapOpen, setIsMiniMapOpen] = useState(false); // Controls visibility of the navigation mini-map
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const [editingFigureId, setEditingFigureId] = useState<string | null>(null);
   const [isFigureEditorOpen, setIsFigureEditorOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false); // Tracks if any drag operation is active
@@ -193,7 +196,6 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   const [isHandPanning, setIsHandPanning] = useState(false); // Tracks if the 'Hand' tool is active for panning
   const [isSpacePanning, setIsSpacePanning] = useState(false); // Tracks if Spacebar is held for panning mode
   const [isModifierPressed, setIsModifierPressed] = useState(false); // Tracks if Ctrl/Cmd is held
-  
 
   // Captures the current state of todos into a single HistoryEntry object
   const snapshot = useCallback(
@@ -284,11 +286,11 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   } = commands;
 
   // Logic to fetch and filter icons based on user input
-  const { filteredLibraryIcons, isLibraryLoading, allIconsLibrary: iconRegistry } = useCanvasIcons(
-    plusMenuView,
-    plusMenuSubView,
-    iconSearchQuery
-  );
+  const {
+    filteredLibraryIcons,
+    isLibraryLoading,
+    allIconsLibrary: iconRegistry,
+  } = useCanvasIcons(plusMenuView, plusMenuSubView, iconSearchQuery);
 
   // Theme-aware color calculations for drawing
   const { resolvedTheme } = useTheme();
@@ -335,7 +337,17 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
         codes,
       });
     },
-    [rectangles, circles, images, texts, frames, polygons, figures, codes, margin]
+    [
+      rectangles,
+      circles,
+      images,
+      texts,
+      frames,
+      polygons,
+      figures,
+      codes,
+      margin,
+    ]
   );
   const getShapeBoundsLocal = useCallback(
     (a: ConnectorAnchor) => {
@@ -357,7 +369,17 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
         height: b.height + margin * 2,
       };
     },
-    [rectangles, circles, images, texts, frames, polygons, figures, codes, margin]
+    [
+      rectangles,
+      circles,
+      images,
+      texts,
+      frames,
+      polygons,
+      figures,
+      codes,
+      margin,
+    ]
   );
   const getContentBoundsLocal = useCallback(
     () =>
@@ -441,7 +463,14 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
           width: bounds.width + margin * 2,
           height: bounds.height + margin * 2,
         };
-        (["top-left", "top-right", "bottom-left", "bottom-right"] as AnchorSide[]).forEach((side) => {
+        (
+          [
+            "top-left",
+            "top-right",
+            "bottom-left",
+            "bottom-right",
+          ] as AnchorSide[]
+        ).forEach((side) => {
           handles.push({
             kind: "rect",
             shapeId: "selection",
@@ -468,7 +497,14 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
           width: r.width + margin * 2,
           height: r.height + margin * 2,
         };
-        (["top-left", "top-right", "bottom-left", "bottom-right"] as AnchorSide[]).forEach((side) => {
+        (
+          [
+            "top-left",
+            "top-right",
+            "bottom-left",
+            "bottom-right",
+          ] as AnchorSide[]
+        ).forEach((side) => {
           handles.push({
             kind,
             shapeId: r.id,
@@ -479,30 +515,53 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
         });
       };
 
-      rectangles.filter(r => selectedIds.has(r.id)).forEach((r) => addPaddedRectHandles(r, "rect"));
-      images.filter(im => selectedIds.has(im.id)).forEach((im) => addPaddedRectHandles(im, "image"));
-      texts.filter(t => selectedIds.has(t.id)).forEach((t) => addPaddedRectHandles(t, "text"));
-      frames.filter(f => selectedIds.has(f.id)).forEach((f) => addPaddedRectHandles(f, "frame"));
-      polygons.filter(p => selectedIds.has(p.id)).forEach((p) => addPaddedRectHandles(p, "poly"));
-      figures.filter(f => selectedIds.has(f.id)).forEach((f) => addPaddedRectHandles(f, "figure"));
-      codes.filter(c => selectedIds.has(c.id)).forEach((c) => addPaddedRectHandles(c, "code"));
+      rectangles
+        .filter((r) => selectedIds.has(r.id))
+        .forEach((r) => addPaddedRectHandles(r, "rect"));
+      images
+        .filter((im) => selectedIds.has(im.id))
+        .forEach((im) => addPaddedRectHandles(im, "image"));
+      texts
+        .filter((t) => selectedIds.has(t.id))
+        .forEach((t) => addPaddedRectHandles(t, "text"));
+      frames
+        .filter((f) => selectedIds.has(f.id))
+        .forEach((f) => addPaddedRectHandles(f, "frame"));
+      polygons
+        .filter((p) => selectedIds.has(p.id))
+        .forEach((p) => addPaddedRectHandles(p, "poly"));
+      figures
+        .filter((f) => selectedIds.has(f.id))
+        .forEach((f) => addPaddedRectHandles(f, "figure"));
+      codes
+        .filter((c) => selectedIds.has(c.id))
+        .forEach((c) => addPaddedRectHandles(c, "code"));
 
-      circles.filter(c => selectedIds.has(c.id)).forEach((c) => {
-        const paddedBox = {
-          x: c.x - c.rx - margin,
-          y: c.y - c.ry - margin,
-          width: c.rx * 2 + margin * 2,
-          height: c.ry * 2 + margin * 2,
-        };
-        (["top-left", "top-right", "bottom-left", "bottom-right"] as AnchorSide[]).forEach((side) => {
-          handles.push({
-            kind: "circle",
-            shapeId: c.id,
-            anchor: side,
-            point: getRectAnchor(paddedBox, side),
+      circles
+        .filter((c) => selectedIds.has(c.id))
+        .forEach((c) => {
+          const paddedBox = {
+            x: c.x - c.rx - margin,
+            y: c.y - c.ry - margin,
+            width: c.rx * 2 + margin * 2,
+            height: c.ry * 2 + margin * 2,
+          };
+          (
+            [
+              "top-left",
+              "top-right",
+              "bottom-left",
+              "bottom-right",
+            ] as AnchorSide[]
+          ).forEach((side) => {
+            handles.push({
+              kind: "circle",
+              shapeId: c.id,
+              anchor: side,
+              point: getRectAnchor(paddedBox, side),
+            });
           });
         });
-      });
     }
 
     return handles;
@@ -645,8 +704,8 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       else if (kind === "code") source = codes[index];
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const s = source as any; 
-      if (!s) return; 
+      const s = source as any;
+      if (!s) return;
 
       // Extract common properties that should persist across shape types
       const common = {
@@ -971,42 +1030,27 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
         handleRedo();
         return;
       }
-      if (
-        isCmd &&
-        (e.key.toLowerCase() === "c")
-      ) {
+      if (isCmd && e.key.toLowerCase() === "c") {
         e.preventDefault();
         copySelected();
         return;
       }
-      if (
-        isCmd &&
-        (e.key.toLowerCase() === "v")
-      ) {
+      if (isCmd && e.key.toLowerCase() === "v") {
         e.preventDefault();
         pasteSelected();
         return;
       }
-      if (
-        isCmd &&
-        (e.key.toLowerCase() === "x")
-      ) {
+      if (isCmd && e.key.toLowerCase() === "x") {
         e.preventDefault();
         cutSelected();
         return;
       }
-      if (
-        isCmd &&
-        (e.key.toLowerCase() === "a")
-      ) {
+      if (isCmd && e.key.toLowerCase() === "a") {
         e.preventDefault();
         selectAll();
         return;
       }
-      if (
-        isCmd &&
-        (e.key.toLowerCase() === "d")
-      ) {
+      if (isCmd && e.key.toLowerCase() === "d") {
         e.preventDefault();
         duplicateSelection();
         return;
@@ -1126,8 +1170,12 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
         !isMulti &&
           selectedShape.some((s) => s.kind === "figure" && s.index === idx),
         {
-          hideTitleText: textEditor?.kind === "figure" && textEditor?.index === idx,
-          titleOverride: (textEditor?.kind === "figure" && textEditor?.index === idx) ? textEditor.value : undefined,
+          hideTitleText:
+            textEditor?.kind === "figure" && textEditor?.index === idx,
+          titleOverride:
+            textEditor?.kind === "figure" && textEditor?.index === idx
+              ? textEditor.value
+              : undefined,
         }
       )
     );
@@ -1202,9 +1250,21 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     const drawnLabels: any[] = [];
     // Collect all shape boundaries once to pass to connectors for obstacle avoidance
     const allNodeBounds = [
-      ...rectangles.filter(r => !r.strokeDashArray).map(r => ({ x: r.x, y: r.y, width: r.width, height: r.height })),
-      ...images.map(i => ({ x: i.x, y: i.y, width: i.width, height: i.height })),
-      ...figures.map(f => ({ x: f.x, y: f.y, width: f.width, height: f.height })),
+      ...rectangles
+        .filter((r) => !r.strokeDashArray)
+        .map((r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })),
+      ...images.map((i) => ({
+        x: i.x,
+        y: i.y,
+        width: i.width,
+        height: i.height,
+      })),
+      ...figures.map((f) => ({
+        x: f.x,
+        y: f.y,
+        width: f.width,
+        height: f.height,
+      })),
     ];
 
     connectors.forEach((c, idx) => {
@@ -1488,12 +1548,22 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
             setIsFigureEditorOpen(false);
             setEditingFigureId(null);
           }
-          handlePointerDown(e as unknown as React.PointerEvent<HTMLCanvasElement>);
+          handlePointerDown(
+            e as unknown as React.PointerEvent<HTMLCanvasElement>
+          );
         }}
-        onPointerMove={handlePointerMove as unknown as React.PointerEventHandler<HTMLDivElement>}
-        onPointerUp={handlePointerUp as unknown as React.PointerEventHandler<HTMLDivElement>}
-        onPointerLeave={handlePointerUp as unknown as React.PointerEventHandler<HTMLDivElement>}
-        onDoubleClick={handleDoubleClick as unknown as React.MouseEventHandler<HTMLDivElement>}
+        onPointerMove={
+          handlePointerMove as unknown as React.PointerEventHandler<HTMLDivElement>
+        }
+        onPointerUp={
+          handlePointerUp as unknown as React.PointerEventHandler<HTMLDivElement>
+        }
+        onPointerLeave={
+          handlePointerUp as unknown as React.PointerEventHandler<HTMLDivElement>
+        }
+        onDoubleClick={
+          handleDoubleClick as unknown as React.MouseEventHandler<HTMLDivElement>
+        }
         onContextMenu={handleContextMenu} // Disable default right-click menu
         style={{ cursor: cursorStyle }} // Cursor changes based on active tool (e.g., crosshair, grab)
       />
@@ -1719,7 +1789,11 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
           {/* Center-bottom toolbar for selecting tools (Select, Pencil, Rect, etc) */}
           <Toolbar
             activeTool={
-              isSpacePanning ? "Hand" : isModifierPressed ? "Select" : activeTool
+              isSpacePanning
+                ? "Hand"
+                : isModifierPressed
+                  ? "Select"
+                  : activeTool
             }
             setActiveTool={setActiveTool}
           />
@@ -1743,65 +1817,106 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
               setEditingFigureId(null);
             }}
             figureId={editingFigureId}
-            figureName={figures.find(f => f.id === editingFigureId)?.title || "Diagram Engine"}
-            code={figures.find(f => f.id === editingFigureId)?.code || ""}
+            figureName={
+              figures.find((f) => f.id === editingFigureId)?.title ||
+              "Diagram Engine"
+            }
+            code={figures.find((f) => f.id === editingFigureId)?.code || ""}
             iconRegistry={iconRegistry}
             onCodeChange={(newCode) => {
               if (editingFigureId) {
-                const index = figures.findIndex(f => f.id === editingFigureId);
+                const index = figures.findIndex(
+                  (f) => f.id === editingFigureId
+                );
                 if (index !== -1) {
                   const updatedFigures = [...figures];
-                  updatedFigures[index] = { ...updatedFigures[index], code: newCode };
+                  updatedFigures[index] = {
+                    ...updatedFigures[index],
+                    code: newCode,
+                  };
                   setFigures(updatedFigures);
                 }
               }
             }}
             onSync={() => {
               if (!editingFigureId) return;
-              const fig = figures.find(f => f.id === editingFigureId);
+              const fig = figures.find((f) => f.id === editingFigureId);
               if (!fig || !fig.code) return;
 
               // 1. Clear old shapes associated with this figure
-              setRectangles(prev => prev.filter(r => r.groupId !== editingFigureId));
-              setImages(prev => prev.filter(im => im.groupId !== editingFigureId));
-              setTexts(prev => prev.filter(t => t.groupId !== editingFigureId));
-              setFigures(prev => prev.filter(f => f.id === editingFigureId || f.groupId !== editingFigureId));
-              setConnectors(prev => prev.filter(() => {
-                // Connectors are tricky because they link shapes. 
-                // We'll just clear all connectors for now or filter them if we can track their linked shapes.
-                return true; // Simplified for now
-              }));
+              setRectangles((prev) =>
+                prev.filter((r) => r.groupId !== editingFigureId)
+              );
+              setImages((prev) =>
+                prev.filter((im) => im.groupId !== editingFigureId)
+              );
+              setTexts((prev) =>
+                prev.filter((t) => t.groupId !== editingFigureId)
+              );
+              setFigures((prev) =>
+                prev.filter(
+                  (f) =>
+                    f.id === editingFigureId || f.groupId !== editingFigureId
+                )
+              );
+              setConnectors((prev) =>
+                prev.filter(() => {
+                  // Connectors are tricky because they link shapes.
+                  // We'll just clear all connectors for now or filter them if we can track their linked shapes.
+                  return true; // Simplified for now
+                })
+              );
 
               // 2. Parse and generate new shapes
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const generated = parseDSL(fig.code, iconRegistry) as any;
-              
+
               // Auto-size the editing figure
               const newWidth = generated.width + 100;
               const newHeight = generated.height + 120;
-              
-              setFigures(prev => prev.map(f => 
-                f.id === editingFigureId 
-                ? { ...f, width: newWidth, height: newHeight } 
-                : f
-              ));
+
+              setFigures((prev) =>
+                prev.map((f) =>
+                  f.id === editingFigureId
+                    ? { ...f, width: newWidth, height: newHeight }
+                    : f
+                )
+              );
 
               const offsetX = fig.x + 50;
               const offsetY = fig.y + 70;
 
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const applyMeta = (shapes: any[] | undefined) => 
-                shapes?.map(s => ({ ...s, x: s.x + offsetX, y: s.y + offsetY, groupId: editingFigureId }));
+              const applyMeta = (shapes: any[] | undefined) =>
+                shapes?.map((s) => ({
+                  ...s,
+                  x: s.x + offsetX,
+                  y: s.y + offsetY,
+                  groupId: editingFigureId,
+                }));
 
-              if (generated.rectangles) setRectangles(prev => [...prev, ...applyMeta(generated.rectangles)!]);
-              if (generated.images) setImages(prev => [...prev, ...applyMeta(generated.images)!]);
-              if (generated.texts) setTexts(prev => [...prev, ...applyMeta(generated.texts)!]);
-              if (generated.figures) setFigures(prev => [...prev, ...applyMeta(generated.figures)!]);
+              if (generated.rectangles)
+                setRectangles((prev) => [
+                  ...prev,
+                  ...applyMeta(generated.rectangles)!,
+                ]);
+              if (generated.images)
+                setImages((prev) => [...prev, ...applyMeta(generated.images)!]);
+              if (generated.texts)
+                setTexts((prev) => [...prev, ...applyMeta(generated.texts)!]);
+              if (generated.figures)
+                setFigures((prev) => [
+                  ...prev,
+                  ...applyMeta(generated.figures)!,
+                ]);
               if (generated.connectors) {
                 // For connectors, we need to ensure their from/to shapeIds match the new ones
-                setConnectors(prev => [...prev.filter(() => true), ...generated.connectors!]);
+                setConnectors((prev) => [
+                  ...prev.filter(() => true),
+                  ...generated.connectors!,
+                ]);
               }
-              
+
               pushHistory();
             }}
           />

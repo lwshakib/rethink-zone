@@ -1,8 +1,4 @@
-import {
-  AnchorSide,
-  CircleShape,
-  ShapeCollection,
-} from "../types"; // Import all shape types for consistent geometry math
+import { AnchorSide, CircleShape, ShapeCollection } from "../types"; // Import all shape types for consistent geometry math
 
 /**
  * Translates an AnchorSide enum into a 2D unit vector representing the exit/entry direction.
@@ -53,8 +49,6 @@ export const getConnectorPoints = (
   // p3 is the point slightly outside the target shape
   const p3 = { x: to.x + toDir.x * offset, y: to.y + toDir.y * offset };
 
-
-
   /**
    * Checks if a line segment between points 'a' and 'b' intersects either the source or destination shape.
    */
@@ -95,41 +89,49 @@ export const getConnectorPoints = (
       return false;
     };
 
-    const blockedByBoxes = allBounds?.filter(b => b !== fromBounds && b !== toBounds) || [];
-    return check(fromBounds) || check(toBounds) || blockedByBoxes.some(box => {
-      // Precise check: actual intersection with a slightly padded box
-      return check(box);
-    });
+    const blockedByBoxes =
+      allBounds?.filter((b) => b !== fromBounds && b !== toBounds) || [];
+    return (
+      check(fromBounds) ||
+      check(toBounds) ||
+      blockedByBoxes.some((box) => {
+        // Precise check: actual intersection with a slightly padded box
+        return check(box);
+      })
+    );
   };
 
   /**
    * Reward/Penalty for proximity to other shapes
    */
-  const getProximityPenalty = (a: { x: number; y: number }, b: { x: number; y: number }) => {
+  const getProximityPenalty = (
+    a: { x: number; y: number },
+    b: { x: number; y: number }
+  ) => {
     if (!allBounds) return 0;
     let penalty = 0;
     const margin = 10;
-    
-    allBounds.forEach(box => {
+
+    allBounds.forEach((box) => {
       if (box === fromBounds || box === toBounds) return;
-      
+
       // Calculate if the segment is near this box
       const bx1 = box.x - margin;
       const by1 = box.y - margin;
       const bx2 = box.x + box.width + margin;
       const by2 = box.y + box.height + margin;
-      
+
       const minX = Math.min(a.x, b.x);
       const maxX = Math.max(a.x, b.x);
       const minY = Math.min(a.y, b.y);
       const maxY = Math.max(a.y, b.y);
-      
+
       if (Math.abs(a.x - b.x) < 0.1) {
-         // Vertical segment near box
-         if (a.x > bx1 && a.x < bx2 && minY < by2 && maxY > by1) penalty += 100;
+        // Vertical segment near box
+        if (a.x > bx1 && a.x < bx2 && minY < by2 && maxY > by1) penalty += 100;
       } else {
-         // Horizontal segment near box
-         if (a.y > by1 && a.y < by2 && minX < bx2 && maxX > bx1) penalty += 100;
+        // Horizontal segment near box
+        if (a.y > by1 && a.y < by2 && minX < bx2 && maxX > bx1) penalty += 100;
       }
     });
     return penalty;
@@ -265,9 +267,9 @@ export const getConnectorPoints = (
     // 1. Base Score: Length + significant penalty for each turn (prefer straight line)
     // Add proximity penalty to keep lines away from shape edges
     let score = length + turns * 200;
-    
+
     for (let i = 0; i < fullPath.length - 1; i++) {
-        score += getProximityPenalty(fullPath[i], fullPath[i+1]);
+      score += getProximityPenalty(fullPath[i], fullPath[i + 1]);
     }
 
     // 2. Center Bonus: Reward Z-shapes that are equidistantly split between shapes
@@ -327,21 +329,26 @@ export const getConnectorPoints = (
 
   // 1. Intelligent Pruning:
   // If a shape moves past its own bend, discard the overtaken waypoint to prevent "hooks".
-  const pruned = rawPts.map(p => ({ ...p }));
+  const pruned = rawPts.map((p) => ({ ...p }));
   if (pruned.length > 3) {
-    if (fromDir.x !== 0 && Math.sign(pruned[2].x - pruned[0].x) !== fromDir.x) pruned.splice(1, 1);
-    else if (fromDir.y !== 0 && Math.sign(pruned[2].y - pruned[0].y) !== fromDir.y) pruned.splice(1, 1);
+    if (fromDir.x !== 0 && Math.sign(pruned[2].x - pruned[0].x) !== fromDir.x)
+      pruned.splice(1, 1);
+    else if (
+      fromDir.y !== 0 &&
+      Math.sign(pruned[2].y - pruned[0].y) !== fromDir.y
+    )
+      pruned.splice(1, 1);
   }
 
   // 2. Cascade Alignment Pass:
   // Dynamically skew waypoints to maintain relative segment sizes.
-  const adjusted = pruned.map(p => ({ ...p }));
+  const adjusted = pruned.map((p) => ({ ...p }));
   for (let i = 1; i < adjusted.length - 1; i++) {
     const prev = adjusted[i - 1];
     const curr = adjusted[i];
     const rawPrev = pruned[i - 1]; // Use pruned as the relative baseline
     const rawCurr = pruned[i];
-    
+
     const dx = Math.abs(rawCurr.x - rawPrev.x);
     const dy = Math.abs(rawCurr.y - rawPrev.y);
     const isPreferH = dx > dy;
@@ -360,12 +367,13 @@ export const getConnectorPoints = (
   for (let i = 1; i < adjusted.length; i++) {
     const prev = pts[pts.length - 1];
     const curr = adjusted[i];
-    
+
     // Orthogonal rectification
     if (Math.abs(prev.x - curr.x) > 0.5 && Math.abs(prev.y - curr.y) > 0.5) {
       let elbow: { x: number; y: number };
       if (i === 1 && fromDir.y !== 0) elbow = { x: prev.x, y: curr.y };
-      else if (i === adjusted.length - 1 && toDir.y !== 0) elbow = { x: prev.x, y: curr.y };
+      else if (i === adjusted.length - 1 && toDir.y !== 0)
+        elbow = { x: prev.x, y: curr.y };
       else elbow = { x: curr.x, y: prev.y };
       pts.push(elbow);
     }
@@ -380,19 +388,26 @@ export const getConnectorPoints = (
     if (finalPts.length >= 2) {
       const p1 = finalPts[finalPts.length - 2];
       const p2 = finalPts[finalPts.length - 1];
-      
+
       // Check if p1, p2, curr are colinear (on the same x or y line)
-      const isColinearX = Math.abs(p1.x - p2.x) < 0.5 && Math.abs(p2.x - curr.x) < 0.5;
-      const isColinearY = Math.abs(p1.y - p2.y) < 0.5 && Math.abs(p2.y - curr.y) < 0.5;
-      
+      const isColinearX =
+        Math.abs(p1.x - p2.x) < 0.5 && Math.abs(p2.x - curr.x) < 0.5;
+      const isColinearY =
+        Math.abs(p1.y - p2.y) < 0.5 && Math.abs(p2.y - curr.y) < 0.5;
+
       if (isColinearX || isColinearY) {
         finalPts[finalPts.length - 1] = curr; // Skip the middle point
         continue;
       }
     }
-    
-    if (finalPts.length === 0 || 
-        Math.hypot(curr.x - finalPts[finalPts.length - 1].x, curr.y - finalPts[finalPts.length - 1].y) > 0.5) {
+
+    if (
+      finalPts.length === 0 ||
+      Math.hypot(
+        curr.x - finalPts[finalPts.length - 1].x,
+        curr.y - finalPts[finalPts.length - 1].y
+      ) > 0.5
+    ) {
       finalPts.push(curr);
     }
   }

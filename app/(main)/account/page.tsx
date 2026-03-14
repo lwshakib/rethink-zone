@@ -189,7 +189,8 @@ export default function AccountPage() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to change password";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to change password";
       toast.error(errorMessage);
     } finally {
       setChangingPassword(false);
@@ -220,7 +221,6 @@ export default function AccountPage() {
     router.push("/sign-in");
     return null;
   }
-
 
   return (
     <div className="min-h-screen bg-background text-foreground font-inter">

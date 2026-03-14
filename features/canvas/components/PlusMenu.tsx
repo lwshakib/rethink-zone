@@ -84,7 +84,9 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
   pendingAddDiagram,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
-  const [hoveredItemName, setHoveredItemName] = React.useState<string | null>(null);
+  const [hoveredItemName, setHoveredItemName] = React.useState<string | null>(
+    null
+  );
 
   // EFFECT: Handle outside clicks and wheel event locking
   useEffect(() => {
@@ -687,9 +689,12 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                       >
                         <div className="h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-sm bg-accent/50 border border-border group-hover:bg-primary/10 group-hover:border-primary/30 transition-all">
                           {(() => {
-                            const IconComp = (LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[
-                              diagram.thumbnail
-                            ];
+                            const IconComp = (
+                              LucideIcons as unknown as Record<
+                                string,
+                                React.ComponentType<{ className?: string }>
+                              >
+                            )[diagram.thumbnail];
                             return IconComp ? (
                               <IconComp className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                             ) : (

@@ -18,7 +18,6 @@ import { toast } from "sonner";
  * Handles the logic and UI for setting a new password.
  */
 function ResetPasswordContent() {
-
   const searchParams = useSearchParams();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");

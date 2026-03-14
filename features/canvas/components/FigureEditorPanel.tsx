@@ -1,22 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { 
-  Download,
-  Terminal,
-  CloudIcon,
-  Loader2,
-  Zap
-} from "lucide-react";
+import { Download, Terminal, CloudIcon, Loader2, Zap } from "lucide-react";
 import Editor from "react-simple-code-editor";
 import Prism from "prismjs";
 import "prismjs/components/prism-clike";
 import "prismjs/components/prism-javascript";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -34,26 +28,26 @@ interface FigureEditorPanelProps {
 
 // Custom Prism grammar for the Diagram DSL
 const DSL_GRAMMAR = {
-  'comment': /\/\/.*/,
-  'group-name': {
+  comment: /\/\/.*/,
+  "group-name": {
     pattern: /^\s*[a-zA-Z0-9\s]+(?=\s*\{)/m,
-    alias: 'class-name'
+    alias: "class-name",
   },
-  'node-name': {
+  "node-name": {
     pattern: /^\s*[a-zA-Z0-9\s]+(?=\s*\[)/m,
-    alias: 'function'
+    alias: "function",
   },
-  'property': {
+  property: {
     pattern: /[a-z-]+(?=:)/,
-    alias: 'attr-name'
+    alias: "attr-name",
   },
-  'string': {
+  string: {
     pattern: /"(?:\\.|[^\\"])*"/,
-    greedy: true
+    greedy: true,
   },
-  'keyword': /\b(?:icon|label|color|type)\b/,
-  'punctuation': /[{}[\]:,]/,
-  'arrow': /->/,
+  keyword: /\b(?:icon|label|color|type)\b/,
+  punctuation: /[{}[\]:,]/,
+  arrow: /->/,
 };
 
 import { ARCHITECTURE_EXAMPLES } from "../constants/architecture-examples";
@@ -77,19 +71,21 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
   const [prompt, setPrompt] = useState("");
   const [repoUrl, setRepoUrl] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [displayExamples, setDisplayExamples] = useState<typeof ARCHITECTURE_EXAMPLES>([]);
+  const [displayExamples, setDisplayExamples] = useState<
+    typeof ARCHITECTURE_EXAMPLES
+  >([]);
   const sidebarRef = React.useRef<HTMLDivElement>(null);
 
   // Determine current theme - defaulting to dark for the premium look of the editor
-  const theme = "dark"; 
+  const theme = "dark";
 
   const handleExportPNG = async () => {
     const shapes = parseDSL(code, iconRegistry);
     const fileName = figureName.replace(/\s+/g, "_") || "architecture";
     toast.promise(exportToPNG(shapes, fileName, theme), {
-      loading: 'Preparing PNG...',
-      success: 'Architecture exported to PNG',
-      error: 'Failed to export PNG'
+      loading: "Preparing PNG...",
+      success: "Architecture exported to PNG",
+      error: "Failed to export PNG",
     });
   };
 
@@ -98,16 +94,16 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
     const fileName = figureName.replace(/\s+/g, "_") || "architecture";
     try {
       exportToSVG(shapes, fileName, theme);
-      toast.success('Architecture exported to SVG');
+      toast.success("Architecture exported to SVG");
     } catch {
-      toast.error('Failed to export SVG');
+      toast.error("Failed to export SVG");
     }
   };
 
   const handleExportCode = () => {
     const fileName = figureName.replace(/\s+/g, "_") || "architecture";
     exportCode(code, fileName);
-    toast.success('Architecture code exported to .txt');
+    toast.success("Architecture code exported to .txt");
   };
 
   // Reshuffle examples when panel opens
@@ -152,12 +148,12 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
       const response = await fetch("/api/generate-architecture", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           prompt,
           repoUrl: repoUrl.trim() || undefined,
-          existingCode: code.trim() ? code : undefined
+          existingCode: code.trim() ? code : undefined,
         }),
-        signal: controller.signal
+        signal: controller.signal,
       });
 
       const data = await response.json();
@@ -174,12 +170,16 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
         toast.success("Architecture generated successfully!");
       }
     } catch (err: unknown) {
-      if (err instanceof Error && err.name === 'AbortError') {
+      if (err instanceof Error && err.name === "AbortError") {
         console.log("Synthesis request aborted by user");
         return;
       }
       console.error("AI Generation Error:", err);
-      toast.error(err instanceof Error ? err.message : "Cloud engine failed to generate diagram.");
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Cloud engine failed to generate diagram."
+      );
     } finally {
       setIsGenerating(false);
       abortControllerRef.current = null;
@@ -216,7 +216,7 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       ref={sidebarRef}
       className="absolute top-0 right-0 h-full w-[480px] bg-[#121212] border-l border-white/5 shadow-[-20px_0_50px_rgba(0,0,0,0.5)] z-[2000] flex flex-col animate-in slide-in-from-right duration-500 ease-out pointer-events-auto overflow-hidden"
       onWheel={(e) => e.stopPropagation()}
@@ -226,14 +226,14 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
       <div className="flex h-20 items-center justify-center px-8 border-b border-white/5 shrink-0">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 bg-white/5 rounded-lg h-10 p-1">
-            <TabsTrigger 
-              value="ai" 
+            <TabsTrigger
+              value="ai"
               className="rounded-md text-xs font-medium transition-all data-[state=active]:bg-[#222] data-[state=active]:text-white"
             >
               AI Architect
             </TabsTrigger>
-            <TabsTrigger 
-              value="code" 
+            <TabsTrigger
+              value="code"
               className="rounded-md text-xs font-medium transition-all data-[state=active]:bg-[#222] data-[state=active]:text-white"
             >
               DSL Editor
@@ -268,20 +268,23 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
                 <span className="text-[11px] font-bold">Export</span>
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-[#1a1a1a] border-white/10 text-white/80 z-[2100]">
-              <DropdownMenuItem 
+            <DropdownMenuContent
+              align="end"
+              className="bg-[#1a1a1a] border-white/10 text-white/80 z-[2100]"
+            >
+              <DropdownMenuItem
                 onClick={handleExportPNG}
                 className="hover:bg-white/5 text-[11px] font-bold cursor-pointer"
               >
                 Export as PNG
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={handleExportSVG}
                 className="hover:bg-white/5 text-[11px] font-bold cursor-pointer"
               >
                 Export as SVG
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={handleExportCode}
                 className="hover:bg-white/5 text-[11px] font-bold cursor-pointer"
               >
@@ -323,7 +326,7 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
                 className="h-[140px] resize-none border-white/5 bg-white/[0.03] text-white placeholder:text-white/10 text-sm py-4 px-5 rounded-md border focus:border-white/20 transition-all outline-none"
                 disabled={isGenerating}
               />
-              <Button 
+              <Button
                 onClick={handleGenerate}
                 disabled={!isGenerating && !prompt.trim()}
                 variant="default"
@@ -336,7 +339,10 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
                   </>
                 ) : (
                   <>
-                    <Zap size={14} className="mr-2 fill-current text-zinc-600" />
+                    <Zap
+                      size={14}
+                      className="mr-2 fill-current text-zinc-600"
+                    />
                     Generate Architecture
                   </>
                 )}
@@ -346,10 +352,12 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-3">
                 <div className="h-px flex-1 bg-white/5" />
-                <span className="text-[10px] font-medium text-white/20">Quick Examples</span>
+                <span className="text-[10px] font-medium text-white/20">
+                  Quick Examples
+                </span>
                 <div className="h-px flex-1 bg-white/5" />
               </div>
-              
+
               <div className="grid grid-cols-1 gap-2">
                 {displayExamples.map((ex, idx) => (
                   <button
@@ -392,9 +400,9 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
                     fontFamily: '"JetBrains Mono", "Fira Code", monospace',
                     fontSize: 13,
                     lineHeight: 1.6,
-                    color: '#999',
-                    backgroundColor: 'transparent',
-                    minHeight: '100%',
+                    color: "#999",
+                    backgroundColor: "transparent",
+                    minHeight: "100%",
                   }}
                   className="prism-editor"
                 />
@@ -409,4 +417,3 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
 
 export { FigureEditorPanel };
 export default FigureEditorPanel;
-

@@ -1,7 +1,5 @@
 import { DiagramTemplate } from "../types";
 
-
-
 export const DIAGRAM_CATALOG: DiagramTemplate[] = [
   {
     name: "Enterprise Multi-Region DR Engine",
@@ -17,7 +15,8 @@ export const DIAGRAM_CATALOG: DiagramTemplate[] = [
           width: 1200,
           height: 1000,
           figureNumber: 1,
-          title: "Architecture: Global Multi-Region Disaster Recovery (SDR-999)",
+          title:
+            "Architecture: Global Multi-Region Disaster Recovery (SDR-999)",
           code: `Group: Global Traffic Management [color: "#2c3e50"] {
   users [icon: "users", label: "Global Users", desc: "Clients accessing from Web/Mobile"]
   aws-route53 [icon: "aws-route53", label: "Route 53", desc: "DNS Failover & Geolocation Routing"]
@@ -56,10 +55,10 @@ aws-waf > aws-alb-failover [color: "#e74c3c", dashed: true]
 aws-alb-primary > aws-asg-primary
 aws-asg-primary > aws-rds-primary
 
-aws-rds-primary <> aws-rds-replica [dashed: true]`
-        }
-      ]
-    }
+aws-rds-primary <> aws-rds-replica [dashed: true]`,
+        },
+      ],
+    },
   },
   {
     name: "Kubernetes Service Mesh (Istio)",
@@ -75,7 +74,8 @@ aws-rds-primary <> aws-rds-replica [dashed: true]`
           width: 1100,
           height: 850,
           figureNumber: 1,
-          title: "Architecture: Enterprise Kubernetes Mesh & Observability Stack",
+          title:
+            "Architecture: Enterprise Kubernetes Mesh & Observability Stack",
           code: `Group: Ingress Layer [color: "#e74c3c"] {
   k8s-ing [icon: "k8s-ing", label: "NGINX Ingress", desc: "Cluster Entry point"]
   aws-waf [icon: "aws-waf", label: "WAF Protection", desc: "Edge Security"]
@@ -112,14 +112,15 @@ pod-web-2 > pod-pay-1
 
 k8s-master <> etcd
 Worker Fleet > prometheus [dashed: true]
-prometheus > grafana`
-        }
-      ]
-    }
+prometheus > grafana`,
+        },
+      ],
+    },
   },
   {
     name: "Serverless Event-Driven Grid",
-    description: "Highly scalable AWS serverless architecture using EventBridge pipes, SQS/SNS fan-out, and global DynamoDB tables for real-time reactive processing.",
+    description:
+      "Highly scalable AWS serverless architecture using EventBridge pipes, SQS/SNS fan-out, and global DynamoDB tables for real-time reactive processing.",
     thumbnail: "Zap",
     shapes: {
       figures: [
@@ -153,14 +154,15 @@ aws-api > aws-lambda-ingest
 aws-lambda-ingest > aws-sqs
 aws-sqs > aws-lambda-worker
 aws-lambda-worker > aws-ddb
-aws-lambda-worker > aws-s3 [dashed: true]`
-        }
-      ]
-    }
+aws-lambda-worker > aws-s3 [dashed: true]`,
+        },
+      ],
+    },
   },
   {
     name: "AI Production Feature Factory",
-    description: "Advanced AI/ML model deployment architecture, featuring real-time feature engineering, SageMaker training, and low-latency model serving.",
+    description:
+      "Advanced AI/ML model deployment architecture, featuring real-time feature engineering, SageMaker training, and low-latency model serving.",
     thumbnail: "BrainCircuit",
     shapes: {
       figures: [
@@ -201,14 +203,15 @@ aws-ddb-features > aws-sm-infer
 aws-sm-train > aws-sm-infer
 
 aws-sm-infer > aws-cw
-aws-cw > aws-drift`
-        }
-      ]
-    }
+aws-cw > aws-drift`,
+        },
+      ],
+    },
   },
   {
     name: "Serverless Media Transcoding",
-    description: "Scalable video processing pipeline using AWS Elemental MediaConvert with automated Lambda-driven orchestration and event-based notifications.",
+    description:
+      "Scalable video processing pipeline using AWS Elemental MediaConvert with automated Lambda-driven orchestration and event-based notifications.",
     thumbnail: "Video",
     shapes: {
       figures: [
@@ -219,7 +222,8 @@ aws-cw > aws-drift`
           width: 1100,
           height: 850,
           figureNumber: 1,
-          title: "Architecture: Automated Media Conversion & Delivery (VOD-101)",
+          title:
+            "Architecture: Automated Media Conversion & Delivery (VOD-101)",
           code: `Group: Ingestion & Trigger [color: "#34495e"] {
   s3-source [icon: "aws-s3", label: "S3 Source", desc: "Upload Video"]
   lambda-submit [icon: "aws-lambda", label: "Job Submitter", desc: "Metadata & Validation"]
@@ -255,14 +259,15 @@ s3-dest > lambda-complete
 aws-eb > lambda-complete
 
 lambda-complete > aws-sns
-s3-source > lambda-complete [dashed: true]`
-        }
-      ]
-    }
+s3-source > lambda-complete [dashed: true]`,
+        },
+      ],
+    },
   },
   {
     name: "High-Throughput Batch Processor",
-    description: "Multi-tier AWS architecture for massive data ingestion, queued processing, and distributed worker fleets within a secure VPC perimeter.",
+    description:
+      "Multi-tier AWS architecture for massive data ingestion, queued processing, and distributed worker fleets within a secure VPC perimeter.",
     thumbnail: "Zap",
     shapes: {
       figures: [
@@ -306,14 +311,15 @@ queue > worker1
 queue > worker2
 queue > worker3
 
-VPC SUBNET > analytics`
-        }
-      ]
-    }
+VPC SUBNET > analytics`,
+        },
+      ],
+    },
   },
   {
     name: "Open Source Triage Flow",
-    description: "Visual roadmap for open-source project issue management, handling bug reports, feature requests, and spec validation logic.",
+    description:
+      "Visual roadmap for open-source project issue management, handling bug reports, feature requests, and spec validation logic.",
     thumbnail: "GitBranch",
     shapes: {
       figures: [
@@ -358,14 +364,15 @@ feature > pkg
 pkg > spec
 pkg > def-pkg
 spec > finish
-def-pkg > finish`
-        }
-      ]
-    }
+def-pkg > finish`,
+        },
+      ],
+    },
   },
   {
     name: "Azure Cloud Service Mesh",
-    description: "Standard Azure enterprise web application template with integrated App Service, SQL database, and a full monitoring suite via Azure Monitor and Log Analytics.",
+    description:
+      "Standard Azure enterprise web application template with integrated App Service, SQL database, and a full monitoring suite via Azure Monitor and Log Analytics.",
     thumbnail: "Cloud",
     shapes: {
       figures: [
@@ -404,14 +411,15 @@ insights > diag
 insights > dash
 sql > monitor
 monitor > log
-log > alerts`
-        }
-      ]
-    }
+log > alerts`,
+        },
+      ],
+    },
   },
   {
     name: "GCP Real-time Task Pipeline",
-    description: "Google Cloud Platform serverless pipeline using Cloud Run orchestration, Cloud Tasks for scheduling, and global storage delivery.",
+    description:
+      "Google Cloud Platform serverless pipeline using Cloud Run orchestration, Cloud Tasks for scheduling, and global storage delivery.",
     thumbnail: "Activity",
     shapes: {
       figures: [
@@ -452,14 +460,15 @@ cdn > CLIENT
 
 run2 > store
 store > run3
-run2 <> ext [dashed: true]`
-        }
-      ]
-    }
+run2 <> ext [dashed: true]`,
+        },
+      ],
+    },
   },
   {
     name: "Azure Operational Intelligence",
-    description: "Deep observability architecture for Azure, focused on separating application metrics from global log analytics and diagnostic dashboards.",
+    description:
+      "Deep observability architecture for Azure, focused on separating application metrics from global log analytics and diagnostic dashboards.",
     thumbnail: "BarChart",
     shapes: {
       figures: [
@@ -496,14 +505,15 @@ app > sql
 insights > dash
 monitor > diag
 log > alerts
-request > app [via: "150,400"]`
-        }
-      ]
-    }
+request > app [via: "150,400"]`,
+        },
+      ],
+    },
   },
   {
     name: "AWS Global Transit Hub",
-    description: "Enterprise connectivity pattern using Transit Gateway to bridge multiple regional VPCs, on-prem networks, and shared service environments.",
+    description:
+      "Enterprise connectivity pattern using Transit Gateway to bridge multiple regional VPCs, on-prem networks, and shared service environments.",
     thumbnail: "Network",
     shapes: {
       figures: [
@@ -536,14 +546,15 @@ dc > dx
 dx > tgw
 tgw > app-prod
 tgw > ad-fs
-app-prod <> ad-fs [dashed: true, via: "600,700"]`
-        }
-      ]
-    }
+app-prod <> ad-fs [dashed: true, via: "600,700"]`,
+        },
+      ],
+    },
   },
   {
     name: "AWS Serverless MLOps",
-    description: "Automated machine learning lifecycle using SageMaker, Lambda, and Step Functions to orchestrate training, deployment, and monitoring.",
+    description:
+      "Automated machine learning lifecycle using SageMaker, Lambda, and Step Functions to orchestrate training, deployment, and monitoring.",
     thumbnail: "Brain",
     shapes: {
       figures: [
@@ -572,14 +583,15 @@ step-fn > sm-train
 sm-train > sm-model
 sm-model > sm-infer
 sm-infer > cw-metrics
-cw-metrics > step-fn [dashed: true, via: "200,700"]`
-        }
-      ]
-    }
+cw-metrics > step-fn [dashed: true, via: "200,700"]`,
+        },
+      ],
+    },
   },
   {
     name: "AWS Managed Kafka Real-time",
-    description: "High-throughput streaming architecture using AWS MSK for ingestion and Flink for real-time analytics and persistence.",
+    description:
+      "High-throughput streaming architecture using AWS MSK for ingestion and Flink for real-time analytics and persistence.",
     thumbnail: "Activity",
     shapes: {
       figures: [
@@ -607,14 +619,15 @@ Group: Sink Tier [color: "#27ae60"] {
 producers > msk
 msk > flink
 flink > ddb
-flink > s3-lake [via: "550,650"]`
-        }
-      ]
-    }
+flink > s3-lake [via: "550,650"]`,
+        },
+      ],
+    },
   },
   {
     name: "AWS Global Accelerator Web",
-    description: "Highly available global web application using Global Accelerator to route traffic to the nearest regional endpoint with sub-second failover.",
+    description:
+      "Highly available global web application using Global Accelerator to route traffic to the nearest regional endpoint with sub-second failover.",
     thumbnail: "Globe",
     shapes: {
       figures: [
@@ -644,14 +657,15 @@ users > ga
 ga > alb-1 [color: "#27ae60"]
 ga > alb-2 [color: "#f39c12", dashed: true]
 alb-1 > asg-1
-alb-2 > asg-2`
-        }
-      ]
-    }
+alb-2 > asg-2`,
+        },
+      ],
+    },
   },
   {
     name: "AWS WAF Perimeter Security",
-    description: "Comprehensive security edge architecture combining WAF, CloudFront, and Shield Advanced to protect against L7 and L3/4 attacks.",
+    description:
+      "Comprehensive security edge architecture combining WAF, CloudFront, and Shield Advanced to protect against L7 and L3/4 attacks.",
     thumbnail: "Shield",
     shapes: {
       figures: [
@@ -681,14 +695,15 @@ internet > shield
 shield > waf
 waf > cf
 cf > alb
-cf > s3-assets [via: "450,600"]`
-        }
-      ]
-    }
+cf > s3-assets [via: "450,600"]`,
+        },
+      ],
+    },
   },
   {
     name: "AWS Batch Image Processor",
-    description: "Event-driven asynchronous image processing pipeline using AWS Batch and Fargate to handle large-scale transformation jobs.",
+    description:
+      "Event-driven asynchronous image processing pipeline using AWS Batch and Fargate to handle large-scale transformation jobs.",
     thumbnail: "Image",
     shapes: {
       figures: [
@@ -714,14 +729,15 @@ s3-output [icon: "aws-s3", label: "Result Storage", desc: "Optimized Web version
 s3-upload > eb
 eb > batch-job
 batch-job > fargate
-fargate > s3-output`
-        }
-      ]
-    }
+fargate > s3-output`,
+        },
+      ],
+    },
   },
   {
     name: "AWS AppSync Real-time Hub",
-    description: "Modern GraphQL-centered architecture using AWS AppSync to provide real-time data sync across multiple storage backends.",
+    description:
+      "Modern GraphQL-centered architecture using AWS AppSync to provide real-time data sync across multiple storage backends.",
     thumbnail: "Zap",
     shapes: {
       figures: [
@@ -746,14 +762,15 @@ Group: Data Sources [color: "#27ae60"] {
 client <> appsync
 appsync > ddb
 appsync > aurora
-appsync > lb-proxy [via: "600,650"]`
-        }
-      ]
-    }
+appsync > lb-proxy [via: "600,650"]`,
+        },
+      ],
+    },
   },
   {
     name: "AWS Compliance Audit Store",
-    description: "Automated security and compliance auditing architecture using CloudTrail, Config, and Security Hub to maintain an enterprise audit trail.",
+    description:
+      "Automated security and compliance auditing architecture using CloudTrail, Config, and Security Hub to maintain an enterprise audit trail.",
     thumbnail: "Search",
     shapes: {
       figures: [
@@ -783,14 +800,15 @@ config > s3-audit
 ct > sec-hub
 config > sec-hub
 sec-hub > guard-duty [dashed: true]
-guard-duty > s3-audit [via: "550,650"]`
-        }
-      ]
-    }
+guard-duty > s3-audit [via: "550,650"]`,
+        },
+      ],
+    },
   },
   {
     name: "AWS Multi-tenant SaaS Bridge",
-    description: "Architecture for a multi-tenant SaaS platform using a shared application tier with tenant-isolated database environments.",
+    description:
+      "Architecture for a multi-tenant SaaS platform using a shared application tier with tenant-isolated database environments.",
     thumbnail: "Users",
     shapes: {
       figures: [
@@ -826,14 +844,15 @@ users > router
 router > workers
 workers > db1
 workers > db2
-workers > cache [via: "600,750"]`
-        }
-      ]
-    }
+workers > cache [via: "600,750"]`,
+        },
+      ],
+    },
   },
   {
     name: "Azure Enterprise Hub-and-Spoke",
-    description: "Centralized network management using a Hub VNet for security services and Spoke VNets for isolated application workloads.",
+    description:
+      "Centralized network management using a Hub VNet for security services and Spoke VNets for isolated application workloads.",
     thumbnail: "Network",
     shapes: {
       figures: [
@@ -870,14 +889,15 @@ er > gateway
 gateway > fw
 fw > web-tier
 fw > sql-tier
-web-tier <> sql-tier [dashed: true, via: "600,700"]`
-        }
-      ]
-    }
+web-tier <> sql-tier [dashed: true, via: "600,700"]`,
+        },
+      ],
+    },
   },
   {
     name: "Azure AKS Enterprise Lattice",
-    description: "Secure Kubernetes orchestration using Azure Kubernetes Service with managed identity, Key Vault integration, and Application Gateway WAF.",
+    description:
+      "Secure Kubernetes orchestration using Azure Kubernetes Service with managed identity, Key Vault integration, and Application Gateway WAF.",
     thumbnail: "Box",
     shapes: {
       figures: [
@@ -913,14 +933,15 @@ appgw > web-pod
 web-pod > api-pod
 api-pod <> kv [dashed: true]
 api-pod > cosmos
-api-pod > coredns [via: "500,600"]`
-        }
-      ]
-    }
+api-pod > coredns [via: "500,600"]`,
+        },
+      ],
+    },
   },
   {
     name: "Azure Data Factory ELT Lattice",
-    description: "Modern data engineering pipeline using Azure Data Factory for orchestration, Data Lake for storage, and Synapse Analytics for warehousing.",
+    description:
+      "Modern data engineering pipeline using Azure Data Factory for orchestration, Data Lake for storage, and Synapse Analytics for warehousing.",
     thumbnail: "Activity",
     shapes: {
       figures: [
@@ -949,14 +970,15 @@ sources > adf
 adf > adls
 adls > bricks
 bricks > synapse
-synapse > adf [dashed: true, via: "600,750"]`
-        }
-      ]
-    }
+synapse > adf [dashed: true, via: "600,750"]`,
+        },
+      ],
+    },
   },
   {
     name: "Azure Entra Hybrid Identity",
-    description: "Secure hybrid identity synchronization between on-premises Active Directory and Azure Active Directory (Microsoft Entra ID).",
+    description:
+      "Secure hybrid identity synchronization between on-premises Active Directory and Azure Active Directory (Microsoft Entra ID).",
     thumbnail: "Users",
     shapes: {
       figures: [
@@ -982,14 +1004,15 @@ Group: Microsoft Cloud [color: "#0078d4"] {
 local-ad > sync-server
 sync-server > entra
 entra > apps
-apps <> local-ad [dashed: true, via: "450,650"]`
-        }
-      ]
-    }
+apps <> local-ad [dashed: true, via: "450,650"]`,
+        },
+      ],
+    },
   },
   {
     name: "Azure IoT Central Mesh",
-    description: "Large-scale IoT monitoring architecture using Azure IoT Hub for device management and Stream Analytics for real-time telemetry processing.",
+    description:
+      "Large-scale IoT monitoring architecture using Azure IoT Hub for device management and Stream Analytics for real-time telemetry processing.",
     thumbnail: "Activity",
     shapes: {
       figures: [
@@ -1018,14 +1041,15 @@ devices > dps
 dps > iot-hub
 iot-hub > stream
 stream > cosmos
-cosmos > iot-hub [dashed: true, via: "550,700"]`
-        }
-      ]
-    }
+cosmos > iot-hub [dashed: true, via: "550,700"]`,
+        },
+      ],
+    },
   },
   {
     name: "Azure SQL Global Failover",
-    description: "Highly resilient database architecture using Azure SQL Managed Instance with Auto-Failover redundancy across multiple Azure regions.",
+    description:
+      "Highly resilient database architecture using Azure SQL Managed Instance with Auto-Failover redundancy across multiple Azure regions.",
     thumbnail: "Database",
     shapes: {
       figures: [
@@ -1052,14 +1076,15 @@ Group: Region B (Passive) [color: "#e67e22"] {
 users > tm
 tm > sql-primary
 sql-primary <> sql-secondary [dashed: true, label: "Replication"]
-tm > sql-secondary [color: "#c0392b", dashed: true]`
-        }
-      ]
-    }
+tm > sql-secondary [color: "#c0392b", dashed: true]`,
+        },
+      ],
+    },
   },
   {
     name: "Azure Media Delivery Lattice",
-    description: "End-to-end video streaming architecture using Azure Media Services for encoding and CDN for global low-latency content distribution.",
+    description:
+      "End-to-end video streaming architecture using Azure Media Services for encoding and CDN for global low-latency content distribution.",
     thumbnail: "Video",
     shapes: {
       figures: [
@@ -1085,14 +1110,15 @@ player [icon: "mobile", label: "End-User Player", desc: "DASH/HLS Client"]
 cam > ams
 ams <> storage
 ams > cdn
-cdn > player`
-        }
-      ]
-    }
+cdn > player`,
+        },
+      ],
+    },
   },
   {
     name: "Azure Governance Perimeter",
-    description: "Enterprise governance architecture using Azure Policy, Blueprints, and Management Groups to enforce compliance across all subscriptions.",
+    description:
+      "Enterprise governance architecture using Azure Policy, Blueprints, and Management Groups to enforce compliance across all subscriptions.",
     thumbnail: "Shield",
     shapes: {
       figures: [
@@ -1119,14 +1145,15 @@ Group: Subscription A [color: "#2980b9"] {
 auth > blueprint
 blueprint > policy
 policy > Subscription A
-Subscription A > rg1 [dashed: true]`
-        }
-      ]
-    }
+Subscription A > rg1 [dashed: true]`,
+        },
+      ],
+    },
   },
   {
     name: "Azure Site Recovery (DR)",
-    description: "Disaster recovery architecture using Azure Site Recovery to provide VM replication and automated orchestration between primary and secondary regions.",
+    description:
+      "Disaster recovery architecture using Azure Site Recovery to provide VM replication and automated orchestration between primary and secondary regions.",
     thumbnail: "RefreshCcw",
     shapes: {
       figures: [
@@ -1153,14 +1180,15 @@ Group: Target Region [color: "#e67e22"] {
 # Replication Flow
 vm-prod > asv
 asv > vm-dr
-disk-p <> disk-t [dashed: true, via: "600,750"]`
-        }
-      ]
-    }
+disk-p <> disk-t [dashed: true, via: "600,750"]`,
+        },
+      ],
+    },
   },
   {
     name: "Azure Virtual Desktop Hub",
-    description: "Modern remote work architecture using Azure Virtual Desktop (AVD) with FSLogix profile storage for scalable, high-performance virtual workstation fleets.",
+    description:
+      "Modern remote work architecture using Azure Virtual Desktop (AVD) with FSLogix profile storage for scalable, high-performance virtual workstation fleets.",
     thumbnail: "Monitor",
     shapes: {
       figures: [
@@ -1188,14 +1216,15 @@ Group: Profile Layer [color: "#7f8c8d"] {
 client > gateway
 gateway > pool
 pool > fslogix
-pool > netapp [via: "700,650"]`
-        }
-      ]
-    }
+pool > netapp [via: "700,650"]`,
+        },
+      ],
+    },
   },
   {
     name: "GCP GKE Autopilot Mesh",
-    description: "Advanced Kubernetes orchestration on Google Cloud using GKE Autopilot with managed Istio service mesh, Cloud Armor, and Cloud SQL.",
+    description:
+      "Advanced Kubernetes orchestration on Google Cloud using GKE Autopilot with managed Istio service mesh, Cloud Armor, and Cloud SQL.",
     thumbnail: "Box",
     shapes: {
       figures: [
@@ -1233,14 +1262,15 @@ armor > glb
 glb > web-deploy
 web-deploy > api-deploy
 api-deploy > sql
-api-deploy <> secrets [dashed: true, via: "550,700"]`
-        }
-      ]
-    }
+api-deploy <> secrets [dashed: true, via: "550,700"]`,
+        },
+      ],
+    },
   },
   {
     name: "GCP BigQuery Data Warehouse",
-    description: "Enterprise-scale data warehousing architecture using Google BigQuery for analytics, Dataflow for ETL, and Pub/Sub for real-time ingestion.",
+    description:
+      "Enterprise-scale data warehousing architecture using Google BigQuery for analytics, Dataflow for ETL, and Pub/Sub for real-time ingestion.",
     thumbnail: "Database",
     shapes: {
       figures: [
@@ -1271,14 +1301,15 @@ pubsub > dataflow
 gcs-raw > dataflow
 dataflow > bq
 bq > looker
-bq <> gcs-raw [dashed: true, via: "600,650"]`
-        }
-      ]
-    }
+bq <> gcs-raw [dashed: true, via: "600,650"]`,
+        },
+      ],
+    },
   },
   {
     name: "GCP Cloud Run Event-Driven",
-    description: "Serverless reactive architecture using Eventarc to trigger Cloud Run services in response to Google Cloud Storage events and Pub/Sub messages.",
+    description:
+      "Serverless reactive architecture using Eventarc to trigger Cloud Run services in response to Google Cloud Storage events and Pub/Sub messages.",
     thumbnail: "Zap",
     shapes: {
       figures: [
@@ -1307,14 +1338,15 @@ gcs-upload > arc
 arc > run-proc
 run-proc > firestore
 run-proc > gcs-final
-firestore <> gcs-upload [dashed: true, via: "550,650"]`
-        }
-      ]
-    }
+firestore <> gcs-upload [dashed: true, via: "550,650"]`,
+        },
+      ],
+    },
   },
   {
     name: "GCP Anthos Hybrid Mesh",
-    description: "Multicloud and hybrid cloud architecture using Anthos to manage Kubernetes clusters across on-premises and Google Cloud environments.",
+    description:
+      "Multicloud and hybrid cloud architecture using Anthos to manage Kubernetes clusters across on-premises and Google Cloud environments.",
     thumbnail: "Network",
     shapes: {
       figures: [
@@ -1342,14 +1374,15 @@ on-prem-gke > interconnect
 interconnect > cloud-gke
 asm > on-prem-gke [dashed: true]
 asm > cloud-gke [dashed: true]
-cloud-gke <> on-prem-gke [via: "600,750"]`
-        }
-      ]
-    }
+cloud-gke <> on-prem-gke [via: "600,750"]`,
+        },
+      ],
+    },
   },
   {
     name: "GCP Vertex AI Pipeline",
-    description: "Full-lifecycle ML architecture on Google Cloud using Vertex AI for model training, metadata tracking, and real-time inference.",
+    description:
+      "Full-lifecycle ML architecture on Google Cloud using Vertex AI for model training, metadata tracking, and real-time inference.",
     thumbnail: "Brain",
     shapes: {
       figures: [
@@ -1376,14 +1409,15 @@ notebooks > train
 train > registry
 registry > infer
 infer <> gcs-data [dashed: true]
-train <> gcs-data [via: "550,650"]`
-        }
-      ]
-    }
+train <> gcs-data [via: "550,650"]`,
+        },
+      ],
+    },
   },
   {
     name: "GCP Apigee API Gateway",
-    description: "Enterprise API management architecture using Apigee to provide security, traffic control, and analytics for backend microservices.",
+    description:
+      "Enterprise API management architecture using Apigee to provide security, traffic control, and analytics for backend microservices.",
     thumbnail: "Link",
     shapes: {
       figures: [
@@ -1411,14 +1445,15 @@ Group: Backend [color: "#27ae60"] {
 client > proxy
 proxy > run1
 proxy > run2
-proxy > analytics [dashed: true, via: "500,600"]`
-        }
-      ]
-    }
+proxy > analytics [dashed: true, via: "500,600"]`,
+        },
+      ],
+    },
   },
   {
     name: "GCP Cloud Spanner Global",
-    description: "Massively scalable, globally distributed relational database architecture using Cloud Spanner for active-active multi-region replication.",
+    description:
+      "Massively scalable, globally distributed relational database architecture using Cloud Spanner for active-active multi-region replication.",
     thumbnail: "Database",
     shapes: {
       figures: [
@@ -1445,14 +1480,15 @@ lb > span-na
 lb > span-eu
 lb > span-as
 span-na <> span-eu [dashed: true]
-span-eu <> span-as [dashed: true]`
-        }
-      ]
-    }
+span-eu <> span-as [dashed: true]`,
+        },
+      ],
+    },
   },
   {
     name: "GCP Cloud Functions OCR",
-    description: "Asynchronous image processing pipeline using Cloud Functions and the Cloud Vision API for automated text extraction and indexing.",
+    description:
+      "Asynchronous image processing pipeline using Cloud Functions and the Cloud Vision API for automated text extraction and indexing.",
     thumbnail: "Search",
     shapes: {
       figures: [
@@ -1480,14 +1516,15 @@ Group: Final [color: "#27ae60"] {
 img-s3 > cf-trigger
 cf-trigger > vision-api
 vision-api > firestore
-vision-api > pubsub [via: "500,600"]`
-        }
-      ]
-    }
+vision-api > pubsub [via: "500,600"]`,
+        },
+      ],
+    },
   },
   {
     name: "GCP VPC Service Perimeter",
-    description: "Zero Trust security architecture using VPC Service Controls to prevent data exfiltration from Google Cloud storage and analytics services.",
+    description:
+      "Zero Trust security architecture using VPC Service Controls to prevent data exfiltration from Google Cloud storage and analytics services.",
     thumbnail: "Shield",
     shapes: {
       figures: [
@@ -1514,14 +1551,15 @@ vpc-net > gcs
 users > bq
 gcs <> bq [dashed: true]
 # block
-Internet > Restricted Perimeter [dashed: true, color: "#e74c3c"]`
-        }
-      ]
-    }
+Internet > Restricted Perimeter [dashed: true, color: "#e74c3c"]`,
+        },
+      ],
+    },
   },
   {
     name: "GCP Firebase Live Lattice",
-    description: "Modern real-time mobile backend architecture using Firebase Authentication, Firestore, and Cloud Functions to power live-syncing applications.",
+    description:
+      "Modern real-time mobile backend architecture using Firebase Authentication, Firestore, and Cloud Functions to power live-syncing applications.",
     thumbnail: "Smartphone",
     shapes: {
       figures: [
@@ -1552,14 +1590,15 @@ app > auth
 firestore > functions
 functions > fcm
 fcm > app
-app > analytics [via: "550,750"]`
-        }
-      ]
-    }
+app > analytics [via: "550,750"]`,
+        },
+      ],
+    },
   },
   {
     name: "Stripe E-commerce Pipeline",
-    description: "Standard secure payment integration architecture using Stripe Checkout, Webhooks, and asynchronous order fulfillment services.",
+    description:
+      "Standard secure payment integration architecture using Stripe Checkout, Webhooks, and asynchronous order fulfillment services.",
     thumbnail: "CreditCard",
     shapes: {
       figures: [
@@ -1588,14 +1627,15 @@ users > checkout
 checkout > webhook
 webhook > db
 api > checkout
-db <> api [dashed: true, via: "500,600"]`
-        }
-      ]
-    }
+db <> api [dashed: true, via: "500,600"]`,
+        },
+      ],
+    },
   },
   {
     name: "Auth0 Modern Auth Grid",
-    description: "Enterprise-grade authentication architecture using Auth0 to manage identity, MFA, and SSO across single-page applications and secure APIs.",
+    description:
+      "Enterprise-grade authentication architecture using Auth0 to manage identity, MFA, and SSO across single-page applications and secure APIs.",
     thumbnail: "Lock",
     shapes: {
       figures: [
@@ -1622,14 +1662,15 @@ client <> auth0
 client > api-gateway
 api-gateway > private-api
 private-api <> db
-auth0 <> db [dashed: true, via: "550,700"]`
-        }
-      ]
-    }
+auth0 <> db [dashed: true, via: "550,700"]`,
+        },
+      ],
+    },
   },
   {
     name: "Pusher Real-time Chat Mesh",
-    description: "Real-time communication architecture using Pusher Channels for WebSocket-based broadcasting and a reactive message queue for persistence.",
+    description:
+      "Real-time communication architecture using Pusher Channels for WebSocket-based broadcasting and a reactive message queue for persistence.",
     thumbnail: "MessageSquare",
     shapes: {
       figures: [
@@ -1657,14 +1698,15 @@ users > chat-api
 chat-api > mq
 mq > pusher
 mq > db
-db <> chat-api [dashed: true, via: "525,650"]`
-        }
-      ]
-    }
+db <> chat-api [dashed: true, via: "525,650"]`,
+        },
+      ],
+    },
   },
   {
     name: "OpenSearch Log Analytics",
-    description: "Scalable log analysis architecture using Fluent Bit for collection, Kinesis for buffering, and OpenSearch (Elasticsearch) for searching and visualization.",
+    description:
+      "Scalable log analysis architecture using Fluent Bit for collection, Kinesis for buffering, and OpenSearch (Elasticsearch) for searching and visualization.",
     thumbnail: "Terminal",
     shapes: {
       figures: [
@@ -1693,14 +1735,15 @@ fleet > fluent
 fluent > kinesis
 kinesis > opensearch
 opensearch > dashboards
-dashboards <> fleet [dashed: true, via: "575,700"]`
-        }
-      ]
-    }
+dashboards <> fleet [dashed: true, via: "575,700"]`,
+        },
+      ],
+    },
   },
   {
     name: "Headless CMS Content Lattice",
-    description: "Modern web content architecture using a headless CMS for content management and an automated build pipeline for static site generation.",
+    description:
+      "Modern web content architecture using a headless CMS for content management and an automated build pipeline for static site generation.",
     thumbnail: "Layout",
     shapes: {
       figures: [
@@ -1727,14 +1770,15 @@ editor > cms
 cms > vercel
 github > vercel
 vercel > cdn
-cdn > editor [dashed: true]`
-        }
-      ]
-    }
+cdn > editor [dashed: true]`,
+        },
+      ],
+    },
   },
   {
     name: "Real-time Gaming Mesh",
-    description: "Highly optimized low-latency architecture for online gaming, featuring matchmaking, dedicated game instances, and sub-second state sync.",
+    description:
+      "Highly optimized low-latency architecture for online gaming, featuring matchmaking, dedicated game instances, and sub-second state sync.",
     thumbnail: "Gamepad",
     shapes: {
       figures: [
@@ -1766,14 +1810,15 @@ match > fleet
 player <> fleet
 fleet <> redis
 fleet > stats
-stats <> lobby [dashed: true, via: "600,750"]`
-        }
-      ]
-    }
+stats <> lobby [dashed: true, via: "600,750"]`,
+        },
+      ],
+    },
   },
   {
     name: "AdTech Real-time Bidder",
-    description: "Massively scalable AdTech architecture capable of processing millions of bids per second with ultra-low latency profile lookups.",
+    description:
+      "Massively scalable AdTech architecture capable of processing millions of bids per second with ultra-low latency profile lookups.",
     thumbnail: "Activity",
     shapes: {
       figures: [
@@ -1802,14 +1847,15 @@ exchange <> bidder-fleet
 bidder-fleet <> profiles
 bidder-fleet > kafka
 kafka > lake
-lake <> profiles [dashed: true, via: "600,650"]`
-        }
-      ]
-    }
+lake <> profiles [dashed: true, via: "600,650"]`,
+        },
+      ],
+    },
   },
   {
     name: "Healthcare Patient Portal",
-    description: "HIPAA-compliant healthcare architecture using FHIR APIs, encrypted storage, and robust auditing for sensitive patient records.",
+    description:
+      "HIPAA-compliant healthcare architecture using FHIR APIs, encrypted storage, and robust auditing for sensitive patient records.",
     thumbnail: "Stethoscope",
     shapes: {
       figures: [
@@ -1838,14 +1884,15 @@ patient <> fhir-api
 fhir-api <> kms
 fhir-api > phi-db
 phi-db > audit-s3
-patient > audit-s3 [dashed: true, via: "550,700"]`
-        }
-      ]
-    }
+patient > audit-s3 [dashed: true, via: "550,700"]`,
+        },
+      ],
+    },
   },
   {
     name: "Vehicle Telematics Hub",
-    description: "IoT architecture for real-time vehicle telematics, processing GPS coordinates, engine health, and driver behavior at scale.",
+    description:
+      "IoT architecture for real-time vehicle telematics, processing GPS coordinates, engine health, and driver behavior at scale.",
     thumbnail: "Car",
     shapes: {
       figures: [
@@ -1874,14 +1921,15 @@ car > iot-core
 iot-core > stream
 stream > geo-db
 stream > map-api
-geo-db <> car [dashed: true]`
-        }
-      ]
-    }
+geo-db <> car [dashed: true]`,
+        },
+      ],
+    },
   },
   {
     name: "Supply Chain Blockchain",
-    description: "Transparency-focused architecture for supply chain tracking, using a private blockchain to record immutable provenance and custody events.",
+    description:
+      "Transparency-focused architecture for supply chain tracking, using a private blockchain to record immutable provenance and custody events.",
     thumbnail: "Package",
     shapes: {
       figures: [
@@ -1911,10 +1959,10 @@ node-peer > chaincode
 chaincode > node-peer [dashed: true]
 node-peer > api
 api > ui
-ui <> sensor [dashed: true, via: "575,700"]`
-        }
-      ]
-    }
+ui <> sensor [dashed: true, via: "575,700"]`,
+        },
+      ],
+    },
   },
   {
     name: "Modern E-Commerce Flow",
@@ -1970,9 +2018,9 @@ bus > ship [routing: "elbow"]
 bus > notify [routing: "elbow"]
 
 # Notification feedback
-notify > web [dashed: true, startArrow: true, endArrow: false]`
-        }
-      ]
-    }
-  }
+notify > web [dashed: true, startArrow: true, endArrow: false]`,
+        },
+      ],
+    },
+  },
 ];

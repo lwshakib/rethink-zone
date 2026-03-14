@@ -402,7 +402,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
   const resolveTool = useCallback(
     (ev?: { ctrlKey?: boolean; metaKey?: boolean }) => {
-      if (ev?.ctrlKey || ev?.metaKey || isModifierPressed) return "Select" as Tool;
+      if (ev?.ctrlKey || ev?.metaKey || isModifierPressed)
+        return "Select" as Tool;
       if (isSpacePanning) return "Hand" as Tool;
       return activeTool;
     },
@@ -687,12 +688,12 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     (template: DiagramTemplate, centerX: number, centerY: number) => {
       // Create a shallow copy of the shapes to avoid mutating the original template catalog
       const shapes = { ...template.shapes };
-      
+
       // Parse DSL for any figures that contain code
-      (shapes.figures || []).forEach(f => {
+      (shapes.figures || []).forEach((f) => {
         if (f.code) {
           const dslShapes = parseDSL(f.code, iconRegistry) as any;
-          
+
           // Auto-size the parent figure to fit its children
           f.width = dslShapes.width + 100;
           f.height = dslShapes.height + 120;
@@ -703,35 +704,63 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           const offsetY = (f.y || 0) + 70;
           const groupId = f.id;
 
-          const offsetShape = (s: any) => ({ ...s, x: (s.x || 0) + offsetX, y: (s.y || 0) + offsetY, groupId });
-          const offsetLine = (l: any) => ({ 
-            ...l, 
-            x1: (l.x1 || 0) + offsetX, y1: (l.y1 || 0) + offsetY,
-            x2: (l.x2 || 0) + offsetX, y2: (l.y2 || 0) + offsetY,
-            groupId
+          const offsetShape = (s: any) => ({
+            ...s,
+            x: (s.x || 0) + offsetX,
+            y: (s.y || 0) + offsetY,
+            groupId,
+          });
+          const offsetLine = (l: any) => ({
+            ...l,
+            x1: (l.x1 || 0) + offsetX,
+            y1: (l.y1 || 0) + offsetY,
+            x2: (l.x2 || 0) + offsetX,
+            y2: (l.y2 || 0) + offsetY,
+            groupId,
           });
 
           if (dslShapes.rectangles) {
-            shapes.rectangles = [...(shapes.rectangles || []), ...dslShapes.rectangles.map(offsetShape)];
+            shapes.rectangles = [
+              ...(shapes.rectangles || []),
+              ...dslShapes.rectangles.map(offsetShape),
+            ];
           }
           if (dslShapes.images) {
-            shapes.images = [...(shapes.images || []), ...dslShapes.images.map(offsetShape)];
+            shapes.images = [
+              ...(shapes.images || []),
+              ...dslShapes.images.map(offsetShape),
+            ];
           }
           if (dslShapes.texts) {
-            shapes.texts = [...(shapes.texts || []), ...dslShapes.texts.map(offsetShape)];
+            shapes.texts = [
+              ...(shapes.texts || []),
+              ...dslShapes.texts.map(offsetShape),
+            ];
           }
           if (dslShapes.figures) {
-            shapes.figures = [...(shapes.figures || []), ...dslShapes.figures.map(offsetShape)];
+            shapes.figures = [
+              ...(shapes.figures || []),
+              ...dslShapes.figures.map(offsetShape),
+            ];
           }
           if (dslShapes.lines) {
-            shapes.lines = [...(shapes.lines || []), ...dslShapes.lines.map(offsetLine)];
+            shapes.lines = [
+              ...(shapes.lines || []),
+              ...dslShapes.lines.map(offsetLine),
+            ];
           }
           if (dslShapes.arrows) {
-            shapes.arrows = [...(shapes.arrows || []), ...dslShapes.arrows.map(offsetLine)];
+            shapes.arrows = [
+              ...(shapes.arrows || []),
+              ...dslShapes.arrows.map(offsetLine),
+            ];
           }
           if (dslShapes.connectors) {
             // Connectors shapeIds are already localized within the DSL parse
-            shapes.connectors = [...(shapes.connectors || []), ...dslShapes.connectors];
+            shapes.connectors = [
+              ...(shapes.connectors || []),
+              ...dslShapes.connectors,
+            ];
           }
         }
       });
@@ -806,7 +835,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
       const newFigures = (shapes.figures || []).map(processShape);
       const newCodes = (shapes.codes || []).map(processShape);
-      const newRects = (shapes.rectangles || []).map(s => {
+      const newRects = (shapes.rectangles || []).map((s) => {
         const res = processShape(s);
         if (res.groupId) res.groupId = idMap.get(res.groupId) || res.groupId;
         return res;
@@ -818,32 +847,32 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         if (res.groupId) res.groupId = idMap.get(res.groupId) || res.groupId;
         return res;
       });
-      const newPolys = (shapes.polygons || []).map(s => {
+      const newPolys = (shapes.polygons || []).map((s) => {
         const res = processShape(s);
         if (res.groupId) res.groupId = idMap.get(res.groupId) || res.groupId;
         return res;
       });
-      const newImages = (shapes.images || []).map(s => {
+      const newImages = (shapes.images || []).map((s) => {
         const res = processShape(s);
         if (res.groupId) res.groupId = idMap.get(res.groupId) || res.groupId;
         return res;
       });
-      const newTexts = (shapes.texts || []).map(s => {
+      const newTexts = (shapes.texts || []).map((s) => {
         const res = processShape(s);
         if (res.groupId) res.groupId = idMap.get(res.groupId) || res.groupId;
         return res;
       });
-      const newFrames = (shapes.frames || []).map(s => {
+      const newFrames = (shapes.frames || []).map((s) => {
         const res = processShape(s);
         if (res.groupId) res.groupId = idMap.get(res.groupId) || res.groupId;
         return res;
       });
-      const newLines = (shapes.lines || []).map(s => {
+      const newLines = (shapes.lines || []).map((s) => {
         const res = processLine(s);
         if (res.groupId) res.groupId = idMap.get(res.groupId) || res.groupId;
         return res;
       });
-      const newArrows = (shapes.arrows || []).map(s => {
+      const newArrows = (shapes.arrows || []).map((s) => {
         const res = processLine(s);
         if (res.groupId) res.groupId = idMap.get(res.groupId) || res.groupId;
         return res;
@@ -1361,33 +1390,33 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             const f = figures[i];
             const headerHeight = 26 / zoom;
             const headerGap = 8 / zoom;
-            
+
             // Hit Test Body
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const inBody = (
+            const inBody =
               point.x >= f.x &&
               point.x <= f.x + f.width &&
               point.y >= f.y &&
-              point.y <= f.y + f.height
-            );
-            
+              point.y <= f.y + f.height;
+
             // Hit Test Header
-            const inHeader = (
+            const inHeader =
               point.x >= f.x &&
-              point.x <= f.x + f.width && 
+              point.x <= f.x + f.width &&
               point.y >= f.y - headerHeight - headerGap &&
-              point.y <= f.y - headerGap
-            );
+              point.y <= f.y - headerGap;
 
             // Hit Test Body Perimeter (Borders) - 10px tolerance
             const bodyTol = 10 / zoom;
-            const inBodyBorder = (
-              (Math.abs(point.x - f.x) <= bodyTol || Math.abs(point.x - (f.x + f.width)) <= bodyTol) &&
-              point.y >= f.y - bodyTol && point.y <= f.y + f.height + bodyTol
-            ) || (
-              (Math.abs(point.y - f.y) <= bodyTol || Math.abs(point.y - (f.y + f.height)) <= bodyTol) &&
-              point.x >= f.x - bodyTol && point.x <= f.x + f.width + bodyTol
-            );
+            const inBodyBorder =
+              ((Math.abs(point.x - f.x) <= bodyTol ||
+                Math.abs(point.x - (f.x + f.width)) <= bodyTol) &&
+                point.y >= f.y - bodyTol &&
+                point.y <= f.y + f.height + bodyTol) ||
+              ((Math.abs(point.y - f.y) <= bodyTol ||
+                Math.abs(point.y - (f.y + f.height)) <= bodyTol) &&
+                point.x >= f.x - bodyTol &&
+                point.x <= f.x + f.width + bodyTol);
 
             if (inHeader || inBodyBorder) return i;
 
@@ -1711,7 +1740,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             const inY = point.y >= by - tol && point.y <= by + bh + tol;
 
             if (inX && inY && (onLeft || onRight || onTop || onBottom)) {
-              // User clicked the padded border of the current selection. 
+              // User clicked the padded border of the current selection.
               // We pick the first selected item to ensure the resizing logic below is triggered.
               picked = selectedShape[0];
             }
@@ -1921,7 +1950,12 @@ export const useCanvasInteraction = (props: InteractionProps) => {
               { x: r.x - margin, y: r.y - margin, sx: -1, sy: -1 },
               { x: r.x + r.width + margin, y: r.y - margin, sx: 1, sy: -1 },
               { x: r.x - margin, y: r.y + r.height + margin, sx: -1, sy: 1 },
-              { x: r.x + r.width + margin, y: r.y + r.height + margin, sx: 1, sy: 1 },
+              {
+                x: r.x + r.width + margin,
+                y: r.y + r.height + margin,
+                sx: 1,
+                sy: 1,
+              },
             ];
             const hitCorner = corners.find(
               (c) =>
@@ -1973,7 +2007,12 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             if (!c) return;
             const hs = 12 / zoom;
             const corners = [
-              { x: c.x - c.rx - margin, y: c.y - c.ry - margin, sx: -1, sy: -1 },
+              {
+                x: c.x - c.rx - margin,
+                y: c.y - c.ry - margin,
+                sx: -1,
+                sy: -1,
+              },
               { x: c.x + c.rx + margin, y: c.y - c.ry - margin, sx: 1, sy: -1 },
               { x: c.x - c.rx - margin, y: c.y + c.ry + margin, sx: -1, sy: 1 },
               { x: c.x + c.rx + margin, y: c.y + c.ry + margin, sx: 1, sy: 1 },
@@ -2090,7 +2129,12 @@ export const useCanvasInteraction = (props: InteractionProps) => {
               { x: t.x - margin, y: t.y - margin, sx: -1, sy: -1 },
               { x: t.x + t.width + margin, y: t.y - margin, sx: 1, sy: -1 },
               { x: t.x - margin, y: t.y + t.height + margin, sx: -1, sy: 1 },
-              { x: t.x + t.width + margin, y: t.y + t.height + margin, sx: 1, sy: 1 },
+              {
+                x: t.x + t.width + margin,
+                y: t.y + t.height + margin,
+                sx: 1,
+                sy: 1,
+              },
             ];
             const hitCorner = corners.find(
               (c) =>
@@ -2145,7 +2189,12 @@ export const useCanvasInteraction = (props: InteractionProps) => {
               { x: f.x - margin, y: f.y - margin, sx: -1, sy: -1 },
               { x: f.x + f.width + margin, y: f.y - margin, sx: 1, sy: -1 },
               { x: f.x - margin, y: f.y + f.height + margin, sx: -1, sy: 1 },
-              { x: f.x + f.width + margin, y: f.y + f.height + margin, sx: 1, sy: 1 },
+              {
+                x: f.x + f.width + margin,
+                y: f.y + f.height + margin,
+                sx: 1,
+                sy: 1,
+              },
             ];
             const hitCorner = corners.find(
               (c) =>
@@ -2200,7 +2249,12 @@ export const useCanvasInteraction = (props: InteractionProps) => {
               { x: p.x - margin, y: p.y - margin, sx: -1, sy: -1 },
               { x: p.x + p.width + margin, y: p.y - margin, sx: 1, sy: -1 },
               { x: p.x - margin, y: p.y + p.height + margin, sx: -1, sy: 1 },
-              { x: p.x + p.width + margin, y: p.y + p.height + margin, sx: 1, sy: 1 },
+              {
+                x: p.x + p.width + margin,
+                y: p.y + p.height + margin,
+                sx: 1,
+                sy: 1,
+              },
             ];
             const hitCorner = corners.find(
               (c) =>
@@ -2255,7 +2309,12 @@ export const useCanvasInteraction = (props: InteractionProps) => {
               { x: p.x - margin, y: p.y - margin, sx: -1, sy: -1 },
               { x: p.x + p.width + margin, y: p.y - margin, sx: 1, sy: -1 },
               { x: p.x - margin, y: p.y + p.height + margin, sx: -1, sy: 1 },
-              { x: p.x + p.width + margin, y: p.y + p.height + margin, sx: 1, sy: 1 },
+              {
+                x: p.x + p.width + margin,
+                y: p.y + p.height + margin,
+                sx: 1,
+                sy: 1,
+              },
             ];
             const hitCorner = corners.find(
               (c) =>
@@ -2310,7 +2369,12 @@ export const useCanvasInteraction = (props: InteractionProps) => {
               { x: p.x - margin, y: p.y - margin, sx: -1, sy: -1 },
               { x: p.x + p.width + margin, y: p.y - margin, sx: 1, sy: -1 },
               { x: p.x - margin, y: p.y + p.height + margin, sx: -1, sy: 1 },
-              { x: p.x + p.width + margin, y: p.y + p.height + margin, sx: 1, sy: 1 },
+              {
+                x: p.x + p.width + margin,
+                y: p.y + p.height + margin,
+                sx: 1,
+                sy: 1,
+              },
             ];
             const hitCorner = corners.find(
               (c) =>
@@ -2575,12 +2639,10 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         isDrawingPathRef.current ||
         isDrawingFrameRef.current ||
         !!pendingConnector;
-      
+
       if (currentlyDragging !== isDragging) {
         setIsDragging(currentlyDragging);
       }
-      
-      const isDraggingNow = currentlyDragging;
 
       // Cursor Styling & Hover State
       let nextCursor = "default";
@@ -2601,39 +2663,43 @@ export const useCanvasInteraction = (props: InteractionProps) => {
       } else if (tool !== "Select") {
         nextCursor = "crosshair";
       } else if (dragModeRef.current !== "none") {
-        if (dragModeRef.current === "drag-connector-segment" && dragConnectorSegmentRef.current) {
+        if (
+          dragModeRef.current === "drag-connector-segment" &&
+          dragConnectorSegmentRef.current
+        ) {
           const drag = dragConnectorSegmentRef.current;
           const dx = point.x - pointerStartRef.current.x;
           const dy = point.y - pointerStartRef.current.y;
           const connector = connectors[drag.connectorIndex];
 
           // 1. Initial movement logic: Apply dx/dy to the segment being dragged
-          const newPath = drag.initialPath.map(p => ({ ...p }));
+          const newPath = drag.initialPath.map((p) => ({ ...p }));
           const i = drag.segmentIndex;
           if (drag.isHorizontal) {
             newPath[i].y += dy;
-            newPath[i+1].y += dy;
+            newPath[i + 1].y += dy;
           } else {
             newPath[i].x += dx;
-            newPath[i+1].x += dx;
+            newPath[i + 1].x += dx;
           }
 
           // 2. Fix Start Anchor (From) - Ensure it stays rooted to the shape
-          if (connector.from.kind !== 'point') {
+          if (connector.from.kind !== "point") {
             const fromDir = getAnchorDir(connector.from.anchor);
             const p0_orig = drag.initialPath[0];
             const p1_moved = newPath[1];
-            
+
             // Check if this move broke orthogonality with the start protrusion
-            const isPerp = (fromDir.x !== 0 && Math.abs(p1_moved.y - p0_orig.y) > 0.5) ||
-                           (fromDir.y !== 0 && Math.abs(p1_moved.x - p0_orig.x) > 0.5);
-            
+            const isPerp =
+              (fromDir.x !== 0 && Math.abs(p1_moved.y - p0_orig.y) > 0.5) ||
+              (fromDir.y !== 0 && Math.abs(p1_moved.x - p0_orig.x) > 0.5);
+
             if (isPerp) {
               const p1_orig = { ...drag.initialPath[1] };
               const p_elbow = { x: p1_orig.x, y: p1_moved.y };
               if (fromDir.y !== 0) {
-                 p_elbow.x = p1_moved.x;
-                 p_elbow.y = p1_orig.y;
+                p_elbow.x = p1_moved.x;
+                p_elbow.y = p1_orig.y;
               }
               newPath[0] = { ...p0_orig };
               newPath.splice(1, 0, p1_orig, p_elbow);
@@ -2645,54 +2711,70 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           }
 
           // 3. Fix End Anchor (To) - Ensure it stays rooted to the shape
-          if (connector.to.kind !== 'point') {
+          if (connector.to.kind !== "point") {
             const toDir = getAnchorDir(connector.to.anchor);
             const last = newPath.length - 1;
             const plast_orig = drag.initialPath[drag.initialPath.length - 1];
             const p_penult_moved = newPath[last - 1];
-            
-            const isPerp = (toDir.x !== 0 && Math.abs(p_penult_moved.y - plast_orig.y) > 0.5) ||
-                           (toDir.y !== 0 && Math.abs(p_penult_moved.x - plast_orig.x) > 0.5);
-            
+
+            const isPerp =
+              (toDir.x !== 0 &&
+                Math.abs(p_penult_moved.y - plast_orig.y) > 0.5) ||
+              (toDir.y !== 0 &&
+                Math.abs(p_penult_moved.x - plast_orig.x) > 0.5);
+
             if (isPerp) {
-              const p_penult_orig = { ...drag.initialPath[drag.initialPath.length - 2] };
+              const p_penult_orig = {
+                ...drag.initialPath[drag.initialPath.length - 2],
+              };
               const p_elbow = { x: p_penult_orig.x, y: p_penult_moved.y };
               if (toDir.y !== 0) {
-                 p_elbow.x = p_penult_moved.x;
-                 p_elbow.y = p_penult_orig.y;
+                p_elbow.x = p_penult_moved.x;
+                p_elbow.y = p_penult_orig.y;
               }
               newPath[last] = { ...plast_orig };
               newPath.splice(last, 0, p_elbow, p_penult_orig);
             } else {
               newPath[last] = { ...plast_orig };
-              if (toDir.x !== 0) newPath[last-1].y = newPath[last].y;
-              else if (toDir.y !== 0) newPath[last-1].x = newPath[last].x;
+              if (toDir.x !== 0) newPath[last - 1].y = newPath[last].y;
+              else if (toDir.y !== 0) newPath[last - 1].x = newPath[last].x;
             }
           }
 
-          const updateAnchorFromPath = (anchor: any, pt: {x:number, y:number}) => {
-             if (anchor.kind === 'point') return { ...anchor, point: pt };
-             const bounds = getShapeBounds(anchor);
-             if (!bounds) return anchor;
-             let percent = anchor.percent || 0.5;
-             if (anchor.anchor === 'left' || anchor.anchor === 'right') {
-                percent = (pt.y - bounds.y) / bounds.height;
-             } else if (anchor.anchor === 'top' || anchor.anchor === 'bottom') {
-                percent = (pt.x - bounds.x) / bounds.width;
-             }
-             return { ...anchor, percent: Math.max(0, Math.min(1, percent)) };
+          const updateAnchorFromPath = (
+            anchor: any,
+            pt: { x: number; y: number }
+          ) => {
+            if (anchor.kind === "point") return { ...anchor, point: pt };
+            const bounds = getShapeBounds(anchor);
+            if (!bounds) return anchor;
+            let percent = anchor.percent || 0.5;
+            if (anchor.anchor === "left" || anchor.anchor === "right") {
+              percent = (pt.y - bounds.y) / bounds.height;
+            } else if (anchor.anchor === "top" || anchor.anchor === "bottom") {
+              percent = (pt.x - bounds.x) / bounds.width;
+            }
+            return { ...anchor, percent: Math.max(0, Math.min(1, percent)) };
           };
 
           const newFrom = updateAnchorFromPath(connector.from, newPath[0]);
-          const newTo = updateAnchorFromPath(connector.to, newPath[newPath.length-1]);
-          
-          const startIndex = (connector.from.kind !== 'point') ? 1 : 0;
-          const endIndex = (connector.to.kind !== 'point') ? newPath.length - 1 : newPath.length;
+          const newTo = updateAnchorFromPath(
+            connector.to,
+            newPath[newPath.length - 1]
+          );
+
+          const startIndex = connector.from.kind !== "point" ? 1 : 0;
+          const endIndex =
+            connector.to.kind !== "point" ? newPath.length - 1 : newPath.length;
           const waypoints = newPath.slice(startIndex, endIndex);
-          
-          setConnectors(prev => prev.map((c, idx) => 
-            idx === drag.connectorIndex ? { ...c, from: newFrom, to: newTo, waypoints } : c
-          ));
+
+          setConnectors((prev) =>
+            prev.map((c, idx) =>
+              idx === drag.connectorIndex
+                ? { ...c, from: newFrom, to: newTo, waypoints }
+                : c
+            )
+          );
           return;
         }
 
@@ -2700,16 +2782,19 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           nextCursor = "move";
         } else {
           // Determine orientation for any interactive resize (individual or collective)
-          const corner = dragRectCornerRef.current || dragCircleCornerRef.current;
+          const corner =
+            dragRectCornerRef.current || dragCircleCornerRef.current;
           if (corner) {
             if (corner.sx !== 0 && corner.sy !== 0) {
-              nextCursor = corner.sx * corner.sy > 0 ? "nwse-resize" : "nesw-resize";
+              nextCursor =
+                corner.sx * corner.sy > 0 ? "nwse-resize" : "nesw-resize";
             } else if (corner.sx !== 0) {
               nextCursor = "ew-resize";
             } else if (corner.sy !== 0) {
               nextCursor = "ns-resize";
             }
-          } else if (dragModeRef.current.includes("-h")) nextCursor = "ew-resize";
+          } else if (dragModeRef.current.includes("-h"))
+            nextCursor = "ew-resize";
           else if (dragModeRef.current.includes("-v")) nextCursor = "ns-resize";
           else nextCursor = "nwse-resize";
         }
@@ -2729,7 +2814,10 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         if (selectedShapeRef.current.length > 0) {
           const margin = 2 / zoom;
           const tol = 10 / zoom;
-          const b = getSelectionBounds(selectedShapeRef.current, stateRef.current);
+          const b = getSelectionBounds(
+            selectedShapeRef.current,
+            stateRef.current
+          );
 
           if (b) {
             const bx = b.x - margin;
@@ -2747,12 +2835,17 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             if (inX && inY) {
               const onlyOne = selectedShapeRef.current.length === 1;
               const firstKind = selectedShapeRef.current[0].kind;
-              
+
               if (onlyOne && firstKind === "code") {
                 // Code Block: only horizontal resizing
                 if ((onLeft || onRight) && !(onTop || onBottom)) {
                   nextCursor = "ew-resize";
-                } else if (point.x >= bx && point.x <= bx + bw && point.y >= by && point.y <= by + bh) {
+                } else if (
+                  point.x >= bx &&
+                  point.x <= bx + bw &&
+                  point.y >= by &&
+                  point.y <= by + bh
+                ) {
                   nextCursor = "move";
                 }
               } else {
@@ -2762,7 +2855,12 @@ export const useCanvasInteraction = (props: InteractionProps) => {
                   nextCursor = "nesw-resize";
                 else if (onLeft || onRight) nextCursor = "ew-resize";
                 else if (onTop || onBottom) nextCursor = "ns-resize";
-                else if (point.x >= bx && point.x <= bx + bw && point.y >= by && point.y <= by + bh) {
+                else if (
+                  point.x >= bx &&
+                  point.x <= bx + bw &&
+                  point.y >= by &&
+                  point.y <= by + bh
+                ) {
                   nextCursor = "move";
                 }
               }
@@ -2771,13 +2869,34 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         }
 
         const allNodeBounds = [
-          ...rectangles.filter(r => !r.strokeDashArray).map(r => ({ x: r.x, y: r.y, width: r.width, height: r.height })),
-          ...images.map(i => ({ x: i.x, y: i.y, width: i.width, height: i.height })),
-          ...figures.map(f => ({ x: f.x, y: f.y, width: f.width, height: f.height })),
-          ...codes.map(c => ({ x: c.x, y: c.y, width: c.width, height: c.height })),
+          ...rectangles
+            .filter((r) => !r.strokeDashArray)
+            .map((r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })),
+          ...images.map((i) => ({
+            x: i.x,
+            y: i.y,
+            width: i.width,
+            height: i.height,
+          })),
+          ...figures.map((f) => ({
+            x: f.x,
+            y: f.y,
+            width: f.width,
+            height: f.height,
+          })),
+          ...codes.map((c) => ({
+            x: c.x,
+            y: c.y,
+            width: c.width,
+            height: c.height,
+          })),
         ];
 
-        let hitConnectorSegment: { cIdx: number; segIdx: number; isHorizontal: boolean } | null = null;
+        let hitConnectorSegment: {
+          cIdx: number;
+          segIdx: number;
+          isHorizontal: boolean;
+        } | null = null;
         for (let cIdx = 0; cIdx < connectors.length; cIdx++) {
           const c = connectors[cIdx];
           const fromPt = getAnchorPoint(c.from);
@@ -2785,8 +2904,10 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           if (!fromPt || !toPt) continue;
 
           const fullPath = getConnectorPoints(
-            fromPt, toPt,
-            c.from.anchor, c.to.anchor,
+            fromPt,
+            toPt,
+            c.from.anchor,
+            c.to.anchor,
             getShapeBounds(c.from) || undefined,
             getShapeBounds(c.to) || undefined,
             allNodeBounds,
@@ -2795,8 +2916,15 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
           for (let i = 0; i < fullPath.length - 1; i++) {
             const p1 = fullPath[i];
-            const p2 = fullPath[i+1];
-            const dist = distToSegment(point.x, point.y, p1.x, p1.y, p2.x, p2.y);
+            const p2 = fullPath[i + 1];
+            const dist = distToSegment(
+              point.x,
+              point.y,
+              p1.x,
+              p1.y,
+              p2.x,
+              p2.y
+            );
             if (dist < 8 / zoom) {
               const isH = Math.abs(p1.y - p2.y) < 1;
               const isV = Math.abs(p1.x - p2.x) < 1;
@@ -2839,7 +2967,9 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           );
 
         if (hitConnectorSegment) {
-          nextCursor = hitConnectorSegment.isHorizontal ? "ns-resize" : "ew-resize";
+          nextCursor = hitConnectorSegment.isHorizontal
+            ? "ns-resize"
+            : "ew-resize";
         } else if (hitNormal) {
           nextCursor = "move";
         }
@@ -2867,30 +2997,48 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         if (!nearest) {
           const s = stateRef.current;
           const allShapes = [
-            ...s.rectangles.map(x => ({ ...x, kind: 'rect' as const })),
-            ...s.circles.map(x => ({ ...x, kind: 'circle' as const })),
-            ...s.images.map(x => ({ ...x, kind: 'image' as const })),
-            ...s.texts.map(x => ({ ...x, kind: 'text' as const })),
-            ...s.frames.map(x => ({ ...x, kind: 'frame' as const })),
-            ...s.polygons.map(x => ({ ...x, kind: 'poly' as const })),
-            ...s.figures.map(x => ({ ...x, kind: 'figure' as const })),
-            ...s.codes.map(x => ({ ...x, kind: 'code' as const })),
+            ...s.rectangles.map((x) => ({ ...x, kind: "rect" as const })),
+            ...s.circles.map((x) => ({ ...x, kind: "circle" as const })),
+            ...s.images.map((x) => ({ ...x, kind: "image" as const })),
+            ...s.texts.map((x) => ({ ...x, kind: "text" as const })),
+            ...s.frames.map((x) => ({ ...x, kind: "frame" as const })),
+            ...s.polygons.map((x) => ({ ...x, kind: "poly" as const })),
+            ...s.figures.map((x) => ({ ...x, kind: "figure" as const })),
+            ...s.codes.map((x) => ({ ...x, kind: "code" as const })),
           ];
 
           for (const sh of allShapes) {
-            const isCircle = sh.kind === 'circle';
-            const b = isCircle 
-              ? { x: sh.x - sh.rx, y: sh.y - sh.ry, width: sh.rx * 2, height: sh.ry * 2 }
-              : { x: sh.x, y: sh.y, width: (sh as any).width || 0, height: (sh as any).height || 0 };
-            
+            const isCircle = sh.kind === "circle";
+            const b = isCircle
+              ? {
+                  x: sh.x - sh.rx,
+                  y: sh.y - sh.ry,
+                  width: sh.rx * 2,
+                  height: sh.ry * 2,
+                }
+              : {
+                  x: sh.x,
+                  y: sh.y,
+                  width: (sh as any).width || 0,
+                  height: (sh as any).height || 0,
+                };
+
             // Fast bounding box check
             const margin = 20 / zoom;
-            if (point.x < b.x - margin || point.x > b.x + b.width + margin ||
-                point.y < b.y - margin || point.y > b.y + b.height + margin) continue;
+            if (
+              point.x < b.x - margin ||
+              point.x > b.x + b.width + margin ||
+              point.y < b.y - margin ||
+              point.y > b.y + b.height + margin
+            )
+              continue;
 
             const border = findNearestBorderPoint(point, b, isCircle);
-            const d = Math.hypot(point.x - border.point.x, point.y - border.point.y);
-            
+            const d = Math.hypot(
+              point.x - border.point.x,
+              point.y - border.point.y
+            );
+
             if (d < bestDist) {
               bestDist = d;
               nearest = {
@@ -2898,7 +3046,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
                 shapeId: sh.id,
                 anchor: border.anchor,
                 percent: border.percent,
-                point: border.point
+                point: border.point,
               };
             }
           }
@@ -2960,12 +3108,18 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           const isContainedInMovedFigure = (startShape: any) => {
             if (!startShape || movedFigures.length === 0) return false;
             // Use center point for containment check
-            const w = startShape.width ?? (startShape.rx ? startShape.rx * 2 : 0);
-            const h = startShape.height ?? (startShape.ry ? startShape.ry * 2 : 0);
+            const w =
+              startShape.width ?? (startShape.rx ? startShape.rx * 2 : 0);
+            const h =
+              startShape.height ?? (startShape.ry ? startShape.ry * 2 : 0);
             const cx = startShape.x + w / 2;
             const cy = startShape.y + h / 2;
             return movedFigures.some(
-              (f) => cx >= f.x && cx <= f.x + f.width && cy >= f.y && cy <= f.y + f.height
+              (f) =>
+                cx >= f.x &&
+                cx <= f.x + f.width &&
+                cy >= f.y &&
+                cy <= f.y + f.height
             );
           };
 
@@ -2974,7 +3128,9 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           if (selKinds.has("rect") || movedFigures.length > 0) {
             setRectangles((prev) =>
               prev.map((r) => {
-                const startR = startState.rectangles.find((sr) => sr.id === r.id);
+                const startR = startState.rectangles.find(
+                  (sr) => sr.id === r.id
+                );
                 const isSel = selectedShapeRef.current.some(
                   (s) => s.kind === "rect" && s.id === r.id
                 );
@@ -3004,7 +3160,9 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           if (selKinds.has("image") || movedFigures.length > 0) {
             setImages((prev) =>
               prev.map((im) => {
-                const startIm = startState.images.find((sim) => sim.id === im.id);
+                const startIm = startState.images.find(
+                  (sim) => sim.id === im.id
+                );
                 const isSel = selectedShapeRef.current.some(
                   (s) => s.kind === "image" && s.id === im.id
                 );
@@ -3069,7 +3227,15 @@ export const useCanvasInteraction = (props: InteractionProps) => {
                 const isSel = selectedShapeRef.current.some(
                   (s) => s.kind === "line" && s.id === l.id
                 );
-                if ((isSel || isContainedInMovedFigure({ ...startL, x: startL?.x1, y: startL?.y1 })) && startL) {
+                if (
+                  (isSel ||
+                    isContainedInMovedFigure({
+                      ...startL,
+                      x: startL?.x1,
+                      y: startL?.y1,
+                    })) &&
+                  startL
+                ) {
                   return {
                     ...l,
                     x1: startL.x1 + dx,
@@ -3090,7 +3256,15 @@ export const useCanvasInteraction = (props: InteractionProps) => {
                 const isSel = selectedShapeRef.current.some(
                   (s) => s.kind === "arrow" && s.id === a.id
                 );
-                if ((isSel || isContainedInMovedFigure({ ...startA, x: startA?.x1, y: startA?.y1 })) && startA) {
+                if (
+                  (isSel ||
+                    isContainedInMovedFigure({
+                      ...startA,
+                      x: startA?.x1,
+                      y: startA?.y1,
+                    })) &&
+                  startA
+                ) {
                   return {
                     ...a,
                     x1: startA.x1 + dx,
@@ -3137,20 +3311,24 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             );
           }
 
-          // Update connectors attached to moved shapes: Reset to automatic 'elbow' routing 
+          // Update connectors attached to moved shapes: Reset to automatic 'elbow' routing
           // per user request ("should be redefined... as an elbow") whenever a shape moves.
           setConnectors((prev) =>
             prev.map((c) => {
               const fromMoved = selectedShapeRef.current.some(
-                (s) => s.id === c.from.shapeId || movedFigures.some(mf => mf.id === c.from.shapeId)
+                (s) =>
+                  s.id === c.from.shapeId ||
+                  movedFigures.some((mf) => mf.id === c.from.shapeId)
               );
               const toMoved = selectedShapeRef.current.some(
-                (s) => s.id === c.to.shapeId || movedFigures.some(mf => mf.id === c.to.shapeId)
+                (s) =>
+                  s.id === c.to.shapeId ||
+                  movedFigures.some((mf) => mf.id === c.to.shapeId)
               );
-              
+
               if (!fromMoved && !toMoved) return c;
 
-              // Simply clearing waypoints triggers an automatic orthogonal re-route 
+              // Simply clearing waypoints triggers an automatic orthogonal re-route
               // in the getConnectorPoints logic, ensuring an 'elbow' path.
               return { ...c, waypoints: undefined };
             })
@@ -3368,8 +3546,12 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           // Update connectors attached to resized shapes: Reset to automatic 'elbow' routing
           setConnectors((prev) =>
             prev.map((c) => {
-              const fromResized = selectedShapeRef.current.some((s) => s.id === c.from.shapeId);
-              const toResized = selectedShapeRef.current.some((s) => s.id === c.to.shapeId);
+              const fromResized = selectedShapeRef.current.some(
+                (s) => s.id === c.from.shapeId
+              );
+              const toResized = selectedShapeRef.current.some(
+                (s) => s.id === c.to.shapeId
+              );
               if (!fromResized && !toResized) return c;
               return { ...c, waypoints: undefined };
             })
@@ -3602,7 +3784,10 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           if (kind !== "connector") {
             setConnectors((prev) =>
               prev.map((c) => {
-                if (c.from.shapeId === selectedShape[0].id || c.to.shapeId === selectedShape[0].id) {
+                if (
+                  c.from.shapeId === selectedShape[0].id ||
+                  c.to.shapeId === selectedShape[0].id
+                ) {
                   return { ...c, waypoints: undefined };
                 }
                 return c;
@@ -3618,9 +3803,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             const isFrom = (dragRectCornerRef.current?.sx || 1) < 0;
 
             // Find nearest anchor
-            const {
-              anchorHandles,
-            } = stateRef.current;
+            const { anchorHandles } = stateRef.current;
             const tolerance = 20 / zoom;
             let nearestAnchor: any = null;
             let bestDist = tolerance;
@@ -3638,29 +3821,47 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             if (!nearestAnchor) {
               const s = stateRef.current;
               const allShapes = [
-                ...s.rectangles.map(x => ({ ...x, kind: 'rect' as const })),
-                ...s.circles.map(x => ({ ...x, kind: 'circle' as const })),
-                ...s.images.map(x => ({ ...x, kind: 'image' as const })),
-                ...s.texts.map(x => ({ ...x, kind: 'text' as const })),
-                ...s.frames.map(x => ({ ...x, kind: 'frame' as const })),
-                ...s.polygons.map(x => ({ ...x, kind: 'poly' as const })),
-                ...s.figures.map(x => ({ ...x, kind: 'figure' as const })),
-                ...s.codes.map(x => ({ ...x, kind: 'code' as const })),
+                ...s.rectangles.map((x) => ({ ...x, kind: "rect" as const })),
+                ...s.circles.map((x) => ({ ...x, kind: "circle" as const })),
+                ...s.images.map((x) => ({ ...x, kind: "image" as const })),
+                ...s.texts.map((x) => ({ ...x, kind: "text" as const })),
+                ...s.frames.map((x) => ({ ...x, kind: "frame" as const })),
+                ...s.polygons.map((x) => ({ ...x, kind: "poly" as const })),
+                ...s.figures.map((x) => ({ ...x, kind: "figure" as const })),
+                ...s.codes.map((x) => ({ ...x, kind: "code" as const })),
               ];
 
               for (const sh of allShapes) {
-                const isCircle = sh.kind === 'circle';
-                const b = isCircle 
-                  ? { x: sh.x - sh.rx, y: sh.y - sh.ry, width: sh.rx * 2, height: sh.ry * 2 }
-                  : { x: sh.x, y: sh.y, width: (sh as any).width || 0, height: (sh as any).height || 0 };
-                
+                const isCircle = sh.kind === "circle";
+                const b = isCircle
+                  ? {
+                      x: sh.x - sh.rx,
+                      y: sh.y - sh.ry,
+                      width: sh.rx * 2,
+                      height: sh.ry * 2,
+                    }
+                  : {
+                      x: sh.x,
+                      y: sh.y,
+                      width: (sh as any).width || 0,
+                      height: (sh as any).height || 0,
+                    };
+
                 const margin = 20 / zoom;
-                if (point.x < b.x - margin || point.x > b.x + b.width + margin ||
-                    point.y < b.y - margin || point.y > b.y + b.height + margin) continue;
+                if (
+                  point.x < b.x - margin ||
+                  point.x > b.x + b.width + margin ||
+                  point.y < b.y - margin ||
+                  point.y > b.y + b.height + margin
+                )
+                  continue;
 
                 const border = findNearestBorderPoint(point, b, isCircle);
-                const d = Math.hypot(point.x - border.point.x, point.y - border.point.y);
-                
+                const d = Math.hypot(
+                  point.x - border.point.x,
+                  point.y - border.point.y
+                );
+
                 if (d < bestDist) {
                   bestDist = d;
                   nearestAnchor = {
@@ -3668,7 +3869,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
                     shapeId: sh.id,
                     anchor: border.anchor,
                     percent: border.percent,
-                    point: border.point
+                    point: border.point,
                   };
                 }
               }
@@ -4067,10 +4268,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           else x2 = currentLine.x1;
         }
         if (
-          Math.hypot(
-            x2 - (currentLine?.x1 || 0),
-            y2 - (currentLine?.y1 || 0)
-          ) > 4
+          Math.hypot(x2 - (currentLine?.x1 || 0), y2 - (currentLine?.y1 || 0)) >
+          4
         ) {
           const next = [
             ...lines,
@@ -4120,14 +4319,13 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           let x2 = point.x;
           let y2 = point.y;
           if (event.shiftKey && currentArrow) {
-            if (Math.abs(x2 - currentArrow.x1) >= Math.abs(y2 - currentArrow.y1))
+            if (
+              Math.abs(x2 - currentArrow.x1) >= Math.abs(y2 - currentArrow.y1)
+            )
               y2 = currentArrow.y1;
             else x2 = currentArrow.x1;
           }
-          if (
-            Math.hypot(x2 - currentArrow!.x1, y2 - currentArrow!.y1) >
-            4
-          ) {
+          if (Math.hypot(x2 - currentArrow!.x1, y2 - currentArrow!.y1) > 4) {
             const next = [
               ...arrows,
               {

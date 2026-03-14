@@ -151,14 +151,7 @@ export const drawCircle = (
 
   if (isSelected) {
     // Selection bounding box needs to account for radius vs diameter
-    drawSelectionOverlay(
-      ctx,
-      c.x - c.rx,
-      c.y - c.ry,
-      c.rx * 2,
-      c.ry * 2,
-      zoom
-    );
+    drawSelectionOverlay(ctx, c.x - c.rx, c.y - c.ry, c.rx * 2, c.ry * 2, zoom);
   }
 };
 
@@ -315,7 +308,7 @@ export const drawFrame = (
   } else if (f.deviceType === "desktop" || f.deviceType === "browser") {
     // Logic branch for windowed desktop/browser interfaces
     const isBrowser = f.deviceType === "browser";
-    const barH = (isBrowser ? 44 : 32) / zoom; 
+    const barH = (isBrowser ? 44 : 32) / zoom;
     const radius = 8 / zoom;
 
     // Main window body with rounded top edges
@@ -701,7 +694,7 @@ export const drawConnector = (
     options.stroke || (options.highlight ? "#3b82f6" : themeStroke);
   ctx.strokeStyle = strokeColor;
   ctx.lineWidth = (options.strokeWidth || (options.highlight ? 2.5 : 2)) / zoom;
-  
+
   // Premium Touch: Shadow for depth
   if (!options.highlight) {
     ctx.shadowColor = "rgba(0,0,0,0.1)";
@@ -710,15 +703,15 @@ export const drawConnector = (
   }
 
   if (options.strokeDashArray) {
-    ctx.setLineDash(options.strokeDashArray.map(v => v));
+    ctx.setLineDash(options.strokeDashArray.map((v) => v));
   } else if (options.highlight) {
     // Flowing Animation: Offset the dash based on current time
     const flowSpeed = (Date.now() / 50) % 20;
     ctx.setLineDash([8, 4]);
     ctx.lineDashOffset = -flowSpeed;
   }
-  
-  ctx.lineJoin = "round"; 
+
+  ctx.lineJoin = "round";
   ctx.lineCap = "round";
 
   const points = getConnectorPoints(
@@ -861,19 +854,22 @@ export const drawFigure = (
 
   // Header/Label (Constant screen size)
   const headerHeight = 24 / zoom;
-  const headerGap = 10 / zoom; 
+  const headerGap = 10 / zoom;
   const hX = f.x;
   const hY = f.y - headerHeight - headerGap;
 
-  const text = options?.titleOverride !== undefined ? options.titleOverride : (f.title || `Figure ${f.figureNumber}`);
+  const text =
+    options?.titleOverride !== undefined
+      ? options.titleOverride
+      : f.title || `Figure ${f.figureNumber}`;
   const fontSize = 10 / zoom;
   const fontWeight = 600;
   ctx.font = `${fontWeight} ${fontSize}px sans-serif`;
-  
+
   const textWidth = ctx.measureText(text).width;
   const iconSize = 10 / zoom;
-  const hPadding = 10 / zoom; 
-  const iconGap = 6 / zoom;  
+  const hPadding = 10 / zoom;
+  const iconGap = 6 / zoom;
   const hWidth = textWidth + iconSize + iconGap + hPadding * 2;
 
   // Draw Rounded Header Background
@@ -886,7 +882,7 @@ export const drawFigure = (
     ctx.rect(hX, hY, hWidth, headerHeight);
   }
   ctx.fill();
-  
+
   // White outline
   ctx.strokeStyle = "rgba(255,255,255,0.4)";
   ctx.lineWidth = 0.5 / zoom;
@@ -897,20 +893,20 @@ export const drawFigure = (
   const iY = hY + (headerHeight - iconSize) / 2;
   ctx.strokeStyle = "white";
   ctx.lineWidth = 1.0 / zoom;
-  
+
   const dotS = iconSize * 0.35;
   // Top center dot
-  ctx.strokeRect(iX + (iconSize - dotS)/2, iY, dotS, dotS);
-  
+  ctx.strokeRect(iX + (iconSize - dotS) / 2, iY, dotS, dotS);
+
   // Branching lines
   ctx.beginPath();
-  ctx.moveTo(iX + iconSize/2, iY + dotS);
-  ctx.lineTo(iX + iconSize/2, iY + iconSize/2);
-  ctx.moveTo(iX + dotS/2, iY + iconSize/2);
-  ctx.lineTo(iX + iconSize - dotS/2, iY + iconSize/2);
-  ctx.lineTo(iX + iconSize - dotS/2, iY + iconSize - dotS);
-  ctx.moveTo(iX + dotS/2, iY + iconSize/2);
-  ctx.lineTo(iX + dotS/2, iY + iconSize - dotS);
+  ctx.moveTo(iX + iconSize / 2, iY + dotS);
+  ctx.lineTo(iX + iconSize / 2, iY + iconSize / 2);
+  ctx.moveTo(iX + dotS / 2, iY + iconSize / 2);
+  ctx.lineTo(iX + iconSize - dotS / 2, iY + iconSize / 2);
+  ctx.lineTo(iX + iconSize - dotS / 2, iY + iconSize - dotS);
+  ctx.moveTo(iX + dotS / 2, iY + iconSize / 2);
+  ctx.lineTo(iX + dotS / 2, iY + iconSize - dotS);
   ctx.stroke();
 
   // Bottom dots

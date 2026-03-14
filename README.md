@@ -21,6 +21,8 @@
 [![React](https://img.shields.io/badge/React-19.2.3-blue)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38bdf8)](https://tailwindcss.com/)
 [![Better-Auth](https://img.shields.io/badge/Better--Auth-1.4.7-6c47ff)](https://www.better-auth.com/)
+[![Jest](https://img.shields.io/badge/Jest-30.3-c21325)](https://jestjs.io/)
+[![Playwright](https://img.shields.io/badge/Playwright-1.58-2ead33)](https://playwright.dev/)
 
 </div>
 
@@ -92,6 +94,7 @@ Rethink Zone is a modern, full-stack workspace application designed for product 
 - **Database**: [PostgreSQL](https://www.postgresql.org/)
 - **Auth**: [Better-Auth 1.4.7](https://www.better-auth.com/)
 - **Server Actions**: Native Next.js server actions for secure data mutations.
+- **Testing**: [Jest](https://jestjs.io/) & [React Testing Library](https://testing-library.com/) for Unit tests, [Playwright](https://playwright.dev/) for E2E tests.
 
 ## 🏗 Architecture
 
@@ -190,6 +193,8 @@ rethink-zone/
 | `npm run db:migrate` | Runs migrations and generates Prisma client |
 | `npm run db:studio`  | Opens the Prisma database GUI               |
 | `npm run lint`       | Runs ESLint for code quality checks         |
+| `npm run test`       | Runs Vitest/Jest unit tests                 |
+| `npm run test:e2e`   | Runs Playwright End-to-End tests            |
 
 ## 🤝 Contributing
 

@@ -1,8 +1,8 @@
 ---
 name: 🚀 Feature Request
-about: Suggest an idea for Infera Notebook
-title: '[FEAT] '
-labels: ['enhancement']
+about: Suggest an idea for Rethink Zone
+title: "[FEAT] "
+labels: ["enhancement"]
 assignees: []
 ---
 

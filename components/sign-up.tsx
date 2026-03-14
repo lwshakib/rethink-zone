@@ -13,7 +13,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export default function SignUp() {
-
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");

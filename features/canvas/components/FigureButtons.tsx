@@ -28,30 +28,35 @@ const FigureButtons: React.FC<FigureButtonsProps> = ({
     <>
       {figures.map((figure) => {
         const isEditing = editingFigureId === figure.id;
-        const isSelected = selectedShape.some(s => s.kind === "figure" && s.id === figure.id);
-        
+        const isSelected = selectedShape.some(
+          (s) => s.kind === "figure" && s.id === figure.id
+        );
+
         // Hide buttons if not selected and not currently editing
         if (!isSelected && !isEditing) return null;
-        
+
         // Match drawing.ts precisely
         const headerHeight = 24 / zoom; // Matches drawing.ts
-        const headerGap = 10 / zoom; 
-        
+        const headerGap = 10 / zoom;
+
         const text = figure.title || `Figure ${figure.figureNumber}`;
-        const measured = measureText(text, 10 / zoom, "sans-serif", 600); 
+        const measured = measureText(text, 10 / zoom, "sans-serif", 600);
         const textWidth = measured.width;
-        
+
         const iconSize = 10 / zoom;
-        const hPadding = 10 / zoom; 
-        const iconGap = 6 / zoom; 
+        const hPadding = 10 / zoom;
+        const iconGap = 6 / zoom;
         const hWidth = textWidth + iconSize + iconGap + hPadding * 2;
-        
+
         // Position to the right of the title pill
-        const buttonXOffset = hWidth + (12 / zoom); 
-        const buttonYOffset = -headerHeight - headerGap; 
-        
-        const pos = canvasToClient(figure.x + buttonXOffset, figure.y + buttonYOffset);
-        
+        const buttonXOffset = hWidth + 12 / zoom;
+        const buttonYOffset = -headerHeight - headerGap;
+
+        const pos = canvasToClient(
+          figure.x + buttonXOffset,
+          figure.y + buttonYOffset
+        );
+
         return (
           <div
             key={figure.id}

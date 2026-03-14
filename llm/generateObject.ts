@@ -1,6 +1,6 @@
-import { z } from 'zod';
-import { CLOUDFLARE_API_KEY, GLM_WORKER_URL } from '@/lib/env';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { z } from "zod";
+import { CLOUDFLARE_API_KEY, GLM_WORKER_URL } from "@/lib/env";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
 /**
  * Generates a structured JSON object using GLM-4.7-Flash in strict schema mode.
@@ -10,7 +10,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
  * @returns The parsed JSON object matching the provided schema.
  */
 interface Message {
-  role: 'system' | 'user' | 'assistant';
+  role: "system" | "user" | "assistant";
   content: string;
 }
 
@@ -19,16 +19,16 @@ export const generateObjectFromAI = async <T extends z.ZodTypeAny>(
   outputSchema: T
 ): Promise<z.infer<T>> => {
   if (!GLM_WORKER_URL) {
-    throw new Error('GLM_WORKER_URL is not set in environment variables');
+    throw new Error("GLM_WORKER_URL is not set in environment variables");
   }
 
   if (!CLOUDFLARE_API_KEY) {
-    throw new Error('CLOUDFLARE_API_KEY is not set in environment variables');
+    throw new Error("CLOUDFLARE_API_KEY is not set in environment variables");
   }
 
   const url = GLM_WORKER_URL;
   const headers = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     Authorization: `Bearer ${CLOUDFLARE_API_KEY}`,
   };
 
@@ -36,14 +36,14 @@ export const generateObjectFromAI = async <T extends z.ZodTypeAny>(
   const jsonSchema = zodToJsonSchema(outputSchema as any);
 
   const response = await fetch(url, {
-    method: 'POST',
+    method: "POST",
     headers: headers,
     body: JSON.stringify({
       messages: messages,
       response_format: {
-        type: 'json_schema',
+        type: "json_schema",
         json_schema: {
-          name: 'response_schema',
+          name: "response_schema",
           strict: true,
           schema: jsonSchema,
         },
@@ -53,13 +53,15 @@ export const generateObjectFromAI = async <T extends z.ZodTypeAny>(
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`GLM-4.7-Flash Worker Error (${response.status}): ${errorText}`);
+    throw new Error(
+      `GLM-4.7-Flash Worker Error (${response.status}): ${errorText}`
+    );
   }
 
   const result = await response.json();
 
   if (!result.choices || !result.choices[0] || !result.choices[0].message) {
-    throw new Error('Unexpected response format from GLM-4.7-Flash Worker');
+    throw new Error("Unexpected response format from GLM-4.7-Flash Worker");
   }
 
   const content = result.choices[0].message.content;
@@ -67,7 +69,7 @@ export const generateObjectFromAI = async <T extends z.ZodTypeAny>(
   try {
     return JSON.parse(content) as z.infer<T>;
   } catch {
-    console.error('Failed to parse JSON from model response:', content);
-    throw new Error('Model returned invalid JSON');
+    console.error("Failed to parse JSON from model response:", content);
+    throw new Error("Model returned invalid JSON");
   }
 };

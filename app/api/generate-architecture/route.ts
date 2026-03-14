@@ -8,7 +8,10 @@ export async function POST(req: Request) {
     const { prompt, existingCode, repoUrl } = await req.json();
 
     if (!prompt && !repoUrl) {
-      return NextResponse.json({ error: "Prompt or Repository URL is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Prompt or Repository URL is required" },
+        { status: 400 }
+      );
     }
 
     let repoContext = "";
@@ -16,10 +19,13 @@ export async function POST(req: Request) {
       try {
         const repoIndex = await analyzeRepo(repoUrl);
         repoContext = `CODEBASE INDEX FOR ANALYSIS:
-Files: ${repoIndex.files.map(f => f.path).join(", ")}
-Significant Functions: ${repoIndex.functions.map(f => `${f.name} (in ${f.file})`).join(", ")}
-Classes/Modules: ${repoIndex.classes.map(c => `${c.name} (in ${c.file})`).join(", ")}
-Core Interactions: ${repoIndex.calls.slice(0, 50).map(c => `${c.from} -> ${c.to}`).join(", ")}
+Files: ${repoIndex.files.map((f) => f.path).join(", ")}
+Significant Functions: ${repoIndex.functions.map((f) => `${f.name} (in ${f.file})`).join(", ")}
+Classes/Modules: ${repoIndex.classes.map((c) => `${c.name} (in ${c.file})`).join(", ")}
+Core Interactions: ${repoIndex.calls
+          .slice(0, 50)
+          .map((c) => `${c.from} -> ${c.to}`)
+          .join(", ")}
 
 INSTRUCTION: Use this codebase index to infer the actual software architecture. Map specific files/modules to appropriate cloud services or logical groups.`;
       } catch (e) {
@@ -28,7 +34,9 @@ INSTRUCTION: Use this codebase index to infer the actual software architecture. 
       }
     }
 
-    const finalPrompt = prompt || "Generate a comprehensive architecture diagram based on this codebase.";
+    const finalPrompt =
+      prompt ||
+      "Generate a comprehensive architecture diagram based on this codebase.";
 
     const messages: Message[] = [
       { role: "system", content: ARCHITECTURE_SYSTEM_PROMPT },
@@ -49,13 +57,19 @@ INSTRUCTION: Use this codebase index to infer the actual software architecture. 
 
     const result = await generateText({
       messages,
-      temperature: 0.2
+      temperature: 0.2,
     });
 
-    return NextResponse.json({ result: result.replace(/```[a-z]*\n?/g, "").replace(/\n?```/g, "").trim() });
+    return NextResponse.json({
+      result: result
+        .replace(/```[a-z]*\n?/g, "")
+        .replace(/\n?```/g, "")
+        .trim(),
+    });
   } catch (error) {
     console.error("API Generation Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Internal Server Error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal Server Error";
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

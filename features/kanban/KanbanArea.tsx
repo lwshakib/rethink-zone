@@ -94,37 +94,43 @@ export default function KanbanArea({ board, onChange }: KanbanAreaProps) {
     () =>
       safeBoard.map((col, colIdx) => ({
         title: col.title,
-        items: (col.items || []).map((item: string | KanbanItem, itemIdx: number) => {
-          const itemObj = typeof item === "string" ? null : item;
-          // Normalizes item text regardless of whether input was a string or object
-          const text =
-            typeof item === "string"
-              ? item
-              : typeof itemObj?.text === "string"
-                ? itemObj.text
-                : "Item";
-          return {
-            id:
-              typeof itemObj?.id === "string"
-                ? itemObj.id
-                : `${colIdx}-${itemIdx}-${text}`, // Fallback ID generation
-            text,
-            description:
-              typeof itemObj?.description === "string" ? itemObj.description : "",
-            status:
-              typeof itemObj?.status === "string"
-                ? itemObj.status
-                : statusOptions[(colIdx + itemIdx) % statusOptions.length], // Default status
-            priority:
-              typeof itemObj?.priority === "string"
-                ? itemObj.priority
-                : priorityOptions[(colIdx + itemIdx) % priorityOptions.length], // Default priority
-            eta:
-              typeof itemObj?.eta === "string"
-                ? itemObj.eta
-                : etaOptions[itemIdx % etaOptions.length], // Default ETA
-          };
-        }),
+        items: (col.items || []).map(
+          (item: string | KanbanItem, itemIdx: number) => {
+            const itemObj = typeof item === "string" ? null : item;
+            // Normalizes item text regardless of whether input was a string or object
+            const text =
+              typeof item === "string"
+                ? item
+                : typeof itemObj?.text === "string"
+                  ? itemObj.text
+                  : "Item";
+            return {
+              id:
+                typeof itemObj?.id === "string"
+                  ? itemObj.id
+                  : `${colIdx}-${itemIdx}-${text}`, // Fallback ID generation
+              text,
+              description:
+                typeof itemObj?.description === "string"
+                  ? itemObj.description
+                  : "",
+              status:
+                typeof itemObj?.status === "string"
+                  ? itemObj.status
+                  : statusOptions[(colIdx + itemIdx) % statusOptions.length], // Default status
+              priority:
+                typeof itemObj?.priority === "string"
+                  ? itemObj.priority
+                  : priorityOptions[
+                      (colIdx + itemIdx) % priorityOptions.length
+                    ], // Default priority
+              eta:
+                typeof itemObj?.eta === "string"
+                  ? itemObj.eta
+                  : etaOptions[itemIdx % etaOptions.length], // Default ETA
+            };
+          }
+        ),
       })),
     [safeBoard]
   );

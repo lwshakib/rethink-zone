@@ -1,8 +1,8 @@
 ---
 name: 🐛 Bug Report
-about: Create a report to help us improve Infera Notebook
-title: '[BUG] '
-labels: ['bug']
+about: Create a report to help us improve Rethink Zone
+title: "[BUG] "
+labels: ["bug"]
 assignees: []
 ---
 
@@ -12,11 +12,12 @@ assignees: []
 
 ## 🛠️ Feature Area
 
-- [ ] AI Notebook Logic
+- [ ] Document Editor
+- [ ] Infinite Canvas
+- [ ] Kanban Board
 - [ ] UI/UX Components
 - [ ] Database/Prisma
 - [ ] Authentication (Better Auth)
-- [ ] Workflow/Inngest
 - [ ] Other: **\_\_**
 
 ## 🔁 Reproduction Steps

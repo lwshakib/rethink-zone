@@ -128,27 +128,97 @@ export const useCanvasCommands = (
     });
 
     // CASCADE DELETE: If a Figure is being deleted, also delete everything "on" it
-    const selectedFigureItems = figures.filter((f) => idsToDeleteByKind.figure.has(f.id));
+    const selectedFigureItems = figures.filter((f) =>
+      idsToDeleteByKind.figure.has(f.id)
+    );
     if (selectedFigureItems.length > 0) {
       const isInsideAnyDeletedFigure = (x: number, y: number) => {
         return selectedFigureItems.some(
-          (f) => x >= f.x && x <= f.x + f.width && y >= f.y && y <= f.y + f.height
+          (f) =>
+            x >= f.x && x <= f.x + f.width && y >= f.y && y <= f.y + f.height
         );
       };
 
       // Check all other shapes for containment
-      rectangles.forEach((r) => { if (!idsToDeleteByKind.rect.has(r.id) && isInsideAnyDeletedFigure(r.x + r.width / 2, r.y + r.height / 2)) idsToDeleteByKind.rect.add(r.id); });
-      circles.forEach((c) => { if (!idsToDeleteByKind.circle.has(c.id) && isInsideAnyDeletedFigure(c.x, c.y)) idsToDeleteByKind.circle.add(c.id); });
-      images.forEach((i) => { if (!idsToDeleteByKind.image.has(i.id) && isInsideAnyDeletedFigure(i.x + i.width / 2, i.y + i.height / 2)) idsToDeleteByKind.image.add(i.id); });
-      texts.forEach((t) => { if (!idsToDeleteByKind.text.has(t.id) && isInsideAnyDeletedFigure(t.x + t.width / 2, t.y + t.height / 2)) idsToDeleteByKind.text.add(t.id); });
-      frames.forEach((f) => { if (!idsToDeleteByKind.frame.has(f.id) && isInsideAnyDeletedFigure(f.x + f.width / 2, f.y + f.height / 2)) idsToDeleteByKind.frame.add(f.id); });
-      lines.forEach((l) => { if (!idsToDeleteByKind.line.has(l.id) && isInsideAnyDeletedFigure((l.x1 + l.x2) / 2, (l.y1 + l.y2) / 2)) idsToDeleteByKind.line.add(l.id); });
-      arrows.forEach((a) => { if (!idsToDeleteByKind.arrow.has(a.id) && isInsideAnyDeletedFigure((a.x1 + a.x2) / 2, (a.y1 + a.y2) / 2)) idsToDeleteByKind.arrow.add(a.id); });
-      polygons.forEach((p) => { if (!idsToDeleteByKind.poly.has(p.id) && isInsideAnyDeletedFigure(p.x + p.width / 2, p.y + p.height / 2)) idsToDeleteByKind.poly.add(p.id); });
-      codes.forEach((c) => { if (!idsToDeleteByKind.code.has(c.id) && isInsideAnyDeletedFigure(c.x + c.width / 2, c.y + c.height / 2)) idsToDeleteByKind.code.add(c.id); });
-      paths.forEach((p) => { if (!idsToDeleteByKind.path.has(p.id) && p.points.length > 0 && isInsideAnyDeletedFigure(p.points[0].x, p.points[0].y)) idsToDeleteByKind.path.add(p.id); });
+      rectangles.forEach((r) => {
+        if (
+          !idsToDeleteByKind.rect.has(r.id) &&
+          isInsideAnyDeletedFigure(r.x + r.width / 2, r.y + r.height / 2)
+        )
+          idsToDeleteByKind.rect.add(r.id);
+      });
+      circles.forEach((c) => {
+        if (
+          !idsToDeleteByKind.circle.has(c.id) &&
+          isInsideAnyDeletedFigure(c.x, c.y)
+        )
+          idsToDeleteByKind.circle.add(c.id);
+      });
+      images.forEach((i) => {
+        if (
+          !idsToDeleteByKind.image.has(i.id) &&
+          isInsideAnyDeletedFigure(i.x + i.width / 2, i.y + i.height / 2)
+        )
+          idsToDeleteByKind.image.add(i.id);
+      });
+      texts.forEach((t) => {
+        if (
+          !idsToDeleteByKind.text.has(t.id) &&
+          isInsideAnyDeletedFigure(t.x + t.width / 2, t.y + t.height / 2)
+        )
+          idsToDeleteByKind.text.add(t.id);
+      });
+      frames.forEach((f) => {
+        if (
+          !idsToDeleteByKind.frame.has(f.id) &&
+          isInsideAnyDeletedFigure(f.x + f.width / 2, f.y + f.height / 2)
+        )
+          idsToDeleteByKind.frame.add(f.id);
+      });
+      lines.forEach((l) => {
+        if (
+          !idsToDeleteByKind.line.has(l.id) &&
+          isInsideAnyDeletedFigure((l.x1 + l.x2) / 2, (l.y1 + l.y2) / 2)
+        )
+          idsToDeleteByKind.line.add(l.id);
+      });
+      arrows.forEach((a) => {
+        if (
+          !idsToDeleteByKind.arrow.has(a.id) &&
+          isInsideAnyDeletedFigure((a.x1 + a.x2) / 2, (a.y1 + a.y2) / 2)
+        )
+          idsToDeleteByKind.arrow.add(a.id);
+      });
+      polygons.forEach((p) => {
+        if (
+          !idsToDeleteByKind.poly.has(p.id) &&
+          isInsideAnyDeletedFigure(p.x + p.width / 2, p.y + p.height / 2)
+        )
+          idsToDeleteByKind.poly.add(p.id);
+      });
+      codes.forEach((c) => {
+        if (
+          !idsToDeleteByKind.code.has(c.id) &&
+          isInsideAnyDeletedFigure(c.x + c.width / 2, c.y + c.height / 2)
+        )
+          idsToDeleteByKind.code.add(c.id);
+      });
+      paths.forEach((p) => {
+        if (
+          !idsToDeleteByKind.path.has(p.id) &&
+          p.points.length > 0 &&
+          isInsideAnyDeletedFigure(p.points[0].x, p.points[0].y)
+        )
+          idsToDeleteByKind.path.add(p.id);
+      });
       // Also recursively delete nested figures (except the ones already being deleted)
-      figures.forEach((f) => { if (!idsToDeleteByKind.figure.has(f.id) && isInsideAnyDeletedFigure(f.x + f.width / 2, f.y + f.height / 2)) idsToDeleteByKind.figure.add(f.id); });
+      figures.forEach((f) => {
+        if (
+          !idsToDeleteByKind.figure.has(f.id) &&
+          isInsideAnyDeletedFigure(f.x + f.width / 2, f.y + f.height / 2)
+        )
+          idsToDeleteByKind.figure.add(f.id);
+      });
     }
 
     const allDeletedIds = new Set(
@@ -700,7 +770,12 @@ export const useCanvasCommands = (
           setter(next);
         };
 
-        processCollection(clipboard.rectangles, "rect", rectangles, setRectangles);
+        processCollection(
+          clipboard.rectangles,
+          "rect",
+          rectangles,
+          setRectangles
+        );
         processCollection(clipboard.circles, "circle", circles, setCircles);
         processCollection(clipboard.images, "image", images, setImages);
         processCollection(clipboard.texts, "text", texts, setTexts);
@@ -712,37 +787,39 @@ export const useCanvasCommands = (
         processCollection(clipboard.codes, "code", codes, setCodes);
         processCollection(clipboard.paths, "path", paths, setPaths);
 
-      pushHistory(updates);
-      setSelectedShape(newSelection);
-    } catch (e) {
-      console.error("Paste failed", e);
-    }
-  }, [
-    rectangles,
-    circles,
-    images,
-    texts,
-    frames,
-    lines,
-    arrows,
-    polygons,
-    figures,
-    codes,
-    paths,
-    setRectangles,
-    setCircles,
-    setImages,
-    setTexts,
-    setFrames,
-    setLines,
-    setArrows,
-    setPolygons,
-    setFigures,
-    setCodes,
-    setPaths,
-    pushHistory,
-    setSelectedShape,
-  ]);
+        pushHistory(updates);
+        setSelectedShape(newSelection);
+      } catch (e) {
+        console.error("Paste failed", e);
+      }
+    },
+    [
+      rectangles,
+      circles,
+      images,
+      texts,
+      frames,
+      lines,
+      arrows,
+      polygons,
+      figures,
+      codes,
+      paths,
+      setRectangles,
+      setCircles,
+      setImages,
+      setTexts,
+      setFrames,
+      setLines,
+      setArrows,
+      setPolygons,
+      setFigures,
+      setCodes,
+      setPaths,
+      pushHistory,
+      setSelectedShape,
+    ]
+  );
 
   /**
    * cutSelected - Combines copy and delete operations.
@@ -809,17 +886,40 @@ export const useCanvasCommands = (
       let setter: any = null;
       const kindKey = kind + "s" === "polys" ? "polygons" : kind + "s";
 
-      if (kind === "rect") { items = [...rectangles]; setter = setRectangles; }
-      else if (kind === "circle") { items = [...circles]; setter = setCircles; }
-      else if (kind === "image") { items = [...images]; setter = setImages; }
-      else if (kind === "text") { items = [...texts]; setter = setTexts; }
-      else if (kind === "frame") { items = [...frames]; setter = setFrames; }
-      else if (kind === "line") { items = [...lines]; setter = setLines; }
-      else if (kind === "arrow") { items = [...arrows]; setter = setArrows; }
-      else if (kind === "poly") { items = [...polygons]; setter = setPolygons; }
-      else if (kind === "figure") { items = [...figures]; setter = setFigures; }
-      else if (kind === "code") { items = [...codes]; setter = setCodes; }
-      else if (kind === "path") { items = [...paths]; setter = setPaths; }
+      if (kind === "rect") {
+        items = [...rectangles];
+        setter = setRectangles;
+      } else if (kind === "circle") {
+        items = [...circles];
+        setter = setCircles;
+      } else if (kind === "image") {
+        items = [...images];
+        setter = setImages;
+      } else if (kind === "text") {
+        items = [...texts];
+        setter = setTexts;
+      } else if (kind === "frame") {
+        items = [...frames];
+        setter = setFrames;
+      } else if (kind === "line") {
+        items = [...lines];
+        setter = setLines;
+      } else if (kind === "arrow") {
+        items = [...arrows];
+        setter = setArrows;
+      } else if (kind === "poly") {
+        items = [...polygons];
+        setter = setPolygons;
+      } else if (kind === "figure") {
+        items = [...figures];
+        setter = setFigures;
+      } else if (kind === "code") {
+        items = [...codes];
+        setter = setCodes;
+      } else if (kind === "path") {
+        items = [...paths];
+        setter = setPaths;
+      }
 
       if (items.length && setter) {
         const selected = indices.map((i) => items[i]);
@@ -830,7 +930,32 @@ export const useCanvasCommands = (
       }
     });
     pushHistory(updates);
-  }, [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, figures, codes, paths, pushHistory, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setFigures, setCodes, setPaths]);
+  }, [
+    selectedShape,
+    rectangles,
+    circles,
+    images,
+    texts,
+    frames,
+    lines,
+    arrows,
+    polygons,
+    figures,
+    codes,
+    paths,
+    pushHistory,
+    setRectangles,
+    setCircles,
+    setImages,
+    setTexts,
+    setFrames,
+    setLines,
+    setArrows,
+    setPolygons,
+    setFigures,
+    setCodes,
+    setPaths,
+  ]);
 
   /**
    * sendToBack - Moves selected shapes to the bottom of their respective collection.
@@ -850,17 +975,40 @@ export const useCanvasCommands = (
       let setter: any = null;
       const kindKey = kind + "s" === "polys" ? "polygons" : kind + "s";
 
-      if (kind === "rect") { items = [...rectangles]; setter = setRectangles; }
-      else if (kind === "circle") { items = [...circles]; setter = setCircles; }
-      else if (kind === "image") { items = [...images]; setter = setImages; }
-      else if (kind === "text") { items = [...texts]; setter = setTexts; }
-      else if (kind === "frame") { items = [...frames]; setter = setFrames; }
-      else if (kind === "line") { items = [...lines]; setter = setLines; }
-      else if (kind === "arrow") { items = [...arrows]; setter = setArrows; }
-      else if (kind === "poly") { items = [...polygons]; setter = setPolygons; }
-      else if (kind === "figure") { items = [...figures]; setter = setFigures; }
-      else if (kind === "code") { items = [...codes]; setter = setCodes; }
-      else if (kind === "path") { items = [...paths]; setter = setPaths; }
+      if (kind === "rect") {
+        items = [...rectangles];
+        setter = setRectangles;
+      } else if (kind === "circle") {
+        items = [...circles];
+        setter = setCircles;
+      } else if (kind === "image") {
+        items = [...images];
+        setter = setImages;
+      } else if (kind === "text") {
+        items = [...texts];
+        setter = setTexts;
+      } else if (kind === "frame") {
+        items = [...frames];
+        setter = setFrames;
+      } else if (kind === "line") {
+        items = [...lines];
+        setter = setLines;
+      } else if (kind === "arrow") {
+        items = [...arrows];
+        setter = setArrows;
+      } else if (kind === "poly") {
+        items = [...polygons];
+        setter = setPolygons;
+      } else if (kind === "figure") {
+        items = [...figures];
+        setter = setFigures;
+      } else if (kind === "code") {
+        items = [...codes];
+        setter = setCodes;
+      } else if (kind === "path") {
+        items = [...paths];
+        setter = setPaths;
+      }
 
       if (items.length && setter) {
         const selected = indices.map((i) => items[i]);
@@ -871,7 +1019,32 @@ export const useCanvasCommands = (
       }
     });
     pushHistory(updates);
-  }, [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, figures, codes, paths, pushHistory, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setFigures, setCodes, setPaths]);
+  }, [
+    selectedShape,
+    rectangles,
+    circles,
+    images,
+    texts,
+    frames,
+    lines,
+    arrows,
+    polygons,
+    figures,
+    codes,
+    paths,
+    pushHistory,
+    setRectangles,
+    setCircles,
+    setImages,
+    setTexts,
+    setFrames,
+    setLines,
+    setArrows,
+    setPolygons,
+    setFigures,
+    setCodes,
+    setPaths,
+  ]);
 
   /**
    * bringForward - Move selected shapes one level up within their collection.
@@ -891,17 +1064,40 @@ export const useCanvasCommands = (
       let setter: any = null;
       const kindKey = kind + "s" === "polys" ? "polygons" : kind + "s";
 
-      if (kind === "rect") { items = [...rectangles]; setter = setRectangles; }
-      else if (kind === "circle") { items = [...circles]; setter = setCircles; }
-      else if (kind === "image") { items = [...images]; setter = setImages; }
-      else if (kind === "text") { items = [...texts]; setter = setTexts; }
-      else if (kind === "frame") { items = [...frames]; setter = setFrames; }
-      else if (kind === "line") { items = [...lines]; setter = setLines; }
-      else if (kind === "arrow") { items = [...arrows]; setter = setArrows; }
-      else if (kind === "poly") { items = [...polygons]; setter = setPolygons; }
-      else if (kind === "figure") { items = [...figures]; setter = setFigures; }
-      else if (kind === "code") { items = [...codes]; setter = setCodes; }
-      else if (kind === "path") { items = [...paths]; setter = setPaths; }
+      if (kind === "rect") {
+        items = [...rectangles];
+        setter = setRectangles;
+      } else if (kind === "circle") {
+        items = [...circles];
+        setter = setCircles;
+      } else if (kind === "image") {
+        items = [...images];
+        setter = setImages;
+      } else if (kind === "text") {
+        items = [...texts];
+        setter = setTexts;
+      } else if (kind === "frame") {
+        items = [...frames];
+        setter = setFrames;
+      } else if (kind === "line") {
+        items = [...lines];
+        setter = setLines;
+      } else if (kind === "arrow") {
+        items = [...arrows];
+        setter = setArrows;
+      } else if (kind === "poly") {
+        items = [...polygons];
+        setter = setPolygons;
+      } else if (kind === "figure") {
+        items = [...figures];
+        setter = setFigures;
+      } else if (kind === "code") {
+        items = [...codes];
+        setter = setCodes;
+      } else if (kind === "path") {
+        items = [...paths];
+        setter = setPaths;
+      }
 
       if (items.length && setter) {
         const next = [...items];
@@ -915,7 +1111,32 @@ export const useCanvasCommands = (
       }
     });
     pushHistory(updates);
-  }, [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, figures, codes, paths, pushHistory, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setFigures, setCodes, setPaths]);
+  }, [
+    selectedShape,
+    rectangles,
+    circles,
+    images,
+    texts,
+    frames,
+    lines,
+    arrows,
+    polygons,
+    figures,
+    codes,
+    paths,
+    pushHistory,
+    setRectangles,
+    setCircles,
+    setImages,
+    setTexts,
+    setFrames,
+    setLines,
+    setArrows,
+    setPolygons,
+    setFigures,
+    setCodes,
+    setPaths,
+  ]);
 
   /**
    * sendBackward - Move selected shapes one level down within their collection.
@@ -935,17 +1156,40 @@ export const useCanvasCommands = (
       let setter: any = null;
       const kindKey = kind + "s" === "polys" ? "polygons" : kind + "s";
 
-      if (kind === "rect") { items = [...rectangles]; setter = setRectangles; }
-      else if (kind === "circle") { items = [...circles]; setter = setCircles; }
-      else if (kind === "image") { items = [...images]; setter = setImages; }
-      else if (kind === "text") { items = [...texts]; setter = setTexts; }
-      else if (kind === "frame") { items = [...frames]; setter = setFrames; }
-      else if (kind === "line") { items = [...lines]; setter = setLines; }
-      else if (kind === "arrow") { items = [...arrows]; setter = setArrows; }
-      else if (kind === "poly") { items = [...polygons]; setter = setPolygons; }
-      else if (kind === "figure") { items = [...figures]; setter = setFigures; }
-      else if (kind === "code") { items = [...codes]; setter = setCodes; }
-      else if (kind === "path") { items = [...paths]; setter = setPaths; }
+      if (kind === "rect") {
+        items = [...rectangles];
+        setter = setRectangles;
+      } else if (kind === "circle") {
+        items = [...circles];
+        setter = setCircles;
+      } else if (kind === "image") {
+        items = [...images];
+        setter = setImages;
+      } else if (kind === "text") {
+        items = [...texts];
+        setter = setTexts;
+      } else if (kind === "frame") {
+        items = [...frames];
+        setter = setFrames;
+      } else if (kind === "line") {
+        items = [...lines];
+        setter = setLines;
+      } else if (kind === "arrow") {
+        items = [...arrows];
+        setter = setArrows;
+      } else if (kind === "poly") {
+        items = [...polygons];
+        setter = setPolygons;
+      } else if (kind === "figure") {
+        items = [...figures];
+        setter = setFigures;
+      } else if (kind === "code") {
+        items = [...codes];
+        setter = setCodes;
+      } else if (kind === "path") {
+        items = [...paths];
+        setter = setPaths;
+      }
 
       if (items.length && setter) {
         const next = [...items];
@@ -959,7 +1203,32 @@ export const useCanvasCommands = (
       }
     });
     pushHistory(updates);
-  }, [selectedShape, rectangles, circles, images, texts, frames, lines, arrows, polygons, figures, codes, paths, pushHistory, setRectangles, setCircles, setImages, setTexts, setFrames, setLines, setArrows, setPolygons, setFigures, setCodes, setPaths]);
+  }, [
+    selectedShape,
+    rectangles,
+    circles,
+    images,
+    texts,
+    frames,
+    lines,
+    arrows,
+    polygons,
+    figures,
+    codes,
+    paths,
+    pushHistory,
+    setRectangles,
+    setCircles,
+    setImages,
+    setTexts,
+    setFrames,
+    setLines,
+    setArrows,
+    setPolygons,
+    setFigures,
+    setCodes,
+    setPaths,
+  ]);
 
   return {
     deleteSelected,

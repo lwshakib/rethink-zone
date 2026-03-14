@@ -16,8 +16,6 @@ import {
   Ungroup,
   ArrowLeft,
   ArrowRight,
-  CornerDownRight,
-  Minus,
 } from "lucide-react";
 // Type definitions for various shapes supportable on the canvas
 import {
@@ -49,7 +47,11 @@ interface FloatingToolbarProps {
   codes: CodeShape[]; // All code block data
   connectors: Connector[]; // All connector data
   canvasToClient: (x: number, y: number) => { x: number; y: number }; // Transform helper
-  onUpdateShape: (kind: string, index: number, updates: Record<string, unknown>) => void; // Generic update trigger
+  onUpdateShape: (
+    kind: string,
+    index: number,
+    updates: Record<string, unknown>
+  ) => void; // Generic update trigger
   onChangeKind: (kind: string, index: number, newKind: string) => void; // Shape transformation trigger
   onDelete: () => void; // Global delete handler
   onDuplicate: () => void; // Global duplicate handler
@@ -347,7 +349,8 @@ const FloatingToolbar = React.memo(
     const shapeData = useMemo(() => {
       if (selectedShape.length === 0) return null;
       const { kind, id } = selectedShape[0];
-      const findById = <T extends { id: string }>(arr: T[]) => arr.find((s) => s.id === id);
+      const findById = <T extends { id: string }>(arr: T[]) =>
+        arr.find((s) => s.id === id);
 
       // Switch through collections to find the matching entity
       const source =
@@ -399,7 +402,8 @@ const FloatingToolbar = React.memo(
     // Grouping logic: check if selected items are part of a group
     const isInGroup = useMemo(() => {
       return selectedShape.some((s) => {
-        const findById = <T extends { id: string }>(arr: T[]) => arr.find((item) => item.id === s.id);
+        const findById = <T extends { id: string }>(arr: T[]) =>
+          arr.find((item) => item.id === s.id);
         const shape =
           s.kind === "rect"
             ? findById(rectangles)
@@ -487,7 +491,8 @@ const FloatingToolbar = React.memo(
               mainKind === s.kind ||
               (mainKind === "poly" &&
                 s.kind.startsWith("poly") &&
-                (shapeData as unknown as PolyShape).type === s.kind.split(":")[1])
+                (shapeData as unknown as PolyShape).type ===
+                  s.kind.split(":")[1])
                 ? "bg-[#3bc1ff] text-white shadow-lg"
                 : `text-foreground/80 ${bgHover}`
             }`}
@@ -649,10 +654,12 @@ const FloatingToolbar = React.memo(
                     mainKind === "text"
                       ? currentFill === "transparent"
                       : isLineOrArrow
-                        ? (shapeData as { strokeWidth?: number }).strokeWidth === 0
+                        ? (shapeData as { strokeWidth?: number })
+                            .strokeWidth === 0
                         : colorTarget === "fill"
                           ? currentFill === "transparent"
-                          : (shapeData as { strokeWidth?: number }).strokeWidth === 0
+                          : (shapeData as { strokeWidth?: number })
+                              .strokeWidth === 0
                   )
                     ? "ring-[3px] ring-[#3bc1ff]"
                     : "hover:scale-105"
@@ -686,7 +693,8 @@ const FloatingToolbar = React.memo(
               }
               className={`flex items-center justify-between px-3 py-2 rounded-md transition-all ${
                 // Highlight the button if it matches the current width
-                (shapeData as { strokeWidth?: number }).strokeWidth === preset.width
+                (shapeData as { strokeWidth?: number }).strokeWidth ===
+                preset.width
                   ? "bg-[#3bc1ff] text-white"
                   : `${bgHover} text-foreground/80`
               }`}
@@ -1139,9 +1147,7 @@ const FloatingToolbar = React.memo(
                   </div>
                   <ChevronDown className="h-3 w-3 opacity-40" />
                 </button>
-                <PopoverContainer
-                  active={activePopover === "shapes"}
-                >
+                <PopoverContainer active={activePopover === "shapes"}>
                   {renderShapesGrid()}
                 </PopoverContainer>
               </div>
@@ -1209,9 +1215,7 @@ const FloatingToolbar = React.memo(
                   )}
                   <ChevronDown className="h-3 w-3 opacity-40" />
                 </button>
-                <PopoverContainer
-                  active={activePopover === "color"}
-                >
+                <PopoverContainer active={activePopover === "color"}>
                   {renderColorGrid()}
                 </PopoverContainer>
                 {/* Secondary popover for the deep color picker */}
@@ -1252,9 +1256,7 @@ const FloatingToolbar = React.memo(
                     <TypeIcon className="h-4 w-4" />
                     <ChevronDown className="h-3 w-3 opacity-40 ml-0.5" />
                   </button>
-                  <PopoverContainer
-                    active={activePopover === "typo"}
-                  >
+                  <PopoverContainer active={activePopover === "typo"}>
                     {renderTypographyPanel()}
                   </PopoverContainer>
                 </div>
@@ -1277,9 +1279,7 @@ const FloatingToolbar = React.memo(
                     <CodeIcon className="h-4 w-4" />
                     <ChevronDown className="h-3 w-3 opacity-40 ml-0.5" />
                   </button>
-                  <PopoverContainer
-                    active={activePopover === "code-panel"}
-                  >
+                  <PopoverContainer active={activePopover === "code-panel"}>
                     {renderCodePanel()}
                   </PopoverContainer>
                 </div>
@@ -1313,9 +1313,7 @@ const FloatingToolbar = React.memo(
                     </div>
                     <ChevronDown className="h-3 w-3 opacity-40" />
                   </button>
-                  <PopoverContainer
-                    active={activePopover === "stroke"}
-                  >
+                  <PopoverContainer active={activePopover === "stroke"}>
                     {renderStrokePanel()}
                   </PopoverContainer>
                 </div>
