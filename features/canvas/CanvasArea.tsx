@@ -1535,7 +1535,6 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
             getShapeBounds={getShapeBoundsLocal}
             canvasToClient={canvasToClient}
             onDelete={deleteSelected}
-            zoom={zoom}
           />
 
           {/* Floating toolbar that appears near selected shapes for quick adjustments (color, delete, etc) */}
