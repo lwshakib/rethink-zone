@@ -37,6 +37,7 @@ import {
   getConnectorPoints,
   distToPolyline,
   getSelectionBounds,
+  findNearestBorderPoint,
 } from "../utils/geometry";
 import { measureText } from "../utils/canvas-helpers";
 import { uploadFileToCloudinary } from "../utils/upload";
@@ -2550,18 +2551,59 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         setCursorStyle(nextCursor);
       }
 
-      // Anchor Detection for Arrows - find the closest predefined node
+      // Anchor Detection for Arrows - find the closest predefined node or nearest border
       let nearest: any = null;
       if (tool === "Arrow" && !isDragging) {
-        const tolerance = 14 / zoom;
+        const tolerance = 20 / zoom;
         let bestDist = tolerance;
 
-        // Use direct anchorHandles from prop to avoid ref sync delay
+        // 1. Check direct anchorHandles from prop (corners)
         for (const h of anchorHandles) {
           const d = Math.hypot(point.x - h.point.x, point.y - h.point.y);
           if (d <= bestDist) {
             bestDist = d;
             nearest = h;
+          }
+        }
+
+        // 2. If no handle, check shape borders dynamically
+        if (!nearest) {
+          const s = stateRef.current;
+          const allShapes = [
+            ...s.rectangles.map(x => ({ ...x, kind: 'rect' as const })),
+            ...s.circles.map(x => ({ ...x, kind: 'circle' as const })),
+            ...s.images.map(x => ({ ...x, kind: 'image' as const })),
+            ...s.texts.map(x => ({ ...x, kind: 'text' as const })),
+            ...s.frames.map(x => ({ ...x, kind: 'frame' as const })),
+            ...s.polygons.map(x => ({ ...x, kind: 'poly' as const })),
+            ...s.figures.map(x => ({ ...x, kind: 'figure' as const })),
+            ...s.codes.map(x => ({ ...x, kind: 'code' as const })),
+          ];
+
+          for (const sh of allShapes) {
+            const isCircle = sh.kind === 'circle';
+            const b = isCircle 
+              ? { x: sh.x - sh.rx, y: sh.y - sh.ry, width: sh.rx * 2, height: sh.ry * 2 }
+              : { x: sh.x, y: sh.y, width: (sh as any).width || 0, height: (sh as any).height || 0 };
+            
+            // Fast bounding box check
+            const margin = 20 / zoom;
+            if (point.x < b.x - margin || point.x > b.x + b.width + margin ||
+                point.y < b.y - margin || point.y > b.y + b.height + margin) continue;
+
+            const border = findNearestBorderPoint(point, b, isCircle);
+            const d = Math.hypot(point.x - border.point.x, point.y - border.point.y);
+            
+            if (d < bestDist) {
+              bestDist = d;
+              nearest = {
+                kind: sh.kind,
+                shapeId: sh.id,
+                anchor: border.anchor,
+                percent: border.percent,
+                point: border.point
+              };
+            }
           }
         }
 
@@ -3226,7 +3268,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             let nearestAnchor: any = null;
             let bestDist = tolerance;
 
-            // Check explicit handles
+            // 1. Check direct anchorHandles (explicit corners)
             for (const h of anchorHandles) {
               const d = Math.hypot(point.x - h.point.x, point.y - h.point.y);
               if (d <= bestDist) {
@@ -3235,93 +3277,42 @@ export const useCanvasInteraction = (props: InteractionProps) => {
               }
             }
 
-            // If no handle, check shape borders
+            // 2. If no handle, check shape borders dynamically
             if (!nearestAnchor) {
+              const s = stateRef.current;
               const allShapes = [
-                ...rectangles.map((r) => ({ ...r, kind: "rect" as const })),
-                ...images.map((r) => ({ ...r, kind: "image" as const })),
-                ...texts.map((r) => ({ ...r, kind: "text" as const })),
-                ...frames.map((r) => ({ ...r, kind: "frame" as const })),
-                ...polygons.map((r) => ({ ...r, kind: "poly" as const })),
-                ...figures.map((r) => ({ ...r, kind: "figure" as const })),
-                ...codes.map((r) => ({ ...r, kind: "code" as const })),
+                ...s.rectangles.map(x => ({ ...x, kind: 'rect' as const })),
+                ...s.circles.map(x => ({ ...x, kind: 'circle' as const })),
+                ...s.images.map(x => ({ ...x, kind: 'image' as const })),
+                ...s.texts.map(x => ({ ...x, kind: 'text' as const })),
+                ...s.frames.map(x => ({ ...x, kind: 'frame' as const })),
+                ...s.polygons.map(x => ({ ...x, kind: 'poly' as const })),
+                ...s.figures.map(x => ({ ...x, kind: 'figure' as const })),
+                ...s.codes.map(x => ({ ...x, kind: 'code' as const })),
               ];
 
-              for (const s of allShapes) {
-                const b = { x: s.x, y: s.y, w: s.width, h: s.height };
-                const dists = [
-                  {
-                    d: Math.abs(point.y - b.y),
-                    a: "top" as const,
-                    p: (point.x - b.x) / b.w,
-                  },
-                  {
-                    d: Math.abs(point.y - (b.y + b.h)),
-                    a: "bottom" as const,
-                    p: (point.x - b.x) / b.w,
-                  },
-                  {
-                    d: Math.abs(point.x - b.x),
-                    a: "left" as const,
-                    p: (point.y - b.y) / b.h,
-                  },
-                  {
-                    d: Math.abs(point.x - (b.x + b.w)),
-                    a: "right" as const,
-                    p: (point.y - b.y) / b.h,
-                  },
-                ];
+              for (const sh of allShapes) {
+                const isCircle = sh.kind === 'circle';
+                const b = isCircle 
+                  ? { x: sh.x - sh.rx, y: sh.y - sh.ry, width: sh.rx * 2, height: sh.ry * 2 }
+                  : { x: sh.x, y: sh.y, width: (sh as any).width || 0, height: (sh as any).height || 0 };
+                
+                const margin = 20 / zoom;
+                if (point.x < b.x - margin || point.x > b.x + b.width + margin ||
+                    point.y < b.y - margin || point.y > b.y + b.height + margin) continue;
 
-                for (const hit of dists) {
-                  if (hit.d <= bestDist && hit.p >= -0.1 && hit.p <= 1.1) {
-                    bestDist = hit.d;
-                    nearestAnchor = {
-                      kind: s.kind,
-                      shapeId: s.id,
-                      anchor: hit.a,
-                      percent: Math.max(0, Math.min(1, hit.p)),
-                      point: { x: point.x, y: point.y }, // Temp point for hover
-                    };
-                  }
-                }
-              }
-
-              // Circles as well
-              for (const c of circles) {
-                const b = {
-                  x: c.x - c.rx,
-                  y: c.y - c.ry,
-                  w: c.rx * 2,
-                  h: c.ry * 2,
-                };
-                const dists = [
-                  {
-                    d: Math.hypot(point.x - c.x, point.y - b.y),
-                    a: "top" as const,
-                  },
-                  {
-                    d: Math.hypot(point.x - c.x, point.y - (b.y + b.h)),
-                    a: "bottom" as const,
-                  },
-                  {
-                    d: Math.hypot(point.x - b.x, point.y - c.y),
-                    a: "left" as const,
-                  },
-                  {
-                    d: Math.hypot(point.x - (b.x + b.w), point.y - c.y),
-                    a: "right" as const,
-                  },
-                ];
-                for (const hit of dists) {
-                  if (hit.d <= bestDist) {
-                    bestDist = hit.d;
-                    nearestAnchor = {
-                      kind: "circle",
-                      shapeId: c.id,
-                      anchor: hit.a,
-                      point: { x: point.x, y: point.y },
-                    };
-                  }
+                const border = findNearestBorderPoint(point, b, isCircle);
+                const d = Math.hypot(point.x - border.point.x, point.y - border.point.y);
+                
+                if (d < bestDist) {
+                  bestDist = d;
+                  nearestAnchor = {
+                    kind: sh.kind,
+                    shapeId: sh.id,
+                    anchor: border.anchor,
+                    percent: border.percent,
+                    point: border.point
+                  };
                 }
               }
             }

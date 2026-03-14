@@ -701,3 +701,77 @@ export const getSelectionBounds = (
   const maxY = Math.max(...ys);
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 };
+
+/**
+ * findNearestBorderPoint - Calculates the point on a shape's border closest to a given target point.
+ * Returns the anchor side and percent along that side for persistable attachment.
+ */
+export const findNearestBorderPoint = (
+  target: { x: number; y: number },
+  shapeBox: { x: number; y: number; width: number; height: number },
+  isCircle = false
+) => {
+  if (isCircle) {
+    const rx = shapeBox.width / 2;
+    const ry = shapeBox.height / 2;
+    const cx = shapeBox.x + rx;
+    const cy = shapeBox.y + ry;
+
+    const dx = target.x - cx;
+    const dy = target.y - cy;
+    const angle = Math.atan2(dy, dx);
+
+    const px = cx + rx * Math.cos(angle);
+    const py = cy + ry * Math.sin(angle);
+
+    // For circles, we map them to the 4 main cardinal sides based on quadrant
+    let side: AnchorSide = "top";
+    if (angle >= -Math.PI / 4 && angle < Math.PI / 4) side = "right";
+    else if (angle >= Math.PI / 4 && angle < (3 * Math.PI) / 4) side = "bottom";
+    else if (angle >= (-3 * Math.PI) / 4 && angle < -Math.PI / 4) side = "top";
+    else side = "left";
+
+    return {
+      anchor: side,
+      percent: 0.5, // Simplified for circles to quadrants
+      point: { x: px, y: py },
+    };
+  }
+
+  // Rectangular logic
+  const { x, y, width, height } = shapeBox;
+  const distL = Math.abs(target.x - x);
+  const distR = Math.abs(target.x - (x + width));
+  const distT = Math.abs(target.y - y);
+  const distB = Math.abs(target.y - (y + height));
+
+  // Snap to the closest edge
+  const minDist = Math.min(distL, distR, distT, distB);
+
+  if (minDist === distT) {
+    return {
+      anchor: "top" as AnchorSide,
+      percent: Math.max(0, Math.min(1, (target.x - x) / width)),
+      point: { x: Math.max(x, Math.min(x + width, target.x)), y: y },
+    };
+  }
+  if (minDist === distB) {
+    return {
+      anchor: "bottom" as AnchorSide,
+      percent: Math.max(0, Math.min(1, (target.x - x) / width)),
+      point: { x: Math.max(x, Math.min(x + width, target.x)), y: y + height },
+    };
+  }
+  if (minDist === distL) {
+    return {
+      anchor: "left" as AnchorSide,
+      percent: Math.max(0, Math.min(1, (target.y - y) / height)),
+      point: { x: x, y: Math.max(y, Math.min(y + height, target.y)) },
+    };
+  }
+  return {
+    anchor: "right" as AnchorSide,
+    percent: Math.max(0, Math.min(1, (target.y - y) / height)),
+    point: { x: x + width, y: Math.max(y, Math.min(y + height, target.y)) },
+  };
+};
