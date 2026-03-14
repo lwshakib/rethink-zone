@@ -39,7 +39,7 @@ export const LineActions: React.FC<LineActionsProps> = ({
   if (selectedShape.length !== 1) return null;
 
   const { kind, id, index } = selectedShape[0];
-  if (!["line", "arrow", "connector"].includes(kind)) return null;
+  if (!["line", "arrow"].includes(kind)) return null;
 
   const center = (() => {
     if (kind === "line") {

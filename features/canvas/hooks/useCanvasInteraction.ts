@@ -38,6 +38,7 @@ import {
   distToPolyline,
   getSelectionBounds,
   findNearestBorderPoint,
+  getAnchorDir,
 } from "../utils/geometry";
 import { measureText } from "../utils/canvas-helpers";
 import { uploadFileToCloudinary } from "../utils/upload";
@@ -261,6 +262,14 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     y: number;
     width: number;
     height: number;
+  } | null>(null);
+  const dragConnectorSegmentRef = useRef<{
+    connectorIndex: number;
+    segmentIndex: number;
+    isHorizontal: boolean;
+    initialPath: { x: number; y: number }[];
+    initialFromPercent: number;
+    initialToPercent: number;
   } | null>(null);
   const selectionStartRef = useRef<any>(null);
   const pointerToolRef = useRef<Tool | "">("");
@@ -1490,6 +1499,124 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           return null;
         })();
 
+        // Hit detection for Connector Segments
+        let hitConnectorSegment: {
+          cIdx: number;
+          segIdx: number;
+          isHorizontal: boolean;
+          fullPath: { x: number; y: number }[];
+        } | null = null;
+        if (tool === "Select") {
+          const s = stateRef.current;
+          const allNodeBounds = [
+            ...s.rectangles
+              .filter((r) => !r.strokeDashArray)
+              .map((r) => ({
+                x: r.x,
+                y: r.y,
+                width: r.width,
+                height: r.height,
+              })),
+            ...s.images.map((i) => ({
+              x: i.x,
+              y: i.y,
+              width: i.width,
+              height: i.height,
+            })),
+            ...s.figures.map((f) => ({
+              x: f.x,
+              y: f.y,
+              width: f.width,
+              height: f.height,
+            })),
+            ...s.codes.map((c) => ({
+              x: c.x,
+              y: c.y,
+              width: c.width,
+              height: c.height,
+            })),
+          ];
+
+          for (let cIdx = 0; cIdx < s.connectors.length; cIdx++) {
+            const c = s.connectors[cIdx];
+            const fromPt = getAnchorPoint(c.from);
+            const toPt = getAnchorPoint(c.to);
+            if (!fromPt || !toPt) continue;
+
+            const fullPath = getConnectorPoints(
+              fromPt,
+              toPt,
+              c.from.anchor,
+              c.to.anchor,
+              getShapeBounds(c.from) || undefined,
+              getShapeBounds(c.to) || undefined,
+              allNodeBounds,
+              c.waypoints
+            );
+
+            for (let i = 0; i < fullPath.length - 1; i++) {
+              const p1 = fullPath[i];
+              const p2 = fullPath[i + 1];
+              const dist = distToSegment(
+                point.x,
+                point.y,
+                p1.x,
+                p1.y,
+                p2.x,
+                p2.y
+              );
+              if (dist < 8 / zoom) {
+                const isH = Math.abs(p1.y - p2.y) < 1;
+                const isV = Math.abs(p1.x - p2.x) < 1;
+                if (isH || isV) {
+                  hitConnectorSegment = {
+                    cIdx,
+                    segIdx: i,
+                    isHorizontal: isH,
+                    fullPath,
+                  };
+                  break;
+                }
+              }
+            }
+            if (hitConnectorSegment) break;
+          }
+        }
+
+        if (hitConnectorSegment) {
+          const connector = connectors[hitConnectorSegment.cIdx];
+          dragModeRef.current = "drag-connector-segment";
+          if (event.shiftKey) {
+            setSelectedShape((prev) => [
+              ...prev,
+              {
+                kind: "connector",
+                index: hitConnectorSegment.cIdx,
+                id: connector.id,
+              },
+            ]);
+          } else {
+            setSelectedShape([
+              {
+                kind: "connector",
+                index: hitConnectorSegment.cIdx,
+                id: connector.id,
+              },
+            ]);
+          }
+          dragConnectorSegmentRef.current = {
+            connectorIndex: hitConnectorSegment.cIdx,
+            segmentIndex: hitConnectorSegment.segIdx,
+            isHorizontal: hitConnectorSegment.isHorizontal,
+            initialPath: hitConnectorSegment.fullPath.map((p) => ({ ...p })),
+            initialFromPercent: connector.from.percent || 0.5,
+            initialToPercent: connector.to.percent || 0.5,
+          };
+          pointerStartRef.current = { x: point.x, y: point.y };
+          (event.target as HTMLElement).setPointerCapture(event.pointerId);
+          return;
+        }
+
         let picked: SelectedShapeInfo | null = null;
         if (hitImage != null)
           picked = { kind: "image", index: hitImage, id: images[hitImage].id };
@@ -2442,6 +2569,64 @@ export const useCanvasInteraction = (props: InteractionProps) => {
       } else if (tool !== "Select") {
         nextCursor = "crosshair";
       } else if (dragModeRef.current !== "none") {
+        if (dragModeRef.current === "drag-connector-segment" && dragConnectorSegmentRef.current) {
+          const drag = dragConnectorSegmentRef.current;
+          const dx = point.x - pointerStartRef.current.x;
+          const dy = point.y - pointerStartRef.current.y;
+          
+          const connector = connectors[drag.connectorIndex];
+          const fromDir = getAnchorDir(connector.from.anchor);
+          const toDir = getAnchorDir(connector.to.anchor);
+          
+          const newPath = drag.initialPath.map(p => ({ ...p }));
+          const i = drag.segmentIndex;
+          
+          if (drag.isHorizontal) {
+            newPath[i].y += dy;
+            newPath[i+1].y += dy;
+          } else {
+            newPath[i].x += dx;
+            newPath[i+1].x += dx;
+          }
+
+          // Maintain orthogonality for anchor connections
+          if (fromDir.x !== 0) newPath[0].y = newPath[1].y;
+          else if (fromDir.y !== 0) newPath[0].x = newPath[1].x;
+          
+          if (toDir.x !== 0) newPath[newPath.length-1].y = newPath[newPath.length-2].y;
+          else if (toDir.y !== 0) newPath[newPath.length-1].x = newPath[newPath.length-2].x;
+          
+          // Helper to calculate new percent for sliding anchors
+          const updateAnchorFromPath = (anchor: any, pt: {x:number, y:number}) => {
+             if (anchor.kind === 'point') return { ...anchor, point: pt };
+             const bounds = getShapeBounds(anchor);
+             if (!bounds) return anchor;
+             let percent = 0.5;
+             if (anchor.anchor === 'left' || anchor.anchor === 'right') {
+                percent = (pt.y - bounds.y) / bounds.height;
+             } else if (anchor.anchor === 'top' || anchor.anchor === 'bottom') {
+                percent = (pt.x - bounds.x) / bounds.width;
+             }
+             return { ...anchor, percent: Math.max(0, Math.min(1, percent)) };
+          };
+
+          const newFrom = updateAnchorFromPath(connector.from, newPath[0]);
+          const newTo = updateAnchorFromPath(connector.to, newPath[newPath.length-1]);
+          
+          // Extract waypoints
+          let startIndex = 1;
+          if (fromDir.x !== 0 || fromDir.y !== 0) startIndex = 2;
+          let endIndex = newPath.length - 1;
+          if (toDir.x !== 0 || toDir.y !== 0) endIndex = newPath.length - 2;
+          
+          const waypoints = newPath.slice(startIndex, endIndex);
+          
+          setConnectors(prev => prev.map((c, idx) => 
+            idx === drag.connectorIndex ? { ...c, from: newFrom, to: newTo, waypoints } : c
+          ));
+          return;
+        }
+
         if (dragModeRef.current === "move") {
           nextCursor = "move";
         } else {
@@ -2516,6 +2701,45 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           }
         }
 
+        const allNodeBounds = [
+          ...rectangles.filter(r => !r.strokeDashArray).map(r => ({ x: r.x, y: r.y, width: r.width, height: r.height })),
+          ...images.map(i => ({ x: i.x, y: i.y, width: i.width, height: i.height })),
+          ...figures.map(f => ({ x: f.x, y: f.y, width: f.width, height: f.height })),
+          ...codes.map(c => ({ x: c.x, y: c.y, width: c.width, height: c.height })),
+        ];
+
+        let hitConnectorSegment: { cIdx: number; segIdx: number; isHorizontal: boolean } | null = null;
+        for (let cIdx = 0; cIdx < connectors.length; cIdx++) {
+          const c = connectors[cIdx];
+          const fromPt = getAnchorPoint(c.from);
+          const toPt = getAnchorPoint(c.to);
+          if (!fromPt || !toPt) continue;
+
+          const fullPath = getConnectorPoints(
+            fromPt, toPt,
+            c.from.anchor, c.to.anchor,
+            getShapeBounds(c.from) || undefined,
+            getShapeBounds(c.to) || undefined,
+            allNodeBounds,
+            c.waypoints
+          );
+
+          for (let i = 0; i < fullPath.length - 1; i++) {
+            const p1 = fullPath[i];
+            const p2 = fullPath[i+1];
+            const dist = distToSegment(point.x, point.y, p1.x, p1.y, p2.x, p2.y);
+            if (dist < 8 / zoom) {
+              const isH = Math.abs(p1.y - p2.y) < 1;
+              const isV = Math.abs(p1.x - p2.x) < 1;
+              if (isH || isV) {
+                hitConnectorSegment = { cIdx, segIdx: i, isHorizontal: isH };
+                break;
+              }
+            }
+          }
+          if (hitConnectorSegment) break;
+        }
+
         const hitNormal =
           [
             ...rectangles,
@@ -2545,7 +2769,11 @@ export const useCanvasInteraction = (props: InteractionProps) => {
               8 / zoom
           );
 
-        if (hitNormal) nextCursor = "move";
+        if (hitConnectorSegment) {
+          nextCursor = hitConnectorSegment.isHorizontal ? "ns-resize" : "ew-resize";
+        } else if (hitNormal) {
+          nextCursor = "move";
+        }
       }
       if (nextCursor !== cursorStyleRef.current) {
         setCursorStyle(nextCursor);
@@ -3496,6 +3724,13 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     (event: React.PointerEvent<HTMLCanvasElement>) => {
       const tool = pointerToolRef.current || resolveTool(event);
       pointerToolRef.current = "";
+      if (dragModeRef.current === "drag-connector-segment") {
+        dragConnectorSegmentRef.current = null;
+        dragModeRef.current = "none";
+        pushHistory();
+        (event.target as HTMLElement).releasePointerCapture(event.pointerId);
+        return;
+      }
 
       if (isPanningRef.current) {
         isPanningRef.current = false;

@@ -370,7 +370,8 @@ export type DragMode =
   | "resize-line"
   | "resize-arrow"
   | "resize-connector"
-  | "resize-selection";
+  | "resize-selection"
+  | "drag-connector-segment";
 
 // Simple UI wrapper for general icons
 export interface IconItem {
