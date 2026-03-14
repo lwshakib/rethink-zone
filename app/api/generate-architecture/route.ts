@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { generateText, Message } from "@/llm/generateText";
 import { analyzeRepo } from "@/lib/repo-analyzer";
 import { ARCHITECTURE_SYSTEM_PROMPT } from "@/llm/prompts";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import prisma from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
@@ -14,6 +17,63 @@ export async function POST(req: Request) {
       );
     }
 
+    // --- 1. AUTHENTICATION & CREDIT CONSUMPTION ---
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = session.user.id;
+
+    // Fetch user and handle daily credit reset
+    let user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const now = new Date();
+    const lastReset = new Date(user.lastCreditReset);
+    const todayMidnight = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+
+    if (lastReset < todayMidnight) {
+      user = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          credits: 10,
+          lastCreditReset: now,
+        },
+      });
+    }
+
+    // Check for sufficient credits
+    if (user.credits < 1) {
+      return NextResponse.json(
+        { error: "Credits exhausted. You have to wait for daily limit reset." },
+        { status: 403 }
+      );
+    }
+
+    // CONSUME CREDIT IMMEDIATELY (Before Repo Analysis or AI Request)
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        credits: {
+          decrement: 1,
+        },
+      },
+    });
+
+    // --- 2. REPO ANALYSIS (IF REQUESTED) ---
     let repoContext = "";
     if (repoUrl) {
       try {
@@ -30,10 +90,10 @@ Core Interactions: ${repoIndex.calls
 INSTRUCTION: Use this codebase index to infer the actual software architecture. Map specific files/modules to appropriate cloud services or logical groups.`;
       } catch (e) {
         console.warn("Repo analysis failed, proceeding with prompt only:", e);
-        // We don't fail the whole request, but we could add a warning to the response if we had a way
       }
     }
 
+    // --- 3. AI GENERATION ---
     const finalPrompt =
       prompt ||
       "Generate a comprehensive architecture diagram based on this codebase.";

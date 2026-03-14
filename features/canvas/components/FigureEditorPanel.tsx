@@ -74,6 +74,7 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
   const [displayExamples, setDisplayExamples] = useState<
     typeof ARCHITECTURE_EXAMPLES
   >([]);
+  const [credits, setCredits] = useState<number | null>(null);
   const sidebarRef = React.useRef<HTMLDivElement>(null);
 
   // Determine current theme - defaulting to dark for the premium look of the editor
@@ -110,6 +111,22 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
   useEffect(() => {
     const shuffled = [...ARCHITECTURE_EXAMPLES].sort(() => 0.5 - Math.random());
     setDisplayExamples(shuffled.slice(0, 4));
+
+    // Fetch credits when panel opens
+    const fetchCredits = async () => {
+      try {
+        const res = await fetch("/api/user/credits");
+        if (res.ok) {
+          const data = await res.json();
+          setCredits(data.credits);
+        }
+      } catch (err) {
+        console.error("Failed to fetch credits:", err);
+      }
+    };
+    if (isOpen) {
+      fetchCredits();
+    }
   }, [isOpen]);
 
   // Safeguard: Abort generation if the panel is closed
@@ -140,6 +157,11 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
       return;
     }
 
+    if (credits === 0) {
+      toast.error("Credits exhausted. You have to wait for daily limit reset.");
+      return;
+    }
+
     setIsGenerating(true);
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -167,6 +189,7 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
       if (result) {
         onCodeChange(result);
         setActiveTab("code");
+        setCredits((prev) => (prev !== null ? prev - 1 : null)); // Optimistically deduct credit
         toast.success("Architecture generated successfully!");
       }
     } catch (err: unknown) {
@@ -328,7 +351,7 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
               />
               <Button
                 onClick={handleGenerate}
-                disabled={!isGenerating && !prompt.trim()}
+                disabled={!isGenerating && (!prompt.trim() || credits === 0)}
                 variant="default"
                 className="h-10 font-semibold text-xs rounded-md px-10 border border-white/10 bg-white text-black hover:bg-zinc-200 transition-all"
               >
@@ -374,6 +397,15 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Minimal Credits Display */}
+            <div className="mt-auto pt-4 flex justify-end">
+              <span className="text-[10px] font-medium text-white/20 tracking-tight">
+                {credits !== null
+                  ? `${credits} credits remaining`
+                  : "checking credits..."}
+              </span>
             </div>
           </div>
         ) : (

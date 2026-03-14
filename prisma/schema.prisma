@@ -32,6 +32,8 @@ model User {
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
+  credits       Int       @default(10)
+  lastCreditReset DateTime  @default(now())
   workspaces    Workspace[]
 
   @@unique([email])
