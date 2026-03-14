@@ -304,22 +304,51 @@ export const getConnectorPoints = (
     }
   }
 
-  // Build the final point array
-  const pts: { x: number; y: number }[] = [p0];
-  if (fromDir.x !== 0 || fromDir.y !== 0) pts.push(p1);
+  // Build the initial point array
+  let rawPts: { x: number; y: number }[] = [p0];
+  if (fromDir.x !== 0 || fromDir.y !== 0) rawPts.push(p1);
 
   if (waypoints && waypoints.length > 0) {
     // Manual Waypoints take precedence over automatic routing
-    pts.push(...waypoints);
+    rawPts.push(...waypoints);
   } else if (bestPath) {
-    pts.push(...bestPath);
+    rawPts.push(...bestPath);
   } else {
     // Ultimate fallback: Use a centered vertical-first Z-path
-    pts.push(...z1);
+    rawPts.push(...z1);
   }
 
-  if (toDir.x !== 0 || toDir.y !== 0) pts.push(p3);
-  pts.push(p4);
+  if (toDir.x !== 0 || toDir.y !== 0) rawPts.push(p3);
+  rawPts.push(p4);
+
+  // Rectification pass: Guarantee all segments are orthogonal
+  const pts: { x: number; y: number }[] = [rawPts[0]];
+  for (let i = 1; i < rawPts.length; i++) {
+    const prev = pts[pts.length - 1];
+    const curr = rawPts[i];
+    
+    // If a segment is not naturally orthogonal, insert a bridge point
+    if (Math.abs(prev.x - curr.x) > 0.5 && Math.abs(prev.y - curr.y) > 0.5) {
+      // Create an elbow to rectify the diagonal
+      let elbow: { x: number; y: number };
+      
+      // Heuristic for elbow direction:
+      // 1. If we're at the very start, prefer moving in fromDir
+      if (i === 1 && fromDir.y !== 0) {
+        elbow = { x: prev.x, y: curr.y };
+      } 
+      // 2. If we're at the very end, prefer moving into the shape based on toDir
+      else if (i === rawPts.length - 1 && toDir.y !== 0) {
+        elbow = { x: prev.x, y: curr.y };
+      }
+      // 3. Middle segments: default to x-then-y (standard orthogonal look)
+      else {
+        elbow = { x: curr.x, y: prev.y };
+      }
+      pts.push(elbow);
+    }
+    pts.push(curr);
+  }
 
   // Post-processing: remove identical consecutive points to prevent render artifacts
   const finalPts: { x: number; y: number }[] = [];

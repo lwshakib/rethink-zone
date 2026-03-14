@@ -2573,14 +2573,11 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           const drag = dragConnectorSegmentRef.current;
           const dx = point.x - pointerStartRef.current.x;
           const dy = point.y - pointerStartRef.current.y;
-          
           const connector = connectors[drag.connectorIndex];
-          const fromDir = getAnchorDir(connector.from.anchor);
-          const toDir = getAnchorDir(connector.to.anchor);
-          
-          const newPath = drag.initialPath.map(p => ({ ...p }));
+
+          // 1. Initial movement logic: Apply dx/dy to the segment being dragged
+          let newPath = drag.initialPath.map(p => ({ ...p }));
           const i = drag.segmentIndex;
-          
           if (drag.isHorizontal) {
             newPath[i].y += dy;
             newPath[i+1].y += dy;
@@ -2589,19 +2586,63 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             newPath[i+1].x += dx;
           }
 
-          // Maintain orthogonality for anchor connections
-          if (fromDir.x !== 0) newPath[0].y = newPath[1].y;
-          else if (fromDir.y !== 0) newPath[0].x = newPath[1].x;
-          
-          if (toDir.x !== 0) newPath[newPath.length-1].y = newPath[newPath.length-2].y;
-          else if (toDir.y !== 0) newPath[newPath.length-1].x = newPath[newPath.length-2].x;
-          
-          // Helper to calculate new percent for sliding anchors
+          // 2. Fix Start Anchor (From) - Ensure it stays rooted to the shape
+          if (connector.from.kind !== 'point') {
+            const fromDir = getAnchorDir(connector.from.anchor);
+            const p0_orig = drag.initialPath[0];
+            const p1_moved = newPath[1];
+            
+            // Check if this move broke orthogonality with the start protrusion
+            const isPerp = (fromDir.x !== 0 && Math.abs(p1_moved.y - p0_orig.y) > 0.5) ||
+                           (fromDir.y !== 0 && Math.abs(p1_moved.x - p0_orig.x) > 0.5);
+            
+            if (isPerp) {
+              const p1_orig = { ...drag.initialPath[1] };
+              const p_elbow = { x: p1_orig.x, y: p1_moved.y };
+              if (fromDir.y !== 0) {
+                 p_elbow.x = p1_moved.x;
+                 p_elbow.y = p1_orig.y;
+              }
+              newPath[0] = { ...p0_orig };
+              newPath.splice(1, 0, p1_orig, p_elbow);
+            } else {
+              newPath[0] = { ...p0_orig };
+              if (fromDir.x !== 0) newPath[1].y = newPath[0].y;
+              else if (fromDir.y !== 0) newPath[1].x = newPath[0].x;
+            }
+          }
+
+          // 3. Fix End Anchor (To) - Ensure it stays rooted to the shape
+          if (connector.to.kind !== 'point') {
+            const toDir = getAnchorDir(connector.to.anchor);
+            let last = newPath.length - 1;
+            const plast_orig = drag.initialPath[drag.initialPath.length - 1];
+            const p_penult_moved = newPath[last - 1];
+            
+            const isPerp = (toDir.x !== 0 && Math.abs(p_penult_moved.y - plast_orig.y) > 0.5) ||
+                           (toDir.y !== 0 && Math.abs(p_penult_moved.x - plast_orig.x) > 0.5);
+            
+            if (isPerp) {
+              const p_penult_orig = { ...drag.initialPath[drag.initialPath.length - 2] };
+              const p_elbow = { x: p_penult_orig.x, y: p_penult_moved.y };
+              if (toDir.y !== 0) {
+                 p_elbow.x = p_penult_moved.x;
+                 p_elbow.y = p_penult_orig.y;
+              }
+              newPath[last] = { ...plast_orig };
+              newPath.splice(last, 0, p_elbow, p_penult_orig);
+            } else {
+              newPath[last] = { ...plast_orig };
+              if (toDir.x !== 0) newPath[last-1].y = newPath[last].y;
+              else if (toDir.y !== 0) newPath[last-1].x = newPath[last].x;
+            }
+          }
+
           const updateAnchorFromPath = (anchor: any, pt: {x:number, y:number}) => {
              if (anchor.kind === 'point') return { ...anchor, point: pt };
              const bounds = getShapeBounds(anchor);
              if (!bounds) return anchor;
-             let percent = 0.5;
+             let percent = anchor.percent || 0.5;
              if (anchor.anchor === 'left' || anchor.anchor === 'right') {
                 percent = (pt.y - bounds.y) / bounds.height;
              } else if (anchor.anchor === 'top' || anchor.anchor === 'bottom') {
@@ -2613,12 +2654,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           const newFrom = updateAnchorFromPath(connector.from, newPath[0]);
           const newTo = updateAnchorFromPath(connector.to, newPath[newPath.length-1]);
           
-          // Extract waypoints
-          let startIndex = 1;
-          if (fromDir.x !== 0 || fromDir.y !== 0) startIndex = 2;
-          let endIndex = newPath.length - 1;
-          if (toDir.x !== 0 || toDir.y !== 0) endIndex = newPath.length - 2;
-          
+          let startIndex = (connector.from.kind !== 'point') ? 1 : 0;
+          let endIndex = (connector.to.kind !== 'point') ? newPath.length - 1 : newPath.length;
           const waypoints = newPath.slice(startIndex, endIndex);
           
           setConnectors(prev => prev.map((c, idx) => 
