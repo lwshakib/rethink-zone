@@ -39,6 +39,8 @@ import DocumentTab from "@/features/document/document-tab";
 import CanvasTab from "@/features/canvas/canvas-tab";
 import KanbanTab from "@/features/kanban/kanban-tab";
 import { ModeToggle } from "@/components/mode-toggle";
+import { useDebounce } from "@/hooks/use-debounce";
+import { SavingStatus, SavingStatusType } from "@/components/saving-status";
 
 /**
  * Centered loading spinner shown while the workspace data is being fetched.
@@ -77,7 +79,7 @@ export default function WorkspaceDetailPage() {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [loading, setLoading] = useState(true);
   const [, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [savingStatus, setSavingStatus] = useState<SavingStatusType>("idle");
   const [deleting, setDeleting] = useState(false);
   const [dirty, setDirty] = useState(false); // Tracks if there are unsaved changes
   const [editingName, setEditingName] = useState(false); // Title edit mode toggle
@@ -144,9 +146,9 @@ export default function WorkspaceDetailPage() {
 
   /** Persists all current tab data and workspace metadata to the server */
   const saveWorkspace = useCallback(async () => {
-    if (!workspace) return;
+    if (!workspace || !dirty) return;
     try {
-      setSaving(true);
+      setSavingStatus("saving");
       setError(null);
       const payload = {
         name: workspace.name,
@@ -166,13 +168,38 @@ export default function WorkspaceDetailPage() {
       const data = await res.json();
       setWorkspace(data.workspace);
       setDirty(false); // Reset dirty flag after successful save
+      setSavingStatus("saved");
+      
+      // Return to idle/unsaved after showing "saved" for a bit
+      setTimeout(() => {
+        setSavingStatus((current) => current === "saved" ? "idle" : current);
+      }, 3000);
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : "Unable to save.");
-    } finally {
-      setSaving(false);
+      setSavingStatus("error");
     }
-  }, [workspace, documentData, canvasData, kanbanBoard]);
+  }, [workspace, documentData, canvasData, kanbanBoard, dirty]);
+
+  // Debounced auto-save effect
+  const debouncedPayload = useDebounce({
+    name: workspace?.name,
+    documentData,
+    canvasData,
+    kanbanBoard
+  }, 2000);
+
+  useEffect(() => {
+    if (dirty && debouncedPayload) {
+      saveWorkspace();
+    }
+  }, [debouncedPayload, saveWorkspace, dirty]);
+
+  useEffect(() => {
+    if (dirty && savingStatus === "idle") {
+      setSavingStatus("unsaved");
+    }
+  }, [dirty, savingStatus]);
 
   /** triggers workspace deletion and redirects to dashboard */
   const deleteWorkspace = async () => {
@@ -335,20 +362,8 @@ export default function WorkspaceDetailPage() {
                     </AlertDialogContent>
                   </AlertDialog>
 
-                  {/* Manual Save Button (shows dirty state) */}
-                  <Button
-                    onClick={saveWorkspace}
-                    disabled={saving || !dirty}
-                    size="sm"
-                    className="h-8 gap-2 rounded-full bg-primary px-4 text-[11px] font-bold text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-40 shadow-lg"
-                  >
-                    {saving ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Save className="h-3 w-3" />
-                    )}
-                    Save
-                  </Button>
+                  {/* Saving Status Icon (Auto-save) */}
+                  <SavingStatus status={savingStatus} />
                   <ModeToggle />
                 </div>
 
