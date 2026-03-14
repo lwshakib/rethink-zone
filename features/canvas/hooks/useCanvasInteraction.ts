@@ -3097,7 +3097,6 @@ export const useCanvasInteraction = (props: InteractionProps) => {
                 const isSel = selectedShapeRef.current.some(
                   (s) => s.kind === "code" && s.id === c.id
                 );
-                // Important: Don't move a code block if it is the figure itself! (But kind is different, so it's fine)
                 if ((isSel || isContainedInMovedFigure(startC)) && startC) {
                   return { ...c, x: startC.x + dx, y: startC.y + dy };
                 }
@@ -3105,6 +3104,36 @@ export const useCanvasInteraction = (props: InteractionProps) => {
               })
             );
           }
+
+          // Update connectors attached to moved shapes
+          setConnectors((prev) =>
+            prev.map((c) => {
+              const fromMoved = selectedShapeRef.current.some(
+                (s) => s.id === c.from.shapeId || movedFigures.some(mf => mf.id === c.from.shapeId)
+              );
+              const toMoved = selectedShapeRef.current.some(
+                (s) => s.id === c.to.shapeId || movedFigures.some(mf => mf.id === c.to.shapeId)
+              );
+              if (!fromMoved && !toMoved) return c;
+
+              // Topology-preserving shift: If the start moves, push all waypoints to keep the 'tail' attached.
+              // This fulfills the "redefined according to elements" request by keeping the relative shape.
+              const startC = startState.connectors.find((sc) => sc.id === c.id);
+              if (!startC) return c;
+
+              let newWaypoints = (startC.waypoints || []).map((p) => ({ ...p }));
+              if (fromMoved) {
+                newWaypoints = newWaypoints.map((p) => ({
+                  x: p.x + dx,
+                  y: p.y + dy,
+                }));
+              }
+              // If only 'to' moves, we stretch the last segment by NOT shifting waypoints.
+              // If both move, the whole thing translates (newWaypoints is already shifted).
+              
+              return { ...c, waypoints: newWaypoints };
+            })
+          );
 
           return;
         }

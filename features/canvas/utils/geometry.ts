@@ -321,46 +321,75 @@ export const getConnectorPoints = (
   if (toDir.x !== 0 || toDir.y !== 0) rawPts.push(p3);
   rawPts.push(p4);
 
-  // Rectification pass: Guarantee all segments are orthogonal
-  const pts: { x: number; y: number }[] = [rawPts[0]];
-  for (let i = 1; i < rawPts.length; i++) {
-    const prev = pts[pts.length - 1];
-    const curr = rawPts[i];
+  // 1. Intelligent Pruning:
+  // If a shape moves past its own bend, discard the overtaken waypoint to prevent "hooks".
+  let pruned = rawPts.map(p => ({ ...p }));
+  if (pruned.length > 3) {
+    if (fromDir.x !== 0 && Math.sign(pruned[2].x - pruned[0].x) !== fromDir.x) pruned.splice(1, 1);
+    else if (fromDir.y !== 0 && Math.sign(pruned[2].y - pruned[0].y) !== fromDir.y) pruned.splice(1, 1);
+  }
+
+  // 2. Cascade Alignment Pass:
+  // Dynamically skew waypoints to maintain relative segment sizes.
+  let adjusted = pruned.map(p => ({ ...p }));
+  for (let i = 1; i < adjusted.length - 1; i++) {
+    const prev = adjusted[i - 1];
+    const curr = adjusted[i];
+    const rawPrev = pruned[i - 1]; // Use pruned as the relative baseline
+    const rawCurr = pruned[i];
     
-    // If a segment is not naturally orthogonal, insert a bridge point
+    const dx = Math.abs(rawCurr.x - rawPrev.x);
+    const dy = Math.abs(rawCurr.y - rawPrev.y);
+    const isPreferH = dx > dy;
+
+    if (i === 1 && (fromDir.x !== 0 || fromDir.y !== 0)) {
+      if (fromDir.x !== 0) curr.y = prev.y;
+      else curr.x = prev.x;
+    } else {
+      if (isPreferH) curr.y = prev.y;
+      else curr.x = prev.x;
+    }
+  }
+
+  // 3. Rectification & Merging Pass:
+  const pts: { x: number; y: number }[] = [adjusted[0]];
+  for (let i = 1; i < adjusted.length; i++) {
+    const prev = pts[pts.length - 1];
+    const curr = adjusted[i];
+    
+    // Orthogonal rectification
     if (Math.abs(prev.x - curr.x) > 0.5 && Math.abs(prev.y - curr.y) > 0.5) {
-      // Create an elbow to rectify the diagonal
       let elbow: { x: number; y: number };
-      
-      // Heuristic for elbow direction:
-      // 1. If we're at the very start, prefer moving in fromDir
-      if (i === 1 && fromDir.y !== 0) {
-        elbow = { x: prev.x, y: curr.y };
-      } 
-      // 2. If we're at the very end, prefer moving into the shape based on toDir
-      else if (i === rawPts.length - 1 && toDir.y !== 0) {
-        elbow = { x: prev.x, y: curr.y };
-      }
-      // 3. Middle segments: default to x-then-y (standard orthogonal look)
-      else {
-        elbow = { x: curr.x, y: prev.y };
-      }
+      if (i === 1 && fromDir.y !== 0) elbow = { x: prev.x, y: curr.y };
+      else if (i === adjusted.length - 1 && toDir.y !== 0) elbow = { x: prev.x, y: curr.y };
+      else elbow = { x: curr.x, y: prev.y };
       pts.push(elbow);
     }
     pts.push(curr);
   }
 
-  // Post-processing: remove identical consecutive points to prevent render artifacts
+  // 4. Colinear Segment Merging:
+  // Collapse points that are redundant or create zero-length segments.
   const finalPts: { x: number; y: number }[] = [];
-  for (const pt of pts) {
-    if (
-      finalPts.length === 0 ||
-      Math.hypot(
-        pt.x - finalPts[finalPts.length - 1].x,
-        pt.y - finalPts[finalPts.length - 1].y
-      ) > 0.5
-    ) {
-      finalPts.push(pt);
+  for (let i = 0; i < pts.length; i++) {
+    const curr = pts[i];
+    if (finalPts.length >= 2) {
+      const p1 = finalPts[finalPts.length - 2];
+      const p2 = finalPts[finalPts.length - 1];
+      
+      // Check if p1, p2, curr are colinear (on the same x or y line)
+      const isColinearX = Math.abs(p1.x - p2.x) < 0.5 && Math.abs(p2.x - curr.x) < 0.5;
+      const isColinearY = Math.abs(p1.y - p2.y) < 0.5 && Math.abs(p2.y - curr.y) < 0.5;
+      
+      if (isColinearX || isColinearY) {
+        finalPts[finalPts.length - 1] = curr; // Skip the middle point
+        continue;
+      }
+    }
+    
+    if (finalPts.length === 0 || 
+        Math.hypot(curr.x - finalPts[finalPts.length - 1].x, curr.y - finalPts[finalPts.length - 1].y) > 0.5) {
+      finalPts.push(curr);
     }
   }
 
