@@ -2576,7 +2576,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           const connector = connectors[drag.connectorIndex];
 
           // 1. Initial movement logic: Apply dx/dy to the segment being dragged
-          let newPath = drag.initialPath.map(p => ({ ...p }));
+          const newPath = drag.initialPath.map(p => ({ ...p }));
           const i = drag.segmentIndex;
           if (drag.isHorizontal) {
             newPath[i].y += dy;
@@ -2615,7 +2615,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           // 3. Fix End Anchor (To) - Ensure it stays rooted to the shape
           if (connector.to.kind !== 'point') {
             const toDir = getAnchorDir(connector.to.anchor);
-            let last = newPath.length - 1;
+            const last = newPath.length - 1;
             const plast_orig = drag.initialPath[drag.initialPath.length - 1];
             const p_penult_moved = newPath[last - 1];
             
@@ -2654,8 +2654,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           const newFrom = updateAnchorFromPath(connector.from, newPath[0]);
           const newTo = updateAnchorFromPath(connector.to, newPath[newPath.length-1]);
           
-          let startIndex = (connector.from.kind !== 'point') ? 1 : 0;
-          let endIndex = (connector.to.kind !== 'point') ? newPath.length - 1 : newPath.length;
+          const startIndex = (connector.from.kind !== 'point') ? 1 : 0;
+          const endIndex = (connector.to.kind !== 'point') ? newPath.length - 1 : newPath.length;
           const waypoints = newPath.slice(startIndex, endIndex);
           
           setConnectors(prev => prev.map((c, idx) => 
@@ -3562,15 +3562,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
             // Find nearest anchor
             const {
-              rectangles,
-              images,
-              texts,
-              frames,
-              polygons,
-              circles,
               anchorHandles,
-              figures,
-              codes,
             } = stateRef.current;
             const tolerance = 20 / zoom;
             let nearestAnchor: any = null;

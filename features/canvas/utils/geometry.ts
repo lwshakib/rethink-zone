@@ -305,7 +305,7 @@ export const getConnectorPoints = (
   }
 
   // Build the initial point array
-  let rawPts: { x: number; y: number }[] = [p0];
+  const rawPts: { x: number; y: number }[] = [p0];
   if (fromDir.x !== 0 || fromDir.y !== 0) rawPts.push(p1);
 
   if (waypoints && waypoints.length > 0) {
@@ -323,7 +323,7 @@ export const getConnectorPoints = (
 
   // 1. Intelligent Pruning:
   // If a shape moves past its own bend, discard the overtaken waypoint to prevent "hooks".
-  let pruned = rawPts.map(p => ({ ...p }));
+  const pruned = rawPts.map(p => ({ ...p }));
   if (pruned.length > 3) {
     if (fromDir.x !== 0 && Math.sign(pruned[2].x - pruned[0].x) !== fromDir.x) pruned.splice(1, 1);
     else if (fromDir.y !== 0 && Math.sign(pruned[2].y - pruned[0].y) !== fromDir.y) pruned.splice(1, 1);
@@ -331,7 +331,7 @@ export const getConnectorPoints = (
 
   // 2. Cascade Alignment Pass:
   // Dynamically skew waypoints to maintain relative segment sizes.
-  let adjusted = pruned.map(p => ({ ...p }));
+  const adjusted = pruned.map(p => ({ ...p }));
   for (let i = 1; i < adjusted.length - 1; i++) {
     const prev = adjusted[i - 1];
     const curr = adjusted[i];
