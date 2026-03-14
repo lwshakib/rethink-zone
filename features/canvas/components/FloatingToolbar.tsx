@@ -1023,6 +1023,37 @@ const FloatingToolbar = React.memo(
 
                 <div className={`h-6 w-px ${separatorColor} mx-1`} />
 
+                {/* Routing Type Selection */}
+                <div
+                  className={`flex p-0.5 ${bgSubtle} rounded-sm border ${borderSubtle} mx-1`}
+                >
+                  <button
+                    onClick={() =>
+                      onUpdateShape(mainKind, mainIndex, {
+                        routingType: "elbow",
+                      })
+                    }
+                    className={`h-7 px-2 flex items-center justify-center rounded-sm transition-all ${(shapeData as Connector).routingType !== "straight" ? `${toggleBg} text-foreground shadow-sm` : "text-muted-foreground/60 hover:text-foreground"}`}
+                    title="Elbow Routing"
+                  >
+                    <ElbowIcon />
+                  </button>
+                  <button
+                    onClick={() =>
+                      onUpdateShape(mainKind, mainIndex, {
+                        routingType: "straight",
+                        waypoints: [], // Reset waypoints for straight lines
+                      })
+                    }
+                    className={`h-7 px-2 flex items-center justify-center rounded-sm transition-all ${(shapeData as Connector).routingType === "straight" ? `${toggleBg} text-foreground shadow-sm` : "text-muted-foreground/60 hover:text-foreground"}`}
+                    title="Straight Routing"
+                  >
+                    <StraightIcon />
+                  </button>
+                </div>
+
+                <div className={`h-6 w-px ${separatorColor} mx-1`} />
+
                 {/* Arrow Head Toggles */}
                 <button
                   onClick={() =>

@@ -114,6 +114,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [editingFigureId, setEditingFigureId] = useState<string | null>(null);
   const [isFigureEditorOpen, setIsFigureEditorOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false); // Tracks if any drag operation is active
 
   // Centralized shape state: manages collections of all items currently on the canvas
   const {
@@ -407,6 +408,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   // Dynamically calculates where connector handles should appear based on current shapes and active tool
   const anchorHandles = useMemo(() => {
     if (activeTool !== "Arrow" && activeTool !== "Select") return [];
+    if (isDragging) return [];
     const handles: {
       kind: ShapeKind;
       shapeId: string;
@@ -516,6 +518,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     figures,
     codes,
     selectedShape,
+    isDragging,
   ]);
 
   // Generic function to update properties of an existing shape and record history
@@ -872,6 +875,8 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     strokeColor,
     strokeWidth,
     theme: resolvedTheme || "light",
+    isDragging,
+    setIsDragging,
   });
 
   // Helper to re-apply a specific history state to all shape collections
@@ -1519,74 +1524,80 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
         {/* Secondary UI components that require pointer interactions */}
         <div className="pointer-events-auto contents">
           {/* Connector handles that appear on hover to allow linking shapes */}
-          <ConnectorHandles
-            activeTool={activeTool}
-            anchorHandles={anchorHandles}
-            hoverAnchor={hoverAnchor}
-            canvasToClient={canvasToClient}
-            selectedShape={selectedShape}
-            connectors={connectors}
-            getAnchorPoint={getAnchorPointLocal}
-          />
+          {!isDragging && (
+            <ConnectorHandles
+              activeTool={activeTool}
+              anchorHandles={anchorHandles}
+              hoverAnchor={hoverAnchor}
+              canvasToClient={canvasToClient}
+              selectedShape={selectedShape}
+              connectors={connectors}
+              getAnchorPoint={getAnchorPointLocal}
+            />
+          )}
 
-          <FigureButtons
-            figures={figures}
-            canvasToClient={canvasToClient}
-            zoom={zoom}
-            selectedShape={selectedShape}
-            editingFigureId={editingFigureId}
-            onOpenEditor={(id: string) => {
-              if (editingFigureId === id) {
-                setEditingFigureId(null);
-                setIsFigureEditorOpen(false);
-              } else {
-                setEditingFigureId(id);
-                setIsFigureEditorOpen(true);
-              }
-            }}
-          />
+          {!isDragging && (
+            <>
+              <FigureButtons
+                figures={figures}
+                canvasToClient={canvasToClient}
+                zoom={zoom}
+                selectedShape={selectedShape}
+                editingFigureId={editingFigureId}
+                onOpenEditor={(id: string) => {
+                  if (editingFigureId === id) {
+                    setEditingFigureId(null);
+                    setIsFigureEditorOpen(false);
+                  } else {
+                    setEditingFigureId(id);
+                    setIsFigureEditorOpen(true);
+                  }
+                }}
+              />
 
-          {/* Context buttons for frames */}
-          <FrameButtons
-            frames={frames}
-            canvasToClient={canvasToClient}
-            zoom={zoom}
-          />
+              {/* Context buttons for frames */}
+              <FrameButtons
+                frames={frames}
+                canvasToClient={canvasToClient}
+                zoom={zoom}
+              />
 
-          {/* Delete icon at the center of selected lines/connectors */}
-          <LineActions
-            selectedShape={selectedShape}
-            connectors={connectors}
-            lines={lines}
-            arrows={arrows}
-            getAnchorPoint={getAnchorPointLocal}
-            getShapeBounds={getShapeBoundsLocal}
-            canvasToClient={canvasToClient}
-            onDelete={deleteSelected}
-          />
+              {/* Delete icon at the center of selected lines/connectors */}
+              <LineActions
+                selectedShape={selectedShape}
+                connectors={connectors}
+                lines={lines}
+                arrows={arrows}
+                getAnchorPoint={getAnchorPointLocal}
+                getShapeBounds={getShapeBoundsLocal}
+                canvasToClient={canvasToClient}
+                onDelete={deleteSelected}
+              />
 
-          {/* Floating toolbar that appears near selected shapes for quick adjustments (color, delete, etc) */}
-          <FloatingToolbar
-            selectedShape={selectedShape}
-            rectangles={rectangles}
-            circles={circles}
-            images={images}
-            texts={texts}
-            frames={frames}
-            polygons={polygons}
-            lines={lines}
-            arrows={arrows}
-            codes={codes}
-            connectors={connectors}
-            canvasToClient={canvasToClient}
-            onUpdateShape={onUpdateShape}
-            onChangeKind={onChangeKind}
-            onDelete={deleteSelected}
-            onDuplicate={() => duplicateSelection(20)}
-            onGroup={groupSelected}
-            onUngroup={ungroupSelected}
-            theme={resolvedTheme}
-          />
+              {/* Floating toolbar that appears near selected shapes for quick adjustments (color, delete, etc) */}
+              <FloatingToolbar
+                selectedShape={selectedShape}
+                rectangles={rectangles}
+                circles={circles}
+                images={images}
+                texts={texts}
+                frames={frames}
+                polygons={polygons}
+                lines={lines}
+                arrows={arrows}
+                codes={codes}
+                connectors={connectors}
+                canvasToClient={canvasToClient}
+                onUpdateShape={onUpdateShape}
+                onChangeKind={onChangeKind}
+                onDelete={deleteSelected}
+                onDuplicate={() => duplicateSelection(20)}
+                onGroup={groupSelected}
+                onUngroup={ungroupSelected}
+                theme={resolvedTheme}
+              />
+            </>
+          )}
 
           {contextMenu && (
             <ContextMenu

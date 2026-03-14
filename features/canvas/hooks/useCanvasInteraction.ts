@@ -154,6 +154,8 @@ type InteractionProps = {
   strokeColor: string;
   strokeWidth: number;
   theme: string;
+  isDragging: boolean;
+  setIsDragging: (b: boolean) => void;
 };
 
 export const useCanvasInteraction = (props: InteractionProps) => {
@@ -227,6 +229,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     strokeColor,
     strokeWidth,
     theme,
+    isDragging,
+    setIsDragging,
   } = props;
 
   const isPanningRef = useRef(false);
@@ -1814,6 +1818,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             codes: [...codes],
           };
 
+          setIsDragging(true);
           // Setup Drag Modes
           const s_rects = workingState ? workingState.rectangles : rectangles;
           const s_circles = workingState ? workingState.circles : circles;
@@ -2559,15 +2564,23 @@ export const useCanvasInteraction = (props: InteractionProps) => {
       const point = toCanvasPointFromClient(event.clientX, event.clientY);
       const tool = resolveTool(event);
 
-      const isDragging =
+      const currentlyDragging =
         dragModeRef.current !== "none" ||
+        isPanningRef.current ||
         isErasingRef.current ||
         isDrawingRectRef.current ||
         isDrawingCircleRef.current ||
         isDrawingLineRef.current ||
         isDrawingArrowRef.current ||
         isDrawingPathRef.current ||
-        isDrawingFrameRef.current;
+        isDrawingFrameRef.current ||
+        !!pendingConnector;
+      
+      if (currentlyDragging !== isDragging) {
+        setIsDragging(currentlyDragging);
+      }
+      
+      const isDraggingNow = currentlyDragging;
 
       // Cursor Styling & Hover State
       let nextCursor = "default";
@@ -2917,8 +2930,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         const dx = event.clientX - pointerStartRef.current.x;
         const dy = event.clientY - pointerStartRef.current.y;
         setPan({
-          x: panStartRef.current.x + dx / zoom,
-          y: panStartRef.current.y + dy / zoom,
+          x: panStartRef.current.x + dx,
+          y: panStartRef.current.y + dy,
         });
         return;
       }
@@ -4200,6 +4213,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         setCurrentFrame(null);
       }
 
+      setIsDragging(false);
       setRerenderTick((t) => t + 1);
       (event.target as HTMLElement).releasePointerCapture(event.pointerId);
     },
@@ -4495,12 +4509,10 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
   return {
     cursorStyle,
-    hoverAnchor,
     pendingConnector,
     textEditor,
     selectionRect,
     editingCodeId,
-    setHoverAnchor,
     setPendingConnector,
     setTextEditor,
     setSelectionRect,
