@@ -597,6 +597,12 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
           pushHistory({ figures: n });
           return n;
         });
+      } else if (kind === "connector") {
+        setConnectors((prev) => {
+          const n = updateFn(prev);
+          pushHistory({ connectors: n });
+          return n;
+        });
       } else if (kind === "code") {
         setCodes((prev) => {
           const n = updateFn(prev);
@@ -616,6 +622,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       setImages,
       setFigures,
       setCodes,
+      setConnectors,
       pushHistory,
     ]
   );
@@ -1197,7 +1204,10 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
         strokeDashArray: c.strokeDashArray,
         drawnLabels,
         allBounds: allNodeBounds,
-        waypoints: c.waypoints
+        waypoints: c.waypoints,
+        routingType: c.routingType,
+        startArrowHead: c.startArrowHead,
+        endArrowHead: c.endArrowHead,
       });
     });
 

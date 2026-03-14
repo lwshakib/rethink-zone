@@ -237,6 +237,9 @@ export type Connector = {
   strokeDashArray?: number[];
   strokeWidth?: number;
   waypoints?: { x: number; y: number }[]; // Custom elbow joints or routing points
+  routingType?: "elbow" | "straight";
+  startArrowHead?: boolean;
+  endArrowHead?: boolean;
 };
 
 /**

@@ -679,6 +679,9 @@ export const drawConnector = (
   themeStroke: string,
   zoom: number,
   options: {
+    routingType?: "elbow" | "straight";
+    startArrowHead?: boolean;
+    endArrowHead?: boolean;
     fromAnchor?: AnchorSide | "none";
     toAnchor?: AnchorSide | "none";
     fromBounds?: { x: number; y: number; width: number; height: number };
@@ -726,7 +729,8 @@ export const drawConnector = (
     options.fromBounds,
     options.toBounds,
     options.allBounds,
-    options.waypoints
+    options.waypoints,
+    options.routingType
   );
 
   if (points.length < 2) {
@@ -734,7 +738,7 @@ export const drawConnector = (
     return;
   }
 
-  const cornerRadius = 12 / zoom; 
+  const cornerRadius = 12 / zoom;
   ctx.beginPath();
   ctx.moveTo(points[0].x, points[0].y);
 
@@ -753,24 +757,45 @@ export const drawConnector = (
   // Reset shadow for arrowhead and labels
   ctx.shadowColor = "transparent";
 
-  // Draw the arrowhead
-  const lastP = points[points.length - 1];
-  const prevP = points[points.length - 2] || points[0];
-  const angle = Math.atan2(lastP.y - prevP.y, lastP.x - prevP.x);
-  const size = 10;
-  
-  ctx.save();
-  ctx.translate(lastP.x, lastP.y);
-  ctx.rotate(angle);
-  ctx.beginPath();
-  ctx.moveTo(0, 0); 
-  ctx.lineTo(-size, -size * 0.4); 
-  ctx.lineTo(-size * 0.8, 0); // Notched back for sleeker look
-  ctx.lineTo(-size, size * 0.4);
-  ctx.closePath();
-  ctx.fillStyle = strokeColor;
-  ctx.fill();
-  ctx.restore();
+  // Draw the arrowhead at the end (defaults to true if not specified)
+  if (options.endArrowHead !== false) {
+    const lastP = points[points.length - 1];
+    const prevP = points[points.length - 2] || points[0];
+    const angle = Math.atan2(lastP.y - prevP.y, lastP.x - prevP.x);
+    const size = 10;
+    ctx.save();
+    ctx.translate(lastP.x, lastP.y);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-size, -size * 0.4);
+    ctx.lineTo(-size * 0.8, 0); // Notched back for sleeker look
+    ctx.lineTo(-size, size * 0.4);
+    ctx.closePath();
+    ctx.fillStyle = strokeColor;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Draw the arrowhead at the start if enabled
+  if (options.startArrowHead) {
+    const firstP = points[0];
+    const nextP = points[1] || to;
+    const angle = Math.atan2(firstP.y - nextP.y, firstP.x - nextP.x);
+    const size = 10;
+    ctx.save();
+    ctx.translate(firstP.x, firstP.y);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-size, -size * 0.4);
+    ctx.lineTo(-size * 0.8, 0);
+    ctx.lineTo(-size, size * 0.4);
+    ctx.closePath();
+    ctx.fillStyle = strokeColor;
+    ctx.fill();
+    ctx.restore();
+  }
 
   // Draw Label block removed per user request: "on the connections I would prefer to not add any label"
   // If you ever need to restore it, do so by finding the longest segment midpoints.

@@ -14,6 +14,10 @@ import {
   Type as TypeIcon,
   Group,
   Ungroup,
+  ArrowLeft,
+  ArrowRight,
+  CornerDownRight,
+  Minus,
 } from "lucide-react";
 // Type definitions for various shapes supportable on the canvas
 import {
@@ -179,6 +183,36 @@ const ShapeIcon = ({ kind }: { kind: string }) => {
     </SvgWrap>
   );
 };
+
+const ElbowIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M4 20h4a2 2 0 0 0 2-2V6a2 2 0 0 1 2-2h8" />
+  </svg>
+);
+
+const StraightIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M5 19L19 5" />
+  </svg>
+);
 
 // Metadata for shape variety supported in the menu
 const SHAPES = [
@@ -900,6 +934,139 @@ const FloatingToolbar = React.memo(
         ) : (
           // SINGLE SELECTION UI: Show specific tools based on shape kind
           <div className="flex items-center gap-1">
+            {isConnector && (
+              <div className="flex items-center gap-1">
+                {/* Color Trigger */}
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setColorTarget("stroke");
+                      setActivePopover(
+                        activePopover === "color" ? "none" : "color"
+                      );
+                    }}
+                    className={`h-9 w-9 flex items-center justify-center rounded-sm transition-all duration-200 ${activePopover === "color" ? bgActive : bgHover}`}
+                    title="Change Color"
+                  >
+                    <div
+                      className="h-5 w-5 rounded-full border border-foreground/20 shadow-sm"
+                      style={{
+                        backgroundColor:
+                          currentStroke === "transparent" || !currentStroke
+                            ? isDark
+                              ? "#ffffff"
+                              : "#000000"
+                            : currentStroke,
+                      }}
+                    />
+                  </button>
+                  <PopoverContainer active={activePopover === "color"}>
+                    {renderColorGrid()}
+                  </PopoverContainer>
+                </div>
+
+                {/* Routing Type Toggle (Elbow/Straight) */}
+                <button
+                  onClick={() =>
+                    onUpdateShape(mainKind, mainIndex, {
+                      routingType:
+                        (shapeData as Connector).routingType === "straight"
+                          ? "elbow"
+                          : "straight",
+                      waypoints: undefined, // Reset waypoints when changing routing type
+                    })
+                  }
+                  className={`h-9 w-10 flex items-center justify-center rounded-sm transition-all duration-200 ${bgHover}`}
+                  title={
+                    (shapeData as Connector).routingType === "straight"
+                      ? "Use Orthogonal Rails"
+                      : "Use Straight Path"
+                  }
+                >
+                  <div className="opacity-70 scale-90">
+                    {(shapeData as Connector).routingType === "straight" ? (
+                      <StraightIcon />
+                    ) : (
+                      <ElbowIcon />
+                    )}
+                  </div>
+                </button>
+
+                {/* Thickness Menu */}
+                <div className="relative">
+                  <button
+                    onClick={() =>
+                      setActivePopover(
+                        activePopover === "stroke" ? "none" : "stroke"
+                      )
+                    }
+                    className={`h-9 px-2 flex items-center gap-1 rounded-sm transition-all duration-200 ${activePopover === "stroke" ? bgActive : bgHover}`}
+                    title="Line Thickness"
+                  >
+                    <div className="flex flex-col gap-1 w-4 opacity-70">
+                      <div
+                        className={`h-[1px] ${isDark ? "bg-white" : "bg-black"} w-full`}
+                      />
+                      <div
+                        className={`h-[2px] ${isDark ? "bg-white" : "bg-black"} w-full`}
+                      />
+                      <div
+                        className={`h-[3px] ${isDark ? "bg-white" : "bg-black"} w-full`}
+                      />
+                    </div>
+                    <ChevronDown className="h-3 w-3 opacity-40" />
+                  </button>
+                  <PopoverContainer active={activePopover === "stroke"}>
+                    {renderStrokePanel()}
+                  </PopoverContainer>
+                </div>
+
+                <div className={`h-6 w-px ${separatorColor} mx-1`} />
+
+                {/* Arrow Head Toggles */}
+                <button
+                  onClick={() =>
+                    onUpdateShape(mainKind, mainIndex, {
+                      startArrowHead: !(shapeData as Connector).startArrowHead,
+                    })
+                  }
+                  className={`h-9 w-9 flex items-center justify-center rounded-sm transition-all duration-200 ${(shapeData as Connector).startArrowHead ? bgActive : bgHover}`}
+                  title="Toggle Start Arrow"
+                >
+                  <ArrowLeft className="h-4 w-4 opacity-70" />
+                </button>
+
+                <button
+                  onClick={() =>
+                    onUpdateShape(mainKind, mainIndex, {
+                      endArrowHead:
+                        (shapeData as Connector).endArrowHead === false,
+                    })
+                  }
+                  className={`h-9 w-9 flex items-center justify-center rounded-sm transition-all duration-200 ${(shapeData as Connector).endArrowHead !== false ? bgActive : bgHover}`}
+                  title="Toggle End Arrow"
+                >
+                  <ArrowRight className="h-4 w-4 opacity-70" />
+                </button>
+
+                {/* Dash Toggle */}
+                <button
+                  onClick={() =>
+                    onUpdateShape(mainKind, mainIndex, {
+                      strokeDashArray: (shapeData as Connector).strokeDashArray
+                        ? undefined
+                        : [5, 5],
+                    })
+                  }
+                  className={`h-9 w-9 flex items-center justify-center rounded-sm transition-all duration-200 ${(shapeData as Connector).strokeDashArray ? bgActive : bgHover}`}
+                  title="Toggle Dashed Line"
+                >
+                  <div className="h-0.5 w-4 border-b border-dashed border-current opacity-70" />
+                </button>
+
+                <div className={`h-6 w-px ${separatorColor} mx-1`} />
+              </div>
+            )}
             {/* TEXT vs CODE Toggle switch for conversion between textual shapes */}
             {isTextOrCode && (
               <div

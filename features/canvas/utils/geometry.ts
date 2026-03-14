@@ -33,8 +33,12 @@ export const getConnectorPoints = (
   fromBounds?: { x: number; y: number; width: number; height: number }, // Bounding box of the source shape
   toBounds?: { x: number; y: number; width: number; height: number }, // Bounding box of the target shape
   allBounds?: { x: number; y: number; width: number; height: number }[], // All shapes on canvas
-  waypoints?: { x: number; y: number }[] // Manual routing overrides
+  waypoints?: { x: number; y: number }[], // Manual routing overrides
+  routingType?: "elbow" | "straight"
 ) => {
+  if (routingType === "straight" && (!waypoints || waypoints.length === 0)) {
+    return [from, to];
+  }
   const fromDir = getAnchorDir(fromAnchor);
   const toDir = getAnchorDir(toAnchor);
 
