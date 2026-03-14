@@ -90,13 +90,12 @@ const hexToHsv = (hex: string) => {
     g = parseInt(hex.substring(3, 5), 16) / 255;
     b = parseInt(hex.substring(5, 7), 16) / 255;
   }
-  const max = Math.max(r, g, b),
-    min = Math.min(r, g, b);
-  let h = 0,
-    s = 0,
-    v = max;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
   const d = max - min;
-  s = max === 0 ? 0 : d / max;
+  const v = max;
+  let h = 0;
+  let s = max === 0 ? 0 : d / max;
   if (max !== min) {
     switch (max) {
       case r:
@@ -170,12 +169,13 @@ const AdvancedColorPicker = ({
   const satRectRef = useRef<HTMLDivElement>(null);
 
   // Sync HSV state if external color changes (e.g. typing a new hex)
-  useEffect(() => {
+  const [prevColor, setPrevColor] = useState(color);
+  if (color !== prevColor) {
+    setPrevColor(color);
     if (color.startsWith("#") && color.length === 7) {
-      const newHsv = hexToHsv(color);
-      setHsv(newHsv);
+      setHsv(hexToHsv(color));
     }
-  }, [color]);
+  }
 
   // Update Hue from the horizontal rainbow slider
   const handleHueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -240,7 +240,7 @@ const AdvancedColorPicker = ({
           handleSatValueChange(e);
           // Set up global listeners for smooth dragging outside the box
           const moveHandler = (me: MouseEvent) =>
-            handleSatValueChange(me as any);
+            handleSatValueChange(me as unknown as React.MouseEvent);
           const upHandler = () => {
             window.removeEventListener("mousemove", moveHandler);
             window.removeEventListener("mouseup", upHandler);

@@ -1,5 +1,4 @@
 import React from "react"; // React core
-import { Brush } from "lucide-react"; // AI generation icon
 import { FrameShape } from "../types"; // Frame shape type definition
 
 // Props required for FrameButtons
@@ -14,13 +13,11 @@ interface FrameButtonsProps {
  */
 const FrameButtons: React.FC<FrameButtonsProps> = ({
   frames,
-  canvasToClient,
-  zoom,
 }) => {
   return (
     <>
       {/* Loop through each frame to position a button above its top-right corner */}
-      {frames.map((frame, idx) => {
+      {frames.map(() => {
         return null; // Buttons removed as per user request
       })}
     </>

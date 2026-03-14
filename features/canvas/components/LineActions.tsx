@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { X } from "lucide-react";
 import {
   SelectedShape,
@@ -6,6 +6,14 @@ import {
   LineShape,
   ArrowShape,
   ConnectorAnchor,
+  RectShape,
+  CircleShape,
+  ImageShape,
+  TextShape,
+  FrameShape,
+  PolyShape,
+  FigureShape,
+  CodeShape,
 } from "../types";
 import { getConnectorPoints } from "../utils/geometry";
 
@@ -14,14 +22,14 @@ interface LineActionsProps {
   connectors: Connector[];
   lines: LineShape[];
   arrows: ArrowShape[];
-  rectangles: any[];
-  circles: any[];
-  images: any[];
-  texts: any[];
-  frames: any[];
-  polygons: any[];
-  figures: any[];
-  codes: any[];
+  rectangles: RectShape[];
+  circles: CircleShape[];
+  images: ImageShape[];
+  texts: TextShape[];
+  frames: FrameShape[];
+  polygons: PolyShape[];
+  figures: FigureShape[];
+  codes: CodeShape[];
   getAnchorPoint: (anchor: ConnectorAnchor) => { x: number; y: number } | null;
   getShapeBounds: (
     anchor: ConnectorAnchor
@@ -78,16 +86,6 @@ export const LineActions: React.FC<LineActionsProps> = ({
       const toPt = getAnchorPoint(c.to);
       if (!fromPt || !toPt) return null;
 
-      const shapes = {
-        rectangles,
-        circles,
-        images,
-        texts,
-        frames,
-        polygons,
-        figures,
-        codes,
-      };
       const fromBounds = getShapeBounds(c.from);
       const toBounds = getShapeBounds(c.to);
 

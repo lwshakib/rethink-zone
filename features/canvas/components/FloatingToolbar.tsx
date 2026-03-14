@@ -6,25 +6,13 @@ import {
   Palette,
   Sun,
   Circle,
-  Square,
-  Triangle,
-  Diamond,
-  Hexagon,
-  Star,
-  Minus,
-  Type,
-  Image as LucideImage,
-  Frame as LucideFrame,
-  Activity,
   ChevronDown,
-  Check,
   MoreVertical,
   Layers,
   AlignLeft,
   AlignCenter,
   AlignRight,
   MessageSquare,
-  Plus,
   Code as CodeIcon,
   Type as TypeIcon,
   Group,
@@ -60,7 +48,7 @@ interface FloatingToolbarProps {
   codes: CodeShape[]; // All code block data
   connectors: Connector[]; // All connector data
   canvasToClient: (x: number, y: number) => { x: number; y: number }; // Transform helper
-  onUpdateShape: (kind: string, index: number, updates: any) => void; // Generic update trigger
+  onUpdateShape: (kind: string, index: number, updates: Record<string, unknown>) => void; // Generic update trigger
   onChangeKind: (kind: string, index: number, newKind: string) => void; // Shape transformation trigger
   onDelete: () => void; // Global delete handler
   onDuplicate: () => void; // Global duplicate handler
@@ -93,107 +81,105 @@ const PASTEL_PALETTE = [
   "#fef08a",
 ];
 
+// Helper wrapper for SVG boilerplate
+const SvgWrap = ({ children }: { children: React.ReactNode }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="h-5 w-5 pointer-events-none"
+  >
+    {children}
+  </svg>
+);
+
 /**
  * ShapeIcon - Helper component to render an SVG icon matching a specific shape kind.
  */
 const ShapeIcon = ({ kind }: { kind: string }) => {
-  const s = "currentColor"; // Use current text color for stroke
-  const sw = 2; // Standard stroke width
-  // Helper wrapper for SVG boilerplate
-  const Wrap = ({ children }: { children: React.ReactNode }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={s}
-      strokeWidth={sw}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-5 w-5 pointer-events-none"
-    >
-      {children}
-    </svg>
-  );
-
   // Return specific SVG paths based on the kind string
   if (kind === "rect")
     return (
-      <Wrap>
+      <SvgWrap>
         <rect x="3" y="6" width="18" height="12" rx="1" />
-      </Wrap>
+      </SvgWrap>
     );
   if (kind === "circle")
     return (
-      <Wrap>
+      <SvgWrap>
         <circle cx="12" cy="12" r="8" />
-      </Wrap>
+      </SvgWrap>
     );
   if (kind.includes("Diamond"))
     return (
-      <Wrap>
+      <SvgWrap>
         <path d="M12 3L21 12L12 21L3 12L12 3Z" />
-      </Wrap>
+      </SvgWrap>
     );
   if (kind.includes("Triangle"))
     return (
-      <Wrap>
+      <SvgWrap>
         <path d="M12 4L22 20H2L12 4Z" />
-      </Wrap>
+      </SvgWrap>
     );
   if (kind.includes("Oval"))
     return (
-      <Wrap>
+      <SvgWrap>
         <ellipse cx="12" cy="12" rx="9" ry="6" />
-      </Wrap>
+      </SvgWrap>
     );
   if (kind.includes("Parallelogram"))
     return (
-      <Wrap>
+      <SvgWrap>
         <path d="M7 6H21L17 18H3L7 6Z" />
-      </Wrap>
+      </SvgWrap>
     );
   if (kind.includes("Trapezoid"))
     return (
-      <Wrap>
+      <SvgWrap>
         <path d="M6 7H18L21 17H3L6 7Z" />
-      </Wrap>
+      </SvgWrap>
     );
   if (kind.includes("Cylinder"))
     return (
-      <Wrap>
+      <SvgWrap>
         <ellipse cx="12" cy="6" rx="6" ry="3" />
         <path d="M6 6V18c0 1.66 2.69 3 6 3s6-1.34 6-3V6" />
-      </Wrap>
+      </SvgWrap>
     );
   if (kind.includes("Database"))
     return (
-      <Wrap>
+      <SvgWrap>
         <path d="M4 6h16v10c0 1-2 2-8 2s-8-1-8-2V6z" />
         <path d="M4 6c0 1.5 3 3 8 3s8-1.5 8-3" />
-      </Wrap>
+      </SvgWrap>
     );
   if (kind.includes("Hexagon"))
     return (
-      <Wrap>
+      <SvgWrap>
         <path d="M12 2L21 7.2V16.8L12 22L3 16.8V7.2L12 2Z" />
-      </Wrap>
+      </SvgWrap>
     );
   if (kind.includes("Star"))
     return (
-      <Wrap>
+      <SvgWrap>
         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2z" />
-      </Wrap>
+      </SvgWrap>
     );
   if (kind.includes("Document"))
     return (
-      <Wrap>
+      <SvgWrap>
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
         <path d="M14 2v6h6" />
-      </Wrap>
+      </SvgWrap>
     );
   return (
-    <Wrap>
+    <SvgWrap>
       <rect x="3" y="3" width="18" height="18" rx="2" />
-    </Wrap>
+    </SvgWrap>
   );
 };
 
@@ -239,14 +225,13 @@ const PopoverContainer = React.memo(
     className = "",
     style = {},
     transparent = false,
-    theme = "dark",
   }: {
     children: React.ReactNode;
     active: boolean;
     className?: string;
     style?: React.CSSProperties;
     transparent?: boolean;
-    theme?: string;
+    // theme?: string; // theme is not used in the body
   }) => {
     if (!active) return null; // Only render if active
     return (
@@ -331,7 +316,7 @@ const FloatingToolbar = React.memo(
     const shapeData = useMemo(() => {
       if (selectedShape.length === 0) return null;
       const { kind, id } = selectedShape[0];
-      const findById = (arr: any[]) => arr.find((s) => s.id === id);
+      const findById = <T extends { id: string }>(arr: T[]) => arr.find((s) => s.id === id);
 
       // Switch through collections to find the matching entity
       const source =
@@ -361,7 +346,7 @@ const FloatingToolbar = React.memo(
       // Map internal types to display labels
       const label =
         kind === "poly"
-          ? (source as PolyShape).type
+          ? (source as unknown as PolyShape).type
           : kind === "connector"
             ? "Connection"
             : kind.charAt(0).toUpperCase() + kind.slice(1);
@@ -383,7 +368,7 @@ const FloatingToolbar = React.memo(
     // Grouping logic: check if selected items are part of a group
     const isInGroup = useMemo(() => {
       return selectedShape.some((s) => {
-        const findById = (arr: any[]) => arr.find((item) => item.id === s.id);
+        const findById = <T extends { id: string }>(arr: T[]) => arr.find((item) => item.id === s.id);
         const shape =
           s.kind === "rect"
             ? findById(rectangles)
@@ -404,7 +389,7 @@ const FloatingToolbar = React.memo(
                           : s.kind === "code"
                             ? findById(codes)
                             : null;
-        return !!shape?.groupId;
+        return !!(shape as any)?.groupId;
       });
     }, [
       selectedShape,
@@ -471,7 +456,7 @@ const FloatingToolbar = React.memo(
               mainKind === s.kind ||
               (mainKind === "poly" &&
                 s.kind.startsWith("poly") &&
-                (shapeData as any).type === s.kind.split(":")[1])
+                (shapeData as unknown as PolyShape).type === s.kind.split(":")[1])
                 ? "bg-[#3bc1ff] text-white shadow-lg"
                 : `text-foreground/80 ${bgHover}`
             }`}
@@ -691,7 +676,6 @@ const FloatingToolbar = React.memo(
         <div className={`h-px ${separatorColor}`} />
         {/* SECTION: Stroke Dash Styles (Solid vs Dashed) */}
         <div className="flex items-center gap-2 justify-between">
-          {/* Solid Line Option */}
           <button
             onClick={() =>
               onUpdateShape(mainKind, mainIndex, { strokeDashArray: undefined })
@@ -962,7 +946,6 @@ const FloatingToolbar = React.memo(
                 </button>
                 <PopoverContainer
                   active={activePopover === "shapes"}
-                  theme={theme}
                 >
                   {renderShapesGrid()}
                 </PopoverContainer>
@@ -1033,7 +1016,6 @@ const FloatingToolbar = React.memo(
                 </button>
                 <PopoverContainer
                   active={activePopover === "color"}
-                  theme={theme}
                 >
                   {renderColorGrid()}
                 </PopoverContainer>
@@ -1041,7 +1023,6 @@ const FloatingToolbar = React.memo(
                 <PopoverContainer
                   active={activePopover === "custom-color"}
                   className="ml-[160px]"
-                  theme={theme}
                 >
                   <ColorPicker
                     color={
@@ -1078,7 +1059,6 @@ const FloatingToolbar = React.memo(
                   </button>
                   <PopoverContainer
                     active={activePopover === "typo"}
-                    theme={theme}
                   >
                     {renderTypographyPanel()}
                   </PopoverContainer>
@@ -1104,7 +1084,6 @@ const FloatingToolbar = React.memo(
                   </button>
                   <PopoverContainer
                     active={activePopover === "code-panel"}
-                    theme={theme}
                   >
                     {renderCodePanel()}
                   </PopoverContainer>
@@ -1141,7 +1120,6 @@ const FloatingToolbar = React.memo(
                   </button>
                   <PopoverContainer
                     active={activePopover === "stroke"}
-                    theme={theme}
                   >
                     {renderStrokePanel()}
                   </PopoverContainer>
@@ -1171,7 +1149,6 @@ const FloatingToolbar = React.memo(
               <PopoverContainer
                 active={activePopover === "more"}
                 className="min-w-[140px]"
-                theme={theme}
               >
                 <div className="flex flex-col gap-1">
                   <button
@@ -1206,5 +1183,7 @@ const FloatingToolbar = React.memo(
     );
   }
 );
+
+FloatingToolbar.displayName = "FloatingToolbar";
 
 export default FloatingToolbar;

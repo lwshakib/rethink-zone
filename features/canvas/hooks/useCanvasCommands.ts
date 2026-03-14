@@ -227,6 +227,7 @@ export const useCanvasCommands = (
     connectors,
     figures,
     codes,
+    paths,
     setRectangles,
     setCircles,
     setImages,
@@ -238,6 +239,7 @@ export const useCanvasCommands = (
     setConnectors,
     setFigures,
     setCodes,
+    setPaths,
     pushHistory,
     setSelectedShape,
   ]);
@@ -448,6 +450,7 @@ export const useCanvasCommands = (
       polygons,
       figures,
       codes,
+      paths,
       setRectangles,
       setCircles,
       setImages,
@@ -458,6 +461,7 @@ export const useCanvasCommands = (
       setPolygons,
       setFigures,
       setCodes,
+      setPaths,
       pushHistory,
       setSelectedShape,
     ]
@@ -506,6 +510,7 @@ export const useCanvasCommands = (
     polygons,
     figures,
     codes,
+    paths,
     setRectangles,
     setCircles,
     setImages,
@@ -516,6 +521,7 @@ export const useCanvasCommands = (
     setPolygons,
     setFigures,
     setCodes,
+    setPaths,
     pushHistory,
   ]);
 
@@ -582,6 +588,7 @@ export const useCanvasCommands = (
     polygons,
     figures,
     codes,
+    paths,
     setRectangles,
     setCircles,
     setImages,
@@ -592,6 +599,7 @@ export const useCanvasCommands = (
     setPolygons,
     setFigures,
     setCodes,
+    setPaths,
     pushHistory,
   ]);
 
@@ -654,19 +662,6 @@ export const useCanvasCommands = (
     figures,
     codes,
     paths,
-    setRectangles,
-    setCircles,
-    setImages,
-    setTexts,
-    setFrames,
-    setLines,
-    setArrows,
-    setPolygons,
-    setConnectors,
-    setFigures,
-    setCodes,
-    setPaths,
-    pushHistory,
   ]);
 
   /**
@@ -723,37 +718,37 @@ export const useCanvasCommands = (
         processCollection(clipboard.codes, "code", codes, setCodes);
         processCollection(clipboard.paths, "path", paths, setPaths);
 
-        pushHistory(updates);
-        setSelectedShape(newSelection);
-      } catch (e) {
-        console.error("Paste failed", e);
-      }
-    },
-    [
-      rectangles,
-      circles,
-      images,
-      texts,
-      frames,
-      lines,
-      arrows,
-      polygons,
-      figures,
-      codes,
-      setRectangles,
-      setCircles,
-      setImages,
-      setTexts,
-      setFrames,
-      setLines,
-      setArrows,
-      setPolygons,
-      setFigures,
-      setCodes,
-      pushHistory,
-      setSelectedShape,
-    ]
-  );
+      pushHistory(updates);
+      setSelectedShape(newSelection);
+    } catch (e) {
+      console.error("Paste failed", e);
+    }
+  }, [
+    rectangles,
+    circles,
+    images,
+    texts,
+    frames,
+    lines,
+    arrows,
+    polygons,
+    figures,
+    codes,
+    paths,
+    setRectangles,
+    setCircles,
+    setImages,
+    setTexts,
+    setFrames,
+    setLines,
+    setArrows,
+    setPolygons,
+    setFigures,
+    setCodes,
+    setPaths,
+    pushHistory,
+    setSelectedShape,
+  ]);
 
   /**
    * cutSelected - Combines copy and delete operations.
@@ -794,6 +789,7 @@ export const useCanvasCommands = (
     texts,
     frames,
     polygons,
+    paths,
     lines,
     arrows,
     figures,

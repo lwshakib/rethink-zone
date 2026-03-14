@@ -158,6 +158,10 @@ const MiniMap: React.FC<MiniMapProps> = ({
     ctx.fillStyle = theme === "dark" ? "#1a1a1a" : "#fafafa";
     ctx.fillRect(0, 0, mapWidth, mapHeight);
 
+    // Helpers for coordinate mapping
+    const toMapX = (x: number) => (x - bounds.minX) * mapScale;
+    const toMapY = (y: number) => (y - bounds.minY) * mapScale;
+
     // Draw all shapes with simplified visuals
     ctx.fillStyle =
       theme === "dark" ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)";
@@ -207,7 +211,24 @@ const MiniMap: React.FC<MiniMapProps> = ({
     ctx.strokeRect(vX, vY, vW, vH);
     ctx.fillStyle = "rgba(79, 70, 229, 0.08)";
     ctx.fillRect(vX, vY, vW, vH);
-  }, [shapes, viewport, bounds, mapScale, theme]);
+  }, [
+    bounds,
+    mapScale,
+    mapWidth,
+    mapHeight,
+    theme,
+    viewport,
+    rectangles,
+    images,
+    texts,
+    frames,
+    polygons,
+    figures,
+    codes,
+    circles,
+    lines,
+    arrows,
+  ]);
 
   const handlePointer = (e: React.PointerEvent) => {
     if (!bounds || !canvasRef.current || !containerWidth || !containerHeight)
