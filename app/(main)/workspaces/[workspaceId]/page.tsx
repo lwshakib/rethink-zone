@@ -14,7 +14,6 @@ import {
   useSearchParams,
 } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { authClient } from "@/lib/auth-client";
 import { UserMenu } from "@/components/user-menu";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,7 +62,6 @@ export default function WorkspaceDetailPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { data: _session } = authClient.useSession();
 
   // List of available features within a workspace
   const availableTabs = useMemo(() => ["document", "canvas", "kanban"], []);
@@ -78,7 +76,7 @@ export default function WorkspaceDetailPage() {
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [loading, setLoading] = useState(true);
-  const [_error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [dirty, setDirty] = useState(false); // Tracks if there are unsaved changes
@@ -380,7 +378,9 @@ export default function WorkspaceDetailPage() {
             value="document"
             className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
           >
+
             <DocumentTab
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               initialContent={documentData as any}
               onChange={handleDocumentChange}
             />
@@ -391,6 +391,7 @@ export default function WorkspaceDetailPage() {
             value="canvas"
             className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
           >
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             <CanvasTab initialData={canvasData as any} onChange={handleCanvasChange} />
           </TabsContent>
 
@@ -399,6 +400,7 @@ export default function WorkspaceDetailPage() {
             value="kanban"
             className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
           >
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             <KanbanTab board={kanbanBoard as any} onChange={handleKanbanChange} />
           </TabsContent>
         </main>

@@ -5,14 +5,7 @@ import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+
 import { LogoIcon } from "@/components/logo";
 import { Loader2, MailCheck } from "lucide-react";
 import Image from "next/image";
@@ -40,7 +33,7 @@ export default function ForgotPassword() {
         setIsSent(true);
         toast.success("Reset email sent!");
       }
-    } catch (error) {
+    } catch {
       toast.error("An unexpected error occurred");
     } finally {
       setIsLoading(false);

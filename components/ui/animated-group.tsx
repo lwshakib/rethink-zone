@@ -117,7 +117,7 @@ function AnimatedGroup({
 
   // use createElement directly to avoid "component created during render" lint error
   return createElement(
-    motion.create(as as any),
+    motion.create(as as React.ElementType),
     {
       initial: "hidden",
       animate: "visible",
@@ -126,7 +126,7 @@ function AnimatedGroup({
     },
     Children.map(children, (child, index) =>
       createElement(
-        motion.create(asChild as any),
+        motion.create(asChild as React.ElementType),
         { key: index, variants: itemVariants },
         child
       )

@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import { UserMenu } from "@/components/user-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent } from "@/components/ui/card";
+import Image from "next/image";
 
 interface Session {
   id: string;
@@ -102,7 +104,8 @@ export default function AccountPage() {
         name: name,
       });
 
-    } catch (err) {
+      if (error) throw error;
+    } catch {
       toast.error("Failed to update profile");
     } finally {
       setUpdatingProfile(false);
@@ -199,7 +202,8 @@ export default function AccountPage() {
         token: token,
       });
 
-    } catch (error) {
+      if (error) throw error;
+    } catch {
       toast.error("Failed to revoke session");
     }
   };
@@ -217,8 +221,6 @@ export default function AccountPage() {
     return null;
   }
 
-  // @ts-ignore
-  const _currentSessionToken = (authClient as any).getCookie?.("better-auth.session-token") || "";
 
   return (
     <div className="min-h-screen bg-background text-foreground font-inter">
@@ -441,8 +443,7 @@ export default function AccountPage() {
                   </div>
                 ) : (
                   sessions.map((s) => {
-                    const _isCurrent =
-                      s.userId === session.user.id && (s as any).active; // Better Auth usually marks active session
+                    // Better Auth usually marks active session
                     // As per requirement: Current session there should not be any revoke session button.
                     // We need a reliable way to identify current session.
                     // Better auth `listSessions` returns data where the current session often has a flag or we can match token if available.

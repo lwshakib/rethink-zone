@@ -22,7 +22,6 @@ import {
 } from "./types";
 import {
   getRectAnchor, // Helper to find anchor points on a rectangle
-  getCircleAnchor, // Helper to find anchor points on a circle
   getAnchorPoint, // Generic helper to get an anchor point for any shape
   getShapeBounds, // Helper to calculate the bounding box of a shape
   getContentBounds, // Helper to calculate the total bounding box of all content
@@ -91,7 +90,6 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     zoomOut,
     resetView,
     canvasToClient,
-    toCanvasPointFromClient: _toCanvasPointFromClient,
     clampZoom,
   } = useCanvasView(canvasContainerRef);
 
@@ -173,8 +171,6 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     historyIndex,
     setHistoryIndex,
     pushHistory: basePushHistory,
-    undo: _undo,
-    redo: _redo,
     canUndo,
     canRedo,
     isUndoRedoRef,
@@ -419,7 +415,6 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     }[] = [];
 
     const isArrow = activeTool === "Arrow";
-    const selectedIds = new Set(selectedShape.map((s) => s.id));
     const margin = 2 / zoom;
 
     // SCENARIO 1: Selection Handles - collective or individual dashed border corners
@@ -627,6 +622,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   const onChangeKind = useCallback(
     (kind: string, index: number, newKind: string) => {
       if (kind === newKind) return; // No change needed if types are identical
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let source: any = null;
       // Identify the source shape based on its current kind and index
       if (kind === "rect") source = rectangles[index];
@@ -635,6 +631,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       else if (kind === "text") source = texts[index];
       else if (kind === "code") source = codes[index];
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const s = source as any; 
       if (!s) return; 
 
@@ -783,13 +780,11 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     textEditor,
     selectionRect,
     editingCodeId,
-    setPendingConnector: _setPendingConnector,
     setTextEditor,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
     handleDoubleClick,
-    handleWheel,
     handleDrop,
     commitTextEditor,
     cancelTextEditor,
@@ -1173,6 +1168,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       )
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const drawnLabels: any[] = [];
     // Collect all shape boundaries once to pass to connectors for obstacle avoidance
     const allNodeBounds = [
@@ -1459,12 +1455,12 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
             setIsFigureEditorOpen(false);
             setEditingFigureId(null);
           }
-          handlePointerDown(e as any);
+          handlePointerDown(e as unknown as React.PointerEvent<HTMLCanvasElement>);
         }}
-        onPointerMove={handlePointerMove as any}
-        onPointerUp={handlePointerUp as any}
-        onPointerLeave={handlePointerUp as any}
-        onDoubleClick={handleDoubleClick as any}
+        onPointerMove={handlePointerMove as unknown as React.PointerEventHandler<HTMLDivElement>}
+        onPointerUp={handlePointerUp as unknown as React.PointerEventHandler<HTMLDivElement>}
+        onPointerLeave={handlePointerUp as unknown as React.PointerEventHandler<HTMLDivElement>}
+        onDoubleClick={handleDoubleClick as unknown as React.MouseEventHandler<HTMLDivElement>}
         onContextMenu={handleContextMenu} // Disable default right-click menu
         style={{ cursor: cursorStyle }} // Cursor changes based on active tool (e.g., crosshair, grab)
       />
@@ -1535,14 +1531,6 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
             connectors={connectors}
             lines={lines}
             arrows={arrows}
-            rectangles={rectangles}
-            circles={circles}
-            images={images}
-            texts={texts}
-            frames={frames}
-            polygons={polygons}
-            figures={figures}
-            codes={codes}
             getAnchorPoint={getAnchorPointLocal}
             getShapeBounds={getShapeBoundsLocal}
             canvasToClient={canvasToClient}
@@ -1735,13 +1723,14 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
               setImages(prev => prev.filter(im => im.groupId !== editingFigureId));
               setTexts(prev => prev.filter(t => t.groupId !== editingFigureId));
               setFigures(prev => prev.filter(f => f.id === editingFigureId || f.groupId !== editingFigureId));
-              setConnectors(prev => prev.filter(c => {
+              setConnectors(prev => prev.filter(() => {
                 // Connectors are tricky because they link shapes. 
                 // We'll just clear all connectors for now or filter them if we can track their linked shapes.
                 return true; // Simplified for now
               }));
 
               // 2. Parse and generate new shapes
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const generated = parseDSL(fig.code, iconRegistry) as any;
               
               // Auto-size the editing figure
@@ -1757,6 +1746,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
               const offsetX = fig.x + 50;
               const offsetY = fig.y + 70;
 
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const applyMeta = (shapes: any[] | undefined) => 
                 shapes?.map(s => ({ ...s, x: s.x + offsetX, y: s.y + offsetY, groupId: editingFigureId }));
 
@@ -1766,7 +1756,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
               if (generated.figures) setFigures(prev => [...prev, ...applyMeta(generated.figures)!]);
               if (generated.connectors) {
                 // For connectors, we need to ensure their from/to shapeIds match the new ones
-                setConnectors(prev => [...prev.filter(c => true), ...generated.connectors!]);
+                setConnectors(prev => [...prev.filter(() => true), ...generated.connectors!]);
               }
               
               pushHistory();

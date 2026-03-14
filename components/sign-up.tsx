@@ -8,12 +8,12 @@ import { authClient } from "@/lib/auth-client";
 import { Loader2, MailCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+
 import { useState } from "react";
 import { toast } from "sonner";
 
 export default function SignUp() {
-  const router = useRouter();
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -41,7 +41,7 @@ export default function SignUp() {
 
       setIsVerificationSent(true);
       toast.success("Verification email sent!");
-    } catch (error) {
+    } catch {
       toast.error("An unexpected error occurred");
     } finally {
       setIsLoading(false);
@@ -55,7 +55,7 @@ export default function SignUp() {
         provider: "google",
         callbackURL: "/workspaces",
       });
-    } catch (error) {
+    } catch {
       toast.error("Failed to sign up with Google");
       setIsGoogleLoading(false);
     }
@@ -75,7 +75,7 @@ export default function SignUp() {
                 Check your email
               </h1>
               <p className="mt-4 text-zinc-500 dark:text-zinc-400">
-                We've sent a verification link to{" "}
+                We&apos;ve sent a verification link to{" "}
                 <strong className="text-zinc-900 dark:text-zinc-100 font-medium">
                   {email}
                 </strong>

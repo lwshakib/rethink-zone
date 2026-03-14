@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react"; // Importing core React hooks
+import React, { useState, useRef } from "react"; // Importing core React hooks
 
 // Properties for the ColorPicker component
 interface ColorPickerProps {

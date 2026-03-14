@@ -687,7 +687,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                       >
                         <div className="h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-sm bg-accent/50 border border-border group-hover:bg-primary/10 group-hover:border-primary/30 transition-all">
                           {(() => {
-                            const IconComp = (LucideIcons as unknown as Record<string, React.ComponentType<any>>)[
+                            const IconComp = (LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[
                               diagram.thumbnail
                             ];
                             return IconComp ? (

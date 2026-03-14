@@ -1,19 +1,12 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+
 import { LogoIcon } from "@/components/logo";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
@@ -25,7 +18,7 @@ import { toast } from "sonner";
  * Handles the logic and UI for setting a new password.
  */
 function ResetPasswordContent() {
-  const router = useRouter();
+
   const searchParams = useSearchParams();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -56,7 +49,7 @@ function ResetPasswordContent() {
         setIsSuccess(true);
         toast.success("Password reset successfully!");
       }
-    } catch (error) {
+    } catch {
       toast.error("An unexpected error occurred");
     } finally {
       setIsLoading(false);

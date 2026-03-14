@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Settings, LogOut, User, LayoutGrid } from "lucide-react";
+import { Settings, LogOut, LayoutGrid } from "lucide-react";
 
 export function UserMenu() {
   const router = useRouter();

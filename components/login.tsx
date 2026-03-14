@@ -37,7 +37,7 @@ export default function LoginPage() {
       toast.success("Signed in successfully!");
       router.push("/workspaces");
       router.refresh();
-    } catch (error) {
+    } catch {
       toast.error("An unexpected error occurred");
     } finally {
       setIsLoading(false);
@@ -51,7 +51,7 @@ export default function LoginPage() {
         provider: "google",
         callbackURL: "/workspaces",
       });
-    } catch (error) {
+    } catch {
       toast.error("Failed to sign in with Google");
       setIsGoogleLoading(false);
     }
@@ -227,7 +227,7 @@ export default function LoginPage() {
           </form>
 
           <p className="mt-8 text-center text-sm text-zinc-500">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
               href="/sign-up"
               className="font-semibold text-zinc-900 hover:underline dark:text-zinc-100"

@@ -7,8 +7,6 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
 import { UserMenu } from "@/components/user-menu";
 
 import { Button } from "@/components/ui/button";
@@ -94,8 +92,6 @@ export default function WorkspacesPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
-  const router = useRouter();
-  const { data: session } = authClient.useSession(); // Client-side authentication session hook
 
   /**
    * Memoized thumbnails map to ensure stability across re-renders
@@ -163,6 +159,7 @@ export default function WorkspacesPage() {
 
   useEffect(() => {
     loadWorkspaces();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -285,6 +282,7 @@ export default function WorkspacesPage() {
                       >
                         <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[1.3rem] bg-card/80 backdrop-blur-sm">
                           {thumbnail ? (
+                            // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={thumbnail}
                               alt={`${workspace.name} thumbnail`}

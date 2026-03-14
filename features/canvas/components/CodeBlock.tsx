@@ -167,6 +167,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
         clearTimeout(updateTimeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, fontSize, language, isEditing]);
 
   // EFFECT: Automatically focus the hidden textarea when the user enters 'Edit' mode

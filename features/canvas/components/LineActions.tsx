@@ -6,14 +6,6 @@ import {
   LineShape,
   ArrowShape,
   ConnectorAnchor,
-  RectShape,
-  CircleShape,
-  ImageShape,
-  TextShape,
-  FrameShape,
-  PolyShape,
-  FigureShape,
-  CodeShape,
 } from "../types";
 import { getConnectorPoints } from "../utils/geometry";
 
@@ -28,7 +20,6 @@ interface LineActionsProps {
   ) => { x: number; y: number; width: number; height: number } | null;
   canvasToClient: (x: number, y: number) => { x: number; y: number };
   onDelete: () => void;
-  zoom: number;
 }
 
 /**
@@ -43,7 +34,6 @@ export const LineActions: React.FC<LineActionsProps> = ({
   getShapeBounds,
   canvasToClient,
   onDelete,
-  zoom,
 }) => {
   // Only show for single selections of lines/arrows/connectors
   if (selectedShape.length !== 1) return null;

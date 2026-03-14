@@ -450,7 +450,6 @@ export const useCanvasCommands = (
       polygons,
       figures,
       codes,
-      paths,
       setRectangles,
       setCircles,
       setImages,
@@ -461,7 +460,6 @@ export const useCanvasCommands = (
       setPolygons,
       setFigures,
       setCodes,
-      setPaths,
       pushHistory,
       setSelectedShape,
     ]
@@ -510,7 +508,6 @@ export const useCanvasCommands = (
     polygons,
     figures,
     codes,
-    paths,
     setRectangles,
     setCircles,
     setImages,
@@ -521,7 +518,6 @@ export const useCanvasCommands = (
     setPolygons,
     setFigures,
     setCodes,
-    setPaths,
     pushHistory,
   ]);
 
@@ -588,7 +584,6 @@ export const useCanvasCommands = (
     polygons,
     figures,
     codes,
-    paths,
     setRectangles,
     setCircles,
     setImages,
@@ -599,7 +594,6 @@ export const useCanvasCommands = (
     setPolygons,
     setFigures,
     setCodes,
-    setPaths,
     pushHistory,
   ]);
 

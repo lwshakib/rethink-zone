@@ -14,7 +14,7 @@ interface Message {
   content: string;
 }
 
-export const generateObjectFromAI = async <T extends z.ZodSchema>(
+export const generateObjectFromAI = async <T extends z.ZodTypeAny>(
   messages: Message[],
   outputSchema: T
 ): Promise<z.infer<T>> => {
@@ -32,8 +32,8 @@ export const generateObjectFromAI = async <T extends z.ZodSchema>(
     Authorization: `Bearer ${CLOUDFLARE_API_KEY}`,
   };
 
-  // Convert Zod schema to JSON Schema for the worker's strict mode
-  const jsonSchema = zodToJsonSchema(outputSchema as unknown as z.ZodSchema);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const jsonSchema = zodToJsonSchema(outputSchema as any);
 
   const response = await fetch(url, {
     method: 'POST',
@@ -66,7 +66,7 @@ export const generateObjectFromAI = async <T extends z.ZodSchema>(
 
   try {
     return JSON.parse(content) as z.infer<T>;
-  } catch (_error) {
+  } catch {
     console.error('Failed to parse JSON from model response:', content);
     throw new Error('Model returned invalid JSON');
   }

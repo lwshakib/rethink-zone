@@ -1,10 +1,6 @@
 import { DiagramTemplate } from "../types";
 
-// Design Tokens for diagrams that look good in both light and dark modes
-const LOGO_BOX_FILL = "rgba(150, 150, 150, 0.07)";
-const LOGO_BOX_STROKE = "rgba(150, 150, 150, 0.3)";
-const TEXT_MUTED = "rgba(128, 128, 128, 0.8)";
-const ARROW_COLOR = "rgba(100, 100, 100, 0.6)";
+
 
 export const DIAGRAM_CATALOG: DiagramTemplate[] = [
   {

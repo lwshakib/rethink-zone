@@ -263,7 +263,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
   } | null>(null);
   const selectionStartRef = useRef<any>(null);
   const pointerToolRef = useRef<Tool | "">("");
-  const pendingMoveUpdateRef = useRef<number | null>(null);
+  // const pendingMoveUpdateRef = useRef<number | null>(null);
   const selectedShapeRef = useRef(selectedShape);
   const stateRef = useRef({
     rectangles,
@@ -1330,6 +1330,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             const headerGap = 8 / zoom;
             
             // Hit Test Body
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const inBody = (
               point.x >= f.x &&
               point.x <= f.x + f.width &&
@@ -1481,8 +1482,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
               c.from.anchor,
               c.to.anchor,
               fromBounds || undefined,
-              toBounds || undefined,
-              zoom
+              toBounds || undefined
             );
             if (distToPolyline(point.x, point.y, points) <= 10 / zoom) return i;
           }
@@ -3012,8 +3012,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         }
 
         // Resizing Logic
-        const dx = point.x - pointerStartRef.current.x;
-        const dy = point.y - pointerStartRef.current.y;
+        // Resizing Logic
 
         if (
           dragModeRef.current.startsWith("resize-") &&
@@ -3147,7 +3146,6 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             dragLineStartRef.current &&
             cornerPattern === "resize-line"
           ) {
-            const base = dragLineStartRef.current;
             const isStart = (dragRectCornerRef.current?.sx || 1) < 0;
             setLines((prev) =>
               prev.map((l, i) =>
@@ -3163,7 +3161,6 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             dragArrowStartRef.current &&
             cornerPattern === "resize-arrow"
           ) {
-            const base = dragArrowStartRef.current;
             const isStart = (dragRectCornerRef.current?.sx || 1) < 0;
             setArrows((prev) =>
               prev.map((l, i) =>
@@ -3211,7 +3208,6 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             dragConnectorStartRef.current &&
             cornerPattern === "resize-connector"
           ) {
-            const base = dragConnectorStartRef.current;
             const isFrom = (dragRectCornerRef.current?.sx || 1) < 0;
 
             // Find nearest anchor

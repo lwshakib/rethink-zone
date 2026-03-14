@@ -40,7 +40,7 @@ export async function getUser(): Promise<User | null> {
       createdAt: new Date(user.createdAt),
       updatedAt: new Date(user.updatedAt),
     };
-  } catch (e) {
+  } catch {
     // Handle JSON parsing errors by returning null (unauthenticated)
     return null;
   }
