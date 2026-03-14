@@ -3105,7 +3105,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             );
           }
 
-          // Update connectors attached to moved shapes
+          // Update connectors attached to moved shapes: Reset to automatic 'elbow' routing 
+          // per user request ("should be redefined... as an elbow") whenever a shape moves.
           setConnectors((prev) =>
             prev.map((c) => {
               const fromMoved = selectedShapeRef.current.some(
@@ -3114,24 +3115,12 @@ export const useCanvasInteraction = (props: InteractionProps) => {
               const toMoved = selectedShapeRef.current.some(
                 (s) => s.id === c.to.shapeId || movedFigures.some(mf => mf.id === c.to.shapeId)
               );
+              
               if (!fromMoved && !toMoved) return c;
 
-              // Topology-preserving shift: If the start moves, push all waypoints to keep the 'tail' attached.
-              // This fulfills the "redefined according to elements" request by keeping the relative shape.
-              const startC = startState.connectors.find((sc) => sc.id === c.id);
-              if (!startC) return c;
-
-              let newWaypoints = (startC.waypoints || []).map((p) => ({ ...p }));
-              if (fromMoved) {
-                newWaypoints = newWaypoints.map((p) => ({
-                  x: p.x + dx,
-                  y: p.y + dy,
-                }));
-              }
-              // If only 'to' moves, we stretch the last segment by NOT shifting waypoints.
-              // If both move, the whole thing translates (newWaypoints is already shifted).
-              
-              return { ...c, waypoints: newWaypoints };
+              // Simply clearing waypoints triggers an automatic orthogonal re-route 
+              // in the getConnectorPoints logic, ensuring an 'elbow' path.
+              return { ...c, waypoints: undefined };
             })
           );
 
@@ -3344,6 +3333,16 @@ export const useCanvasInteraction = (props: InteractionProps) => {
               })
             );
 
+          // Update connectors attached to resized shapes: Reset to automatic 'elbow' routing
+          setConnectors((prev) =>
+            prev.map((c) => {
+              const fromResized = selectedShapeRef.current.some((s) => s.id === c.from.shapeId);
+              const toResized = selectedShapeRef.current.some((s) => s.id === c.to.shapeId);
+              if (!fromResized && !toResized) return c;
+              return { ...c, waypoints: undefined };
+            })
+          );
+
           return;
         }
 
@@ -3539,7 +3538,22 @@ export const useCanvasInteraction = (props: InteractionProps) => {
                   : c
               )
             );
-          } else if (
+          }
+
+          // Reset connectors attached to this shape during single-element resize
+          // This ensures connectors stay 'smart' and restructured as elbows when their anchors move.
+          if (kind !== "connector") {
+            setConnectors((prev) =>
+              prev.map((c) => {
+                if (c.from.shapeId === selectedShape[0].id || c.to.shapeId === selectedShape[0].id) {
+                  return { ...c, waypoints: undefined };
+                }
+                return c;
+              })
+            );
+          }
+
+          if (
             kind === "connector" &&
             dragConnectorStartRef.current &&
             cornerPattern === "resize-connector"
