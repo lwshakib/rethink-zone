@@ -240,7 +240,7 @@ export const drawFrame = (
   // Logic branch for rounded portable devices
   if (f.deviceType === "phone" || f.deviceType === "tablet") {
     const isPhone = f.deviceType === "phone";
-    const radius = (isPhone ? 32 : 16) / zoom; // Phones are typically more rounded
+    const radius = (isPhone ? 32 : 16) / zoom;
     ctx.beginPath();
     ctx.roundRect(x, y, w, h, radius);
     ctx.fill();
@@ -315,7 +315,7 @@ export const drawFrame = (
   } else if (f.deviceType === "desktop" || f.deviceType === "browser") {
     // Logic branch for windowed desktop/browser interfaces
     const isBrowser = f.deviceType === "browser";
-    const barH = (isBrowser ? 44 : 32) / zoom; // Browsers have larger address bars
+    const barH = (isBrowser ? 44 : 32) / zoom; 
     const radius = 8 / zoom;
 
     // Main window body with rounded top edges
@@ -702,17 +702,17 @@ export const drawConnector = (
   // Premium Touch: Shadow for depth
   if (!options.highlight) {
     ctx.shadowColor = "rgba(0,0,0,0.1)";
-    ctx.shadowBlur = 4 / zoom;
-    ctx.shadowOffsetY = 2 / zoom;
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetY = 2;
   }
 
   if (options.strokeDashArray) {
-    ctx.setLineDash(options.strokeDashArray.map(v => v / zoom));
+    ctx.setLineDash(options.strokeDashArray.map(v => v));
   } else if (options.highlight) {
     // Flowing Animation: Offset the dash based on current time
     const flowSpeed = (Date.now() / 50) % 20;
-    ctx.setLineDash([8 / zoom, 4 / zoom]);
-    ctx.lineDashOffset = -flowSpeed / zoom;
+    ctx.setLineDash([8, 4]);
+    ctx.lineDashOffset = -flowSpeed;
   }
   
   ctx.lineJoin = "round"; 
@@ -757,7 +757,7 @@ export const drawConnector = (
   const lastP = points[points.length - 1];
   const prevP = points[points.length - 2] || points[0];
   const angle = Math.atan2(lastP.y - prevP.y, lastP.x - prevP.x);
-  const size = 10 / zoom;
+  const size = 10;
   
   ctx.save();
   ctx.translate(lastP.x, lastP.y);
@@ -834,7 +834,7 @@ export const drawFigure = (
     ctx.strokeRect(f.x, f.y, f.width, f.height);
   }
 
-  // Header/Label (Constant screen size - zoom dependent canvas units)
+  // Header/Label (Constant screen size)
   const headerHeight = 24 / zoom;
   const headerGap = 10 / zoom; 
   const hX = f.x;
