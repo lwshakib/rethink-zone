@@ -36,6 +36,9 @@ interface DSLConnection {
   strokeWidth?: number;
   strokeDashArray?: number[];
   waypoints?: { x: number; y: number }[];
+  routingType?: "elbow" | "straight";
+  startArrowHead?: boolean;
+  endArrowHead?: boolean;
 }
 
 export function parseDSL(code: string, iconRegistry: string[] = []): ShapeCollection {
@@ -262,6 +265,9 @@ export function parseDSL(code: string, iconRegistry: string[] = []): ShapeCollec
             if (k === 'width') connProps.strokeWidth = parseInt(v);
             if (k === 'dashed') connProps.strokeDashArray = [5, 5];
             if (k === 'dotted') connProps.strokeDashArray = [2, 2];
+            if (k === 'routing') connProps.routingType = v === 'straight' ? 'straight' : 'elbow';
+            if (k === 'startArrow') connProps.startArrowHead = v === 'true';
+            if (k === 'endArrow') connProps.endArrowHead = v === 'true';
             if (k === 'via') {
               connProps.waypoints = v.split(';').map(pt => {
                 const [x, y] = pt.split(',').map(s => parseFloat(s.trim()));
@@ -269,6 +275,18 @@ export function parseDSL(code: string, iconRegistry: string[] = []): ShapeCollec
               }).filter(pt => !isNaN(pt.x) && !isNaN(pt.y));
             }
           });
+        }
+
+        // Logic based on connection type symbol
+        if (type === '<>') {
+          if (connProps.startArrowHead === undefined) connProps.startArrowHead = true;
+          if (connProps.endArrowHead === undefined) connProps.endArrowHead = true;
+        } else if (type === '<') {
+          if (connProps.startArrowHead === undefined) connProps.startArrowHead = true;
+          if (connProps.endArrowHead === undefined) connProps.endArrowHead = false;
+        } else if (type === '>') {
+          if (connProps.startArrowHead === undefined) connProps.startArrowHead = false;
+          // endArrowHead is true by default
         }
 
         froms.forEach(f => {
@@ -489,7 +507,10 @@ export function parseDSL(code: string, iconRegistry: string[] = []): ShapeCollec
         stroke: conn.stroke,
         strokeWidth: conn.strokeWidth,
         strokeDashArray: conn.strokeDashArray,
-        waypoints: conn.waypoints
+        waypoints: conn.waypoints,
+        routingType: conn.routingType,
+        startArrowHead: conn.startArrowHead,
+        endArrowHead: conn.endArrowHead
       };
       result.connectors!.push(connector);
     }

@@ -1915,5 +1915,64 @@ ui <> sensor [dashed: true, via: "575,700"]`
         }
       ]
     }
+  },
+  {
+    name: "Modern E-Commerce Flow",
+    description:
+      "A hybrid architecture showcasing straight routing for core API flows and orthogonal rails for background event processing.",
+    thumbnail: "ShoppingCart",
+    shapes: {
+      figures: [
+        {
+          id: "fig-ecommerce",
+          x: 0,
+          y: 0,
+          width: 1000,
+          height: 800,
+          figureNumber: 1,
+          title: "Architecture: Hybrid Microservices & Event Grid",
+          code: `Group: Client Layer [color: "#3498db"] {
+  web [icon: "laptop", label: "Storefront", desc: "Next.js Web App"]
+  mobile [icon: "mobile", label: "Mobile App", desc: "iOS/Android Client"]
+}
+
+Group: API Gateway [color: "#2c3e50"] {
+  gw [icon: "aws-api-gateway", label: "Kong/APIGW", desc: "Entry Point & Auth"]
+}
+
+Group: Core Services [color: "#27ae60"] {
+  cart [icon: "aws-asg", label: "Cart Service", desc: "Redis-backed Session"]
+  order [icon: "aws-asg", label: "Order API", desc: "PostgreSQL Logic"]
+}
+
+Group: Event Bus [color: "#f39c12"] {
+  bus [icon: "aws-msk", label: "Kafka Bus", desc: "Asynchronous Message Hub"]
+}
+
+Group: Background [color: "#8e44ad"] {
+  ship [icon: "aws-lambda", label: "Shipping", desc: "Logistics Orchestration"]
+  notify [icon: "aws-sns", label: "Notify", desc: "Customer Alerts"]
+}
+
+# Fast API Path (Straight)
+web > gw [routing: "straight", color: "#3498db"]
+mobile > gw [routing: "straight", color: "#3498db"]
+
+gw > cart [routing: "straight", width: 3]
+gw > order [routing: "straight", width: 3]
+
+# Bidirectional Sync
+cart <> order [dashed: true]
+
+# Background Async (Orthogonal)
+order > bus [label: "Order Created"]
+bus > ship [routing: "elbow"]
+bus > notify [routing: "elbow"]
+
+# Notification feedback
+notify > web [dashed: true, startArrow: true, endArrow: false]`
+        }
+      ]
+    }
   }
 ];
