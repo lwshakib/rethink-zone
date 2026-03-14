@@ -89,6 +89,7 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<string>("code");
   const [prompt, setPrompt] = useState("");
+  const [repoUrl, setRepoUrl] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [displayExamples, setDisplayExamples] = useState<typeof ARCHITECTURE_EXAMPLES>([]);
   const sidebarRef = React.useRef<HTMLDivElement>(null);
@@ -167,6 +168,7 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           prompt,
+          repoUrl: repoUrl.trim() || undefined,
           existingCode: code.trim() ? code : undefined
         }),
         signal: controller.signal
@@ -308,6 +310,22 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
       <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-white/10">
         {activeTab === "ai" ? (
           <div className="flex flex-col p-8 gap-8 animate-in fade-in duration-300">
+            {/* Repo Integration Toggle/Input */}
+            <div className="flex flex-col gap-3">
+              <label className="text-[11px] font-medium text-white/40 flex items-center gap-2">
+                <Terminal size={12} />
+                Public GitHub Repository (Optional)
+              </label>
+              <input
+                type="text"
+                value={repoUrl}
+                onChange={(e) => setRepoUrl(e.target.value)}
+                placeholder="https://github.com/owner/repo"
+                className="h-10 border-white/5 bg-white/[0.03] text-white placeholder:text-white/10 text-[11px] py-1 px-4 rounded-md border focus:border-white/20 transition-all outline-none"
+                disabled={isGenerating}
+              />
+            </div>
+
             <div className="flex flex-col gap-3">
               <label className="text-[11px] font-medium text-white/40">
                 AI Architect Instructions

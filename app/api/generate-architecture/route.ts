@@ -1,46 +1,51 @@
 import { NextResponse } from "next/server";
 import { generateText, Message } from "@/llm/generateText";
+import { analyzeRepo } from "@/lib/repo-analyzer";
+import { ARCHITECTURE_SYSTEM_PROMPT } from "@/llm/prompts";
 
 export async function POST(req: Request) {
   try {
-    const { prompt, existingCode } = await req.json();
+    const { prompt, existingCode, repoUrl } = await req.json();
 
-    if (!prompt) {
-      return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
+    if (!prompt && !repoUrl) {
+      return NextResponse.json({ error: "Prompt or Repository URL is required" }, { status: 400 });
     }
 
-    const systemPrompt = `You are a Senior Cloud Solution Architect. Your mission is to design or REFINE comprehensive, high-fidelity enterprise architecture diagrams.
+    let repoContext = "";
+    if (repoUrl) {
+      try {
+        const repoIndex = await analyzeRepo(repoUrl);
+        repoContext = `CODEBASE INDEX FOR ANALYSIS:
+Files: ${repoIndex.files.map(f => f.path).join(", ")}
+Significant Functions: ${repoIndex.functions.map(f => `${f.name} (in ${f.file})`).join(", ")}
+Classes/Modules: ${repoIndex.classes.map(c => `${c.name} (in ${c.file})`).join(", ")}
+Core Interactions: ${repoIndex.calls.slice(0, 50).map(c => `${c.from} -> ${c.to}`).join(", ")}
 
-OBJECTIVE:
-- For NEW requests: Design a robust, multi-layer system from scratch.
-- For REFINEMENTS (when existing code is provided): Modify the existing DSL to incorporate the changes requested by the user. Maintain the original structure, colors, and naming conventions as much as possible unless the user explicitly asks to change them.
+INSTRUCTION: Use this codebase index to infer the actual software architecture. Map specific files/modules to appropriate cloud services or logical groups.`;
+      } catch (e: any) {
+        console.warn("Repo analysis failed, proceeding with prompt only:", e);
+        // We don't fail the whole request, but we could add a warning to the response if we had a way
+      }
+    }
 
-ICON CONVENTION:
-Use: [provider]-[service]
-- AWS: aws-s3, aws-lambda, aws-rds, aws-vpc, aws-alb, aws-cloudfront, aws-sqs, aws-iam, aws-eks, aws-route53, aws-asg, aws-cloudwatch, aws-elasticache.
-- GCP: gcp-run, gcp-functions, gcp-storage, gcp-sql, gcp-gke, gcp-pubsub.
-- Azure: azure-app, azure-functions, azure-vnet, azure-frontdoor, azure-cosmos-db, azure-sql, azure-storage, azure-dns, azure-nsg.
-- Kubernetes: k8s-pod, k8s-svc, k8s-deploy, k8s-node, k8s-ns, k8s-ing.
-- Generic: laptop, mobile, users, cloudinary, mapbox, stripe, database, docker, github, react.
-
-DSL SYNTAX:
-1. Groups: GroupName [color: "hex"] { ... }
-2. Nodes: Name [icon: "name", label: "Display", desc: "Detailed explanation", color: "hex"]
-3. Connections: 
-   - Node1 > Node2 [color: "#hex", dashed: true, via: "x1,y1; x2,y2"] (IMPORTANT: No labels. Use 'via' for custom elbow joints)
-   - Node1 <> Node2 (IMPORTANT: No labels. Can also use 'via')
-
-TONE: Professional and technically accurate. Only return RAW DSL code.`;
+    const finalPrompt = prompt || "Generate a comprehensive architecture diagram based on this codebase.";
 
     const messages: Message[] = [
-      { role: "system", content: systemPrompt },
+      { role: "system", content: ARCHITECTURE_SYSTEM_PROMPT },
     ];
 
-    if (existingCode) {
-      messages.push({ role: "user", content: `Current Architecture DSL:\n${existingCode}\n\nTask: ${prompt}` });
-    } else {
-      messages.push({ role: "user", content: prompt });
+    let userContent = "";
+    if (repoContext) {
+      userContent += `${repoContext}\n\n`;
     }
+
+    if (existingCode) {
+      userContent += `Current Architecture DSL:\n${existingCode}\n\nTask: ${finalPrompt}`;
+    } else {
+      userContent += finalPrompt;
+    }
+
+    messages.push({ role: "user", content: userContent });
 
     const result = await generateText({
       messages,
