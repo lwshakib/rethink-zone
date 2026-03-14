@@ -3366,8 +3366,13 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             const minSize = 4 / zoom;
             const eSx = isV ? 0 : corner.sx;
             const eSy = isH ? 0 : corner.sy;
-            const newW = Math.max(minSize, base.width + dx * eSx);
-            const newH = Math.max(minSize, base.height + dy * eSy);
+            let newW = Math.max(minSize, base.width + dx * eSx);
+            let newH = Math.max(minSize, base.height + dy * eSy);
+            if (event.shiftKey) {
+              const m = Math.max(newW, newH);
+              newW = m;
+              newH = m;
+            }
             const newX = eSx < 0 ? base.x + (base.width - newW) : base.x;
             const newY = eSy < 0 ? base.y + (base.height - newH) : base.y;
             setRectangles((prev) =>
@@ -3449,8 +3454,13 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             const corner = dragFrameCornerRef.current ?? { sx: 1, sy: 1 };
             const eSx = isV ? 0 : corner.sx;
             const eSy = isH ? 0 : corner.sy;
-            const newW = Math.max(8 / zoom, base.width + dx * eSx);
-            const newH = Math.max(8 / zoom, base.height + dy * eSy);
+            let newW = Math.max(8 / zoom, base.width + dx * eSx);
+            let newH = Math.max(8 / zoom, base.height + dy * eSy);
+            if (event.shiftKey) {
+              const m = Math.max(newW, newH);
+              newW = m;
+              newH = m;
+            }
             const newX = eSx < 0 ? base.x + (base.width - newW) : base.x;
             const newY = eSy < 0 ? base.y + (base.height - newH) : base.y;
             setFrames((prev) =>
@@ -3465,8 +3475,13 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             const corner = dragRectCornerRef.current ?? { sx: 1, sy: 1 };
             const eSx = isV ? 0 : corner.sx;
             const eSy = isH ? 0 : corner.sy;
-            const newW = Math.max(4 / zoom, base.width + dx * eSx);
-            const newH = Math.max(4 / zoom, base.height + dy * eSy);
+            let newW = Math.max(4 / zoom, base.width + dx * eSx);
+            let newH = Math.max(4 / zoom, base.height + dy * eSy);
+            if (event.shiftKey) {
+              const m = Math.max(newW, newH);
+              newW = m;
+              newH = m;
+            }
             const newX = eSx < 0 ? base.x + (base.width - newW) : base.x;
             const newY = eSy < 0 ? base.y + (base.height - newH) : base.y;
             setPolygons((prev) =>
@@ -3511,8 +3526,13 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             const corner = dragRectCornerRef.current ?? { sx: 1, sy: 1 };
             const eSx = isV ? 0 : corner.sx;
             const eSy = isH ? 0 : corner.sy;
-            const newW = Math.max(20 / zoom, base.width + dx * eSx);
-            const newH = Math.max(20 / zoom, base.height + dy * eSy);
+            let newW = Math.max(20 / zoom, base.width + dx * eSx);
+            let newH = Math.max(20 / zoom, base.height + dy * eSy);
+            if (event.shiftKey) {
+              const m = Math.max(newW, newH);
+              newW = m;
+              newH = m;
+            }
             const newX = eSx < 0 ? base.x + (base.width - newW) : base.x;
             const newY = eSy < 0 ? base.y + (base.height - newH) : base.y;
             setFigures((prev) =>
@@ -3527,8 +3547,13 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             const corner = dragRectCornerRef.current ?? { sx: 1, sy: 1 };
             const eSx = isV ? 0 : corner.sx;
             const eSy = isH ? 0 : corner.sy;
-            const newW = Math.max(40 / zoom, base.width + dx * eSx);
-            const newH = Math.max(20 / zoom, base.height + dy * eSy);
+            let newW = Math.max(40 / zoom, base.width + dx * eSx);
+            let newH = Math.max(20 / zoom, base.height + dy * eSy);
+            if (event.shiftKey) {
+              const m = Math.max(newW, newH);
+              newW = m;
+              newH = m;
+            }
             const newX = eSx < 0 ? base.x + (base.width - newW) : base.x;
             const newY = eSy < 0 ? base.y + (base.height - newH) : base.y;
             setCodes((prev) =>
@@ -3932,22 +3957,20 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         }
       } else if (tool === "Rectangle" && isDrawingRectRef.current) {
         isDrawingRectRef.current = false;
+        const point = toCanvasPointFromClient(event.clientX, event.clientY);
+        let w = point.x - rectStartRef.current.x;
+        let h = point.y - rectStartRef.current.y;
+        if (event.shiftKey) {
+          const size = Math.max(Math.abs(w), Math.abs(h));
+          w = w >= 0 ? size : -size;
+          h = h >= 0 ? size : -size;
+        }
         const rect = {
           id: makeId(),
           x: rectStartRef.current.x,
           y: rectStartRef.current.y,
-          width:
-            (event.clientX -
-              canvasRef.current!.getBoundingClientRect().left -
-              pan.x) /
-              zoom -
-            rectStartRef.current.x,
-          height:
-            (event.clientY -
-              canvasRef.current!.getBoundingClientRect().top -
-              pan.y) /
-              zoom -
-            rectStartRef.current.y,
+          width: w,
+          height: h,
         };
         // Normalize rect
         if (rect.width < 0) {
@@ -3971,8 +3994,13 @@ export const useCanvasInteraction = (props: InteractionProps) => {
       } else if (tool === "Circle" && isDrawingCircleRef.current) {
         isDrawingCircleRef.current = false;
         const point = toCanvasPointFromClient(event.clientX, event.clientY);
-        const rx = Math.abs(point.x - circleStartRef.current.x);
-        const ry = Math.abs(point.y - circleStartRef.current.y);
+        let rx = Math.abs(point.x - circleStartRef.current.x);
+        let ry = Math.abs(point.y - circleStartRef.current.y);
+        if (event.shiftKey) {
+          const m = Math.max(rx, ry);
+          rx = m;
+          ry = m;
+        }
         if (rx > 2 && ry > 2) {
           const next = [
             ...circles,
@@ -3999,10 +4027,17 @@ export const useCanvasInteraction = (props: InteractionProps) => {
       } else if (tool === "Line" && isDrawingLineRef.current) {
         isDrawingLineRef.current = false;
         const point = toCanvasPointFromClient(event.clientX, event.clientY);
+        let x2 = point.x;
+        let y2 = point.y;
+        if (event.shiftKey && currentLine) {
+          if (Math.abs(x2 - currentLine.x1) >= Math.abs(y2 - currentLine.y1))
+            y2 = currentLine.y1;
+          else x2 = currentLine.x1;
+        }
         if (
           Math.hypot(
-            point.x - currentLine?.x1 || 0,
-            point.y - currentLine?.y1 || 0
+            x2 - (currentLine?.x1 || 0),
+            y2 - (currentLine?.y1 || 0)
           ) > 4
         ) {
           const next = [
@@ -4011,8 +4046,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
               id: makeId(),
               x1: currentLine!.x1,
               y1: currentLine!.y1,
-              x2: point.x,
-              y2: point.y,
+              x2,
+              y2,
             },
           ];
           setLines(next);
@@ -4050,8 +4085,15 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         } else if (isDrawingArrowRef.current) {
           isDrawingArrowRef.current = false;
           const point = toCanvasPointFromClient(event.clientX, event.clientY);
+          let x2 = point.x;
+          let y2 = point.y;
+          if (event.shiftKey && currentArrow) {
+            if (Math.abs(x2 - currentArrow.x1) >= Math.abs(y2 - currentArrow.y1))
+              y2 = currentArrow.y1;
+            else x2 = currentArrow.x1;
+          }
           if (
-            Math.hypot(point.x - currentArrow!.x1, point.y - currentArrow!.y1) >
+            Math.hypot(x2 - currentArrow!.x1, y2 - currentArrow!.y1) >
             4
           ) {
             const next = [
@@ -4060,8 +4102,8 @@ export const useCanvasInteraction = (props: InteractionProps) => {
                 id: makeId(),
                 x1: currentArrow!.x1,
                 y1: currentArrow!.y1,
-                x2: point.x,
-                y2: point.y,
+                x2,
+                y2,
               },
             ];
             setArrows(next);
@@ -4098,6 +4140,11 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         const point = toCanvasPointFromClient(event.clientX, event.clientY);
         let w = point.x - rectStartRef.current.x;
         let h = point.y - rectStartRef.current.y;
+        if (event.shiftKey) {
+          const size = Math.max(Math.abs(w), Math.abs(h));
+          w = w >= 0 ? size : -size;
+          h = h >= 0 ? size : -size;
+        }
         let x = rectStartRef.current.x;
         let y = rectStartRef.current.y;
         if (w < 0) {
