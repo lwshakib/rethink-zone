@@ -8,10 +8,10 @@
   **A premium, unified workspace that blends professional documents, an intelligent infinite canvas, and synchronized kanban boards.**
 
   <p align="center">
-    <img src="public/dark.png" alt="Rethink Zone Dark Mode" width="800" style="border-radius: 12px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1);"/>
+    <img src="public/dark_demo.png" alt="Rethink Zone Dark Mode" width="800" style="border-radius: 12px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1);"/>
   </p>
   <p align="center">
-    <img src="public/light.png" alt="Rethink Zone Light Mode" width="800" style="border-radius: 12px; margin-top: 10px; border: 1px solid rgba(0,0,0,0.1);"/>
+    <img src="public/light_demo.png" alt="Rethink Zone Light Mode" width="800" style="border-radius: 12px; margin-top: 10px; border: 1px solid rgba(0,0,0,0.1);"/>
   </p>
   
   <br/>
