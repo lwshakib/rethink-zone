@@ -191,6 +191,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
 
   const [isHandPanning, setIsHandPanning] = useState(false); // Tracks if the 'Hand' tool is active for panning
   const [isSpacePanning, setIsSpacePanning] = useState(false); // Tracks if Spacebar is held for panning mode
+  const [isModifierPressed, setIsModifierPressed] = useState(false); // Tracks if Ctrl/Cmd is held
   
 
   // Captures the current state of todos into a single HistoryEntry object
@@ -847,6 +848,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     isSpacePanning,
     setIsHandPanning,
     isHandPanning,
+    isModifierPressed,
     anchorHandles,
     pendingAddIcon,
     setPendingAddIcon,
@@ -941,7 +943,12 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       if (isTyping) return;
 
       // Enable spacebar-panning mode
-      if (e.code === "Space" && !e.repeat) setIsSpacePanning(true);
+      if (e.code === "Space" && !e.repeat) {
+        setIsSpacePanning(true);
+      }
+      if (e.key === "Control" || e.key === "Meta") {
+        setIsModifierPressed(true);
+      }
       // Delete key for removing selected elements
       if (e.key === "Delete") {
         e.preventDefault();
@@ -1027,13 +1034,21 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === "Space") setIsSpacePanning(false); // Disable panning mode on space release
+      if (e.key === "Control" || e.key === "Meta") setIsModifierPressed(false);
+    };
+
+    const handleBlur = () => {
+      setIsSpacePanning(false);
+      setIsModifierPressed(false);
     };
 
     window.addEventListener("keydown", handleKeyDown); // Register listeners
     window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("blur", handleBlur);
     return () => {
       window.removeEventListener("keydown", handleKeyDown); // Cleanup listeners on unmount
       window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("blur", handleBlur);
     };
   }, [
     deleteSelected,
@@ -1044,6 +1059,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     zoomOut,
     resetView,
     setIsSpacePanning,
+    setIsModifierPressed,
   ]);
 
   // Initialization: load data from 'initialData' if provided (e.g., from DB)
@@ -1690,7 +1706,12 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
           </button>
 
           {/* Center-bottom toolbar for selecting tools (Select, Pencil, Rect, etc) */}
-          <Toolbar activeTool={activeTool} setActiveTool={setActiveTool} />
+          <Toolbar
+            activeTool={
+              isSpacePanning ? "Hand" : isModifierPressed ? "Select" : activeTool
+            }
+            setActiveTool={setActiveTool}
+          />
 
           {/* Contextual pencil settings (color/width) shown only when pencil or eraser is active */}
           {(activeTool === "Pencil" || activeTool === "Eraser") && (

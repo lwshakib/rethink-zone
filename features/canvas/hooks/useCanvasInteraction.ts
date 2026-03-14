@@ -107,6 +107,7 @@ type InteractionProps = {
   ) => void;
   pushHistory: (overrides?: Partial<HistoryEntry>) => void;
   isSpacePanning: boolean;
+  isModifierPressed: boolean;
   setIsHandPanning: (b: boolean) => void;
   isHandPanning: boolean;
   anchorHandles: any[];
@@ -200,6 +201,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     setCodes,
     pushHistory,
     isSpacePanning,
+    isModifierPressed,
     setIsHandPanning,
     isHandPanning,
     anchorHandles,
@@ -335,6 +337,23 @@ export const useCanvasInteraction = (props: InteractionProps) => {
     cursorStyleRef.current = cursorStyle;
   }, [cursorStyle]);
 
+  // Update cursor immediately when modifier keys change
+  useEffect(() => {
+    if (isSpacePanning) {
+      setCursorStyle("grab");
+    } else if (isModifierPressed) {
+      setCursorStyle("default");
+    } else if (activeTool === "Hand") {
+      setCursorStyle("grab");
+    } else if (activeTool === "Pencil") {
+      // Pencil cursor is complex, better to let handlePointerMove handle it
+    } else if (activeTool === "Select") {
+      setCursorStyle("default");
+    } else {
+      setCursorStyle("crosshair");
+    }
+  }, [isSpacePanning, isModifierPressed, activeTool]);
+
   useEffect(() => {
     hoverAnchorRef.current = hoverAnchor;
   }, [hoverAnchor]);
@@ -379,11 +398,11 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
   const resolveTool = useCallback(
     (ev?: { ctrlKey?: boolean; metaKey?: boolean }) => {
-      if (ev?.ctrlKey || ev?.metaKey) return "Select" as Tool;
+      if (ev?.ctrlKey || ev?.metaKey || isModifierPressed) return "Select" as Tool;
       if (isSpacePanning) return "Hand" as Tool;
       return activeTool;
     },
-    [activeTool, isSpacePanning]
+    [activeTool, isSpacePanning, isModifierPressed]
   );
 
   const eraseAtPoint = useCallback(
