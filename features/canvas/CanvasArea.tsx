@@ -450,8 +450,10 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       return handles;
     }
 
-    // SCENARIO 2: Arrow Snapping - nodes for all shapes to allow connections
+    // SCENARIO 2: Arrow Snapping - nodes for selected shapes to allow connections
     if (isArrow) {
+      const selectedIds = new Set(selectedShape.map((s) => s.id));
+
       // Helper for all standard rectangular shapes
       const addPaddedRectHandles = (
         r: { id: string; x: number; y: number; width: number; height: number },
@@ -474,15 +476,15 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
         });
       };
 
-      rectangles.forEach((r) => addPaddedRectHandles(r, "rect"));
-      images.forEach((im) => addPaddedRectHandles(im, "image"));
-      texts.forEach((t) => addPaddedRectHandles(t, "text"));
-      frames.forEach((f) => addPaddedRectHandles(f, "frame"));
-      polygons.forEach((p) => addPaddedRectHandles(p, "poly"));
-      figures.forEach((f) => addPaddedRectHandles(f, "figure"));
-      codes.forEach((c) => addPaddedRectHandles(c, "code"));
+      rectangles.filter(r => selectedIds.has(r.id)).forEach((r) => addPaddedRectHandles(r, "rect"));
+      images.filter(im => selectedIds.has(im.id)).forEach((im) => addPaddedRectHandles(im, "image"));
+      texts.filter(t => selectedIds.has(t.id)).forEach((t) => addPaddedRectHandles(t, "text"));
+      frames.filter(f => selectedIds.has(f.id)).forEach((f) => addPaddedRectHandles(f, "frame"));
+      polygons.filter(p => selectedIds.has(p.id)).forEach((p) => addPaddedRectHandles(p, "poly"));
+      figures.filter(f => selectedIds.has(f.id)).forEach((f) => addPaddedRectHandles(f, "figure"));
+      codes.filter(c => selectedIds.has(c.id)).forEach((c) => addPaddedRectHandles(c, "code"));
 
-      circles.forEach((c) => {
+      circles.filter(c => selectedIds.has(c.id)).forEach((c) => {
         const paddedBox = {
           x: c.x - c.rx - margin,
           y: c.y - c.ry - margin,
