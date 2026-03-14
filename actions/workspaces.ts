@@ -116,15 +116,15 @@ export async function createWorkspaceAction(
         documentData:
           validated.documentData === null
             ? Prisma.JsonNull
-            : (validated.documentData as any),
+            : (validated.documentData as Prisma.InputJsonValue),
         canvasData:
           validated.canvasData === null
             ? Prisma.JsonNull
-            : (validated.canvasData as any),
+            : (validated.canvasData as Prisma.InputJsonValue),
         kanbanBoard:
           validated.kanbanBoard === null
             ? Prisma.JsonNull
-            : (validated.kanbanBoard as any),
+            : (validated.kanbanBoard as Prisma.InputJsonValue),
       },
     });
 
@@ -179,7 +179,7 @@ export async function updateWorkspaceAction(
             documentData:
               validated.documentData === null
                 ? Prisma.JsonNull
-                : (validated.documentData as any),
+                : (validated.documentData as Prisma.InputJsonValue),
           }
         : {}),
       ...(validated.canvasData !== undefined
@@ -187,7 +187,7 @@ export async function updateWorkspaceAction(
             canvasData:
               validated.canvasData === null
                 ? Prisma.JsonNull
-                : (validated.canvasData as any),
+                : (validated.canvasData as Prisma.InputJsonValue),
           }
         : {}),
       ...(validated.kanbanBoard !== undefined
@@ -195,7 +195,7 @@ export async function updateWorkspaceAction(
             kanbanBoard:
               validated.kanbanBoard === null
                 ? Prisma.JsonNull
-                : (validated.kanbanBoard as any),
+                : (validated.kanbanBoard as Prisma.InputJsonValue),
           }
         : {}),
     };

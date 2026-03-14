@@ -95,7 +95,7 @@ const hexToHsv = (hex: string) => {
   const d = max - min;
   const v = max;
   let h = 0;
-  let s = max === 0 ? 0 : d / max;
+  const s = max === 0 ? 0 : d / max;
   if (max !== min) {
     switch (max) {
       case r:

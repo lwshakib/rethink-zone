@@ -9,8 +9,13 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
  * @param outputSchema - A Zod schema defining the required output structure.
  * @returns The parsed JSON object matching the provided schema.
  */
+interface Message {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
 export const generateObjectFromAI = async <T extends z.ZodSchema>(
-  messages: any[],
+  messages: Message[],
   outputSchema: T
 ): Promise<z.infer<T>> => {
   if (!GLM_WORKER_URL) {
@@ -28,7 +33,7 @@ export const generateObjectFromAI = async <T extends z.ZodSchema>(
   };
 
   // Convert Zod schema to JSON Schema for the worker's strict mode
-  const jsonSchema = zodToJsonSchema(outputSchema as any);
+  const jsonSchema = zodToJsonSchema(outputSchema as unknown as z.ZodSchema);
 
   const response = await fetch(url, {
     method: 'POST',
@@ -61,7 +66,7 @@ export const generateObjectFromAI = async <T extends z.ZodSchema>(
 
   try {
     return JSON.parse(content) as z.infer<T>;
-  } catch (error) {
+  } catch (_error) {
     console.error('Failed to parse JSON from model response:', content);
     throw new Error('Model returned invalid JSON');
   }

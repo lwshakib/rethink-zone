@@ -9,7 +9,7 @@ import React, {
   useState, // Hook to manage local state within the component
 } from "react";
 import { useTheme } from "next-themes"; // Hook to access and manage the current theme (light/dark)
-import { Plus, X } from "lucide-react"; // Importing icons for UI elements
+import { Plus } from "lucide-react"; // Importing icons for UI elements
 import {
   ShapeKind,
   AnchorSide,
@@ -19,7 +19,6 @@ import {
   ConnectorAnchor,
   Tool,
   DiagramTemplate,
-  FigureShape,
 } from "./types";
 import {
   getRectAnchor, // Helper to find anchor points on a rectangle
@@ -523,7 +522,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
 
   // Generic function to update properties of an existing shape and record history
   const onUpdateShape = useCallback(
-    (kind: string, index: number, updates: Record<string, any>) => {
+    (kind: string, index: number, updates: Record<string, unknown>) => {
       const updateFn = <T extends object>(prev: T[]) => {
         const next = [...prev];
         next[index] = { ...next[index], ...updates }; // Merge updates into the specific item
@@ -636,15 +635,16 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       else if (kind === "text") source = texts[index];
       else if (kind === "code") source = codes[index];
 
-      if (!source) return; // Exit if the source shape couldn't be found
+      const s = source as any; 
+      if (!s) return; 
 
       // Extract common properties that should persist across shape types
       const common = {
-        id: source.id,
-        fill: source.fill,
-        stroke: source.stroke,
-        opacity: source.opacity,
-        strokeDashArray: source.strokeDashArray,
+        id: s.id,
+        fill: s.fill,
+        stroke: s.stroke,
+        opacity: s.opacity,
+        strokeDashArray: s.strokeDashArray,
       };
 
       // Remove the shape from its current collection
@@ -889,7 +889,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       setCodes(entry.codes || []);
 
       isUndoRedoRef.current = false; // Reset flag
-      setRerenderTick((t) => t + 1); // Trigger visual redraw
+      setRerenderTick((t: number) => t + 1); // Trigger visual redraw
     },
     [
       setRectangles,
@@ -1353,7 +1353,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       if (!imageCacheRef.current[im.src]) {
         const img = new Image();
         img.src = im.src;
-        img.onload = () => setRerenderTick((t) => t + 1); // Redraw once image loads
+        img.onload = () => setRerenderTick((t: number) => t + 1); // Redraw once image loads
         imageCacheRef.current[im.src] = img;
       }
     });
@@ -1370,7 +1370,7 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
       canvasRef.current.width = rect.width * dpr;
       canvasRef.current.height = rect.height * dpr;
 
-      setRerenderTick((t) => t + 1); // Force redraw after resize
+      setRerenderTick((t: number) => t + 1); // Force redraw after resize
     };
 
     handleResize();

@@ -30,11 +30,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Layers,
   ChevronLeft,
   Save,
   Trash2,
-  Edit2,
   Loader2,
 } from "lucide-react";
 import { Workspace } from "@/hooks/use-workspace-store";
@@ -65,7 +63,7 @@ export default function WorkspaceDetailPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { data: session } = authClient.useSession();
+  const { data: _session } = authClient.useSession();
 
   // List of available features within a workspace
   const availableTabs = useMemo(() => ["document", "canvas", "kanban"], []);
@@ -80,7 +78,7 @@ export default function WorkspaceDetailPage() {
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [dirty, setDirty] = useState(false); // Tracks if there are unsaved changes
@@ -89,9 +87,9 @@ export default function WorkspaceDetailPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Content state for each individual feature
-  const [documentData, setDocumentData] = useState<any>(null);
-  const [canvasData, setCanvasData] = useState<any>(null);
-  const [kanbanBoard, setKanbanBoard] = useState<any>(null);
+  const [documentData, setDocumentData] = useState<unknown>(null);
+  const [canvasData, setCanvasData] = useState<unknown>(null);
+  const [kanbanBoard, setKanbanBoard] = useState<unknown>(null);
 
   /** sync active tab state with URL search params */
   useEffect(() => {
@@ -111,7 +109,7 @@ export default function WorkspaceDetailPage() {
   };
 
   /** Fetches the workspace details and all sub-feature data from the server */
-  const loadWorkspace = async () => {
+  const loadWorkspace = useCallback(async () => {
     try {
       if (!workspaceId) {
         setError("Invalid workspace ID");
@@ -144,7 +142,7 @@ export default function WorkspaceDetailPage() {
       setLoading(false);
       setDirty(false); // Reset dirty flag after load
     }
-  };
+  }, [workspaceId]);
 
   /** Persists all current tab data and workspace metadata to the server */
   const saveWorkspace = useCallback(async () => {
@@ -200,7 +198,7 @@ export default function WorkspaceDetailPage() {
 
   useEffect(() => {
     loadWorkspace();
-  }, [workspaceId]);
+  }, [loadWorkspace]);
 
   /** finalizes a workspace title edit */
   const commitName = () => {
@@ -218,17 +216,17 @@ export default function WorkspaceDetailPage() {
 
   // --- Content change handlers (memoized to prevent unneeded re-renders in children) ---
 
-  const handleDocumentChange = useCallback((data: any) => {
+  const handleDocumentChange = useCallback((data: unknown) => {
     setDocumentData(data);
     setDirty(true);
   }, []);
 
-  const handleCanvasChange = useCallback((data: any) => {
+  const handleCanvasChange = useCallback((data: unknown) => {
     setCanvasData(data);
     setDirty(true);
   }, []);
 
-  const handleKanbanChange = useCallback((data: any) => {
+  const handleKanbanChange = useCallback((data: unknown) => {
     setKanbanBoard(data);
     setDirty(true);
   }, []);
@@ -383,7 +381,7 @@ export default function WorkspaceDetailPage() {
             className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
           >
             <DocumentTab
-              initialContent={documentData}
+              initialContent={documentData as any}
               onChange={handleDocumentChange}
             />
           </TabsContent>
@@ -393,7 +391,7 @@ export default function WorkspaceDetailPage() {
             value="canvas"
             className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
           >
-            <CanvasTab initialData={canvasData} onChange={handleCanvasChange} />
+            <CanvasTab initialData={canvasData as any} onChange={handleCanvasChange} />
           </TabsContent>
 
           {/* Kanban Tab View */}
@@ -401,7 +399,7 @@ export default function WorkspaceDetailPage() {
             value="kanban"
             className="m-0 h-full w-full outline-none data-[state=active]:flex flex-col"
           >
-            <KanbanTab board={kanbanBoard} onChange={handleKanbanChange} />
+            <KanbanTab board={kanbanBoard as any} onChange={handleKanbanChange} />
           </TabsContent>
         </main>
       </Tabs>

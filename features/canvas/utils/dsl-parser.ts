@@ -2,10 +2,7 @@
 import { makeId } from "./index";
 import { 
   ShapeCollection, 
-  FigureShape, 
   RectShape, 
-  ImageShape, 
-  TextShape, 
   Connector, 
   AnchorSide 
 } from "../types";
@@ -255,7 +252,7 @@ export function parseDSL(code: string, iconRegistry: string[] = []): ShapeCollec
         }
 
         const tos = targetPart.split(',').map(s => s.trim());
-        const connProps: any = {};
+        const connProps: Record<string, any> = {};
         
         if (propsPart) {
           propsPart.split(',').forEach(p => {

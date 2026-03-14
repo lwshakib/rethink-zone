@@ -20,12 +20,12 @@ import {
 /**
  * TYPE DEFINITIONS
  */
-type KanbanColumn = {
+export type KanbanColumn = {
   title: string;
   items: string[]; // Simple string-based items (fallback/initial format)
 };
 
-type KanbanItem = {
+export type KanbanItem = {
   id: string; // Unique identifier for the task
   text: string; // Main heading/title of the task
   description: string; // Detailed notes about the task
@@ -34,7 +34,7 @@ type KanbanItem = {
   eta: string; // Expected completion time (Today, Morrow, etc)
 };
 
-type KanbanState = {
+export type KanbanState = {
   title: string; // Name of the column (e.g., "To Do")
   items: KanbanItem[]; // List of structured task objects in this column
 };
@@ -94,38 +94,39 @@ export default function KanbanArea({ board, onChange }: KanbanAreaProps) {
     () =>
       safeBoard.map((col, colIdx) => ({
         title: col.title,
-        items: (col.items || []).map((item: any, itemIdx: number) => {
+        items: (col.items || []).map((item: string | KanbanItem, itemIdx: number) => {
+          const itemObj = typeof item === "string" ? null : item;
           // Normalizes item text regardless of whether input was a string or object
           const text =
             typeof item === "string"
               ? item
-              : typeof item?.text === "string"
-                ? item.text
+              : typeof itemObj?.text === "string"
+                ? itemObj.text
                 : "Item";
           return {
             id:
-              typeof item?.id === "string"
-                ? item.id
+              typeof itemObj?.id === "string"
+                ? itemObj.id
                 : `${colIdx}-${itemIdx}-${text}`, // Fallback ID generation
             text,
             description:
-              typeof item?.description === "string" ? item.description : "",
+              typeof itemObj?.description === "string" ? itemObj.description : "",
             status:
-              typeof item?.status === "string"
-                ? item.status
+              typeof itemObj?.status === "string"
+                ? itemObj.status
                 : statusOptions[(colIdx + itemIdx) % statusOptions.length], // Default status
             priority:
-              typeof item?.priority === "string"
-                ? item.priority
+              typeof itemObj?.priority === "string"
+                ? itemObj.priority
                 : priorityOptions[(colIdx + itemIdx) % priorityOptions.length], // Default priority
             eta:
-              typeof item?.eta === "string"
-                ? item.eta
+              typeof itemObj?.eta === "string"
+                ? itemObj.eta
                 : etaOptions[itemIdx % etaOptions.length], // Default ETA
           };
         }),
       })),
-    [board]
+    [safeBoard]
   );
 
   // Core state for all columns and tasks

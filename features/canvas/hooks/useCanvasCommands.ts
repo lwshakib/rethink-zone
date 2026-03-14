@@ -813,7 +813,7 @@ export const useCanvasCommands = (
       indices.sort((a, b) => a - b);
       let items: any[] = [];
       let setter: any = null;
-      let kindKey = kind + "s" === "polys" ? "polygons" : kind + "s";
+      const kindKey = kind + "s" === "polys" ? "polygons" : kind + "s";
 
       if (kind === "rect") { items = [...rectangles]; setter = setRectangles; }
       else if (kind === "circle") { items = [...circles]; setter = setCircles; }
@@ -854,7 +854,7 @@ export const useCanvasCommands = (
       indices.sort((a, b) => a - b);
       let items: any[] = [];
       let setter: any = null;
-      let kindKey = kind + "s" === "polys" ? "polygons" : kind + "s";
+      const kindKey = kind + "s" === "polys" ? "polygons" : kind + "s";
 
       if (kind === "rect") { items = [...rectangles]; setter = setRectangles; }
       else if (kind === "circle") { items = [...circles]; setter = setCircles; }
@@ -895,7 +895,7 @@ export const useCanvasCommands = (
       indices.sort((a, b) => b - a); // Higher indices first for upward move
       let items: any[] = [];
       let setter: any = null;
-      let kindKey = kind + "s" === "polys" ? "polygons" : kind + "s";
+      const kindKey = kind + "s" === "polys" ? "polygons" : kind + "s";
 
       if (kind === "rect") { items = [...rectangles]; setter = setRectangles; }
       else if (kind === "circle") { items = [...circles]; setter = setCircles; }
@@ -939,7 +939,7 @@ export const useCanvasCommands = (
       indices.sort((a, b) => a - b); // Lower indices first for downward move
       let items: any[] = [];
       let setter: any = null;
-      let kindKey = kind + "s" === "polys" ? "polygons" : kind + "s";
+      const kindKey = kind + "s" === "polys" ? "polygons" : kind + "s";
 
       if (kind === "rect") { items = [...rectangles]; setter = setRectangles; }
       else if (kind === "circle") { items = [...circles]; setter = setCircles; }

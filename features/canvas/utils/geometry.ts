@@ -1,17 +1,6 @@
 import {
   AnchorSide,
   CircleShape,
-  RectShape,
-  ImageShape,
-  TextShape,
-  FrameShape,
-  PolyShape,
-  LineShape,
-  ArrowShape,
-  PathShape,
-  ConnectorAnchor,
-  FigureShape,
-  CodeShape,
   ShapeCollection,
 } from "../types"; // Import all shape types for consistent geometry math
 
@@ -43,7 +32,6 @@ export const getConnectorPoints = (
   toAnchor?: AnchorSide | "none", // Entrance side
   fromBounds?: { x: number; y: number; width: number; height: number }, // Bounding box of the source shape
   toBounds?: { x: number; y: number; width: number; height: number }, // Bounding box of the target shape
-  zoom: number = 1, // Current zoom level
   allBounds?: { x: number; y: number; width: number; height: number }[], // All shapes on canvas
   waypoints?: { x: number; y: number }[] // Manual routing overrides
 ) => {
@@ -61,22 +49,7 @@ export const getConnectorPoints = (
   // p3 is the point slightly outside the target shape
   const p3 = { x: to.x + toDir.x * offset, y: to.y + toDir.y * offset };
 
-  /**
-   * Internal helper to check if a point is inside a shape's bounding box.
-   */
-  const isInternal = (
-    p: { x: number; y: number },
-    b?: { x: number; y: number; width: number; height: number }
-  ) => {
-    if (!b) return false;
-    const pad = 2; // Small tolerance
-    return (
-      p.x > b.x - pad &&
-      p.x < b.x + b.width + pad &&
-      p.y > b.y - pad &&
-      p.y < b.y + b.height + pad
-    );
-  };
+
 
   /**
    * Checks if a line segment between points 'a' and 'b' intersects either the source or destination shape.

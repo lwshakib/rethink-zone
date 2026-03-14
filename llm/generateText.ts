@@ -5,9 +5,9 @@ import { CLOUDFLARE_API_KEY, GLM_WORKER_URL } from '@/lib/env';
  */
 export interface Message {
   role: 'system' | 'user' | 'assistant' | 'tool' | 'developer';
-  content: string | any[];
+  content: string | unknown[];
   name?: string;
-  tool_calls?: any[];
+  tool_calls?: unknown[];
   tool_call_id?: string;
 }
 
@@ -21,7 +21,7 @@ export interface GenerateTextOptions {
   max_tokens?: number;
   stream?: boolean;
   stop?: string[];
-  tools?: any[];
+  tools?: unknown[];
   tool_choice?: "none" | "auto" | "required";
 }
 

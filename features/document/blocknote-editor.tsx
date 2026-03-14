@@ -1,5 +1,6 @@
 "use client"; // Marks this as a client-side component for Next.js
 import "@blocknote/core/fonts/inter.css"; // Load Default Inter fonts for the editor
+import { Block, PartialBlock } from "@blocknote/core"; // Core types for BlockNote
 import { useCreateBlockNote } from "@blocknote/react"; // Hook to initialize the BlockNote editor instance
 import { BlockNoteView } from "@blocknote/shadcn"; // The view component that renders the editor UI
 import "@blocknote/shadcn/style.css"; // Core styles for the Shadcn-themed BlockNote components
@@ -26,14 +27,14 @@ const BlockNoteEditor = ({
   initialContent,
   onChange,
 }: {
-  initialContent?: any;
-  onChange?: (content: any) => void;
+  initialContent?: PartialBlock[];
+  onChange?: (content: Block[]) => void;
 }) => {
   const { resolvedTheme } = useTheme(); // Access the current theme (light or dark)
 
   // Initialize the editor instance with optional starting content
   const editor = useCreateBlockNote({
-    initialContent: initialContent ? (initialContent as any) : undefined,
+    initialContent,
   });
 
   return (

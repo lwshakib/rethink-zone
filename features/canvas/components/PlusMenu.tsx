@@ -5,8 +5,6 @@ import ReactDOMServer from "react-dom/server"; // Used for converting Lucide com
 import {
   Plus,
   Search,
-  Sparkles,
-  Binary,
   LayoutGrid,
   Shapes,
   Smile,
@@ -14,9 +12,6 @@ import {
   ChevronRight,
   Code,
   ImageIcon,
-  ArrowUp,
-  ArrowDown,
-  CornerDownLeft,
   Maximize,
   Diamond,
   Triangle,
@@ -71,7 +66,6 @@ interface PlusMenuProps {
 const PlusMenu: React.FC<PlusMenuProps> = ({
   isOpen,
   onClose,
-  setIsOpen,
   view,
   setView,
   subView,
@@ -81,14 +75,12 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
   visibleIconsLimit,
   setVisibleIconsLimit,
   isLoading,
-  setIsLoading: _setIsLoading,
   onAddIcon,
   onAddShape,
   onAddDiagram,
   icons,
   setActiveTool,
   pendingAddIcon,
-  pendingAddShapeLabel,
   pendingAddDiagram,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -325,8 +317,9 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                         const input = document.createElement("input");
                         input.type = "file";
                         input.accept = "image/*";
-                        input.onchange = async (e: any) => {
-                          const file = e.target.files?.[0];
+                        input.onchange = async (e: Event) => {
+                          const target = e.target as HTMLInputElement;
+                          const file = target.files?.[0];
                           if (file) {
                             try {
                               // Dynamic import for image upload utility
@@ -694,7 +687,7 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                       >
                         <div className="h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-sm bg-accent/50 border border-border group-hover:bg-primary/10 group-hover:border-primary/30 transition-all">
                           {(() => {
-                            const IconComp = (LucideIcons as any)[
+                            const IconComp = (LucideIcons as unknown as Record<string, React.ComponentType<any>>)[
                               diagram.thumbnail
                             ];
                             return IconComp ? (

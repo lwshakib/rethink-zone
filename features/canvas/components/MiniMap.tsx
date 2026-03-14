@@ -135,8 +135,6 @@ const MiniMap: React.FC<MiniMapProps> = ({
     return Math.min(sX, sY);
   }, [bounds, mapWidth, mapHeight]);
 
-  const toMapX = (x: number) => (bounds ? (x - bounds.minX) * mapScale : 0);
-  const toMapY = (y: number) => (bounds ? (y - bounds.minY) * mapScale : 0);
 
   useEffect(() => {
     const canvas = canvasRef.current;

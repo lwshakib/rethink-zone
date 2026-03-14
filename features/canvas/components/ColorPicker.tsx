@@ -21,14 +21,16 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
   const [val, setVal] = useState(100);
 
   // Synchronize internal HSV state whenever the 'color' hex prop changes
-  useEffect(() => {
+  const [prevColor, setPrevColor] = useState(color);
+  if (color !== prevColor) {
+    setPrevColor(color);
     if (color && color.startsWith("#")) {
       const { h, s, v } = hexToHsv(color);
       setHue(h);
       setSat(s);
       setVal(v);
     }
-  }, [color]);
+  }
 
   // Refs for tracking DOM elements to calculate interactive coordinates
   const satValRef = useRef<HTMLDivElement>(null);
@@ -181,9 +183,9 @@ function hsvToHex(h: number, s: number, v: number) {
   const p = v * (1 - s);
   const q = v * (1 - f * s);
   const t = v * (1 - (1 - f) * s);
-  let r = 0,
-    g = 0,
-    b = 0;
+  let r = 0;
+  let g = 0;
+  let b = 0;
   // Choose algorithm based on hue sector (6 sectors of 60 degrees)
   switch (i % 6) {
     case 0:
@@ -246,9 +248,9 @@ function hexToHsv(hex: string) {
   b /= 255;
   const max = Math.max(r, g, b),
     min = Math.min(r, g, b);
-  let h = 0,
-    s = 0,
-    v = max;
+  let h = 0;
+  let s = 0;
+  const v = max;
   const d = max - min;
   s = max === 0 ? 0 : d / max;
   if (max !== min) {

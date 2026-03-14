@@ -7,11 +7,8 @@ import {
   PolyShape,
   LineShape,
   ArrowShape,
-  Connector,
   FigureShape,
-  CodeShape,
   AnchorSide,
-  ShapeKind,
 } from "../types"; // Import shape interfaces for type-safe property access
 import { getConnectorPoints } from "./geometry"; // Import routing utility for smart connectors
 
@@ -30,8 +27,7 @@ export const drawSelectionOverlay = (
   y: number,
   width: number,
   height: number,
-  zoom: number,
-  kind?: ShapeKind
+  zoom: number
 ) => {
   ctx.save();
   // Set the characteristic 'selection blue' color
@@ -82,7 +78,7 @@ export const drawImageItem = (
 
   // Draw selection UI if the shape is active in the inspector
   if (isSelected) {
-    drawSelectionOverlay(ctx, im.x, im.y, im.width, im.height, zoom, "image");
+    drawSelectionOverlay(ctx, im.x, im.y, im.width, im.height, zoom);
   }
 };
 
@@ -118,7 +114,7 @@ export const drawRect = (
   ctx.restore();
 
   if (isSelected) {
-    drawSelectionOverlay(ctx, r.x, r.y, r.width, r.height, zoom, "rect");
+    drawSelectionOverlay(ctx, r.x, r.y, r.width, r.height, zoom);
   }
 };
 
@@ -161,8 +157,7 @@ export const drawCircle = (
       c.y - c.ry,
       c.rx * 2,
       c.ry * 2,
-      zoom,
-      "circle"
+      zoom
     );
   }
 };
@@ -212,7 +207,7 @@ export const drawText = (
   ctx.restore();
 
   if (isSelected) {
-    drawSelectionOverlay(ctx, t.x, t.y, t.width, t.height, zoom, "text");
+    drawSelectionOverlay(ctx, t.x, t.y, t.width, t.height, zoom);
   }
 };
 
@@ -423,7 +418,7 @@ export const drawFrame = (
 
   // Highlight the frame boundary if selected
   if (isSelected) {
-    drawSelectionOverlay(ctx, f.x, f.y, f.width, f.height, zoom, "frame");
+    drawSelectionOverlay(ctx, f.x, f.y, f.width, f.height, zoom);
   }
 };
 
@@ -555,7 +550,7 @@ export const drawPoly = (
     // Early return for specialized shapes as they manage their own ctx.restore() logic implicitly via the return
     ctx.restore();
     if (isSelected)
-      drawSelectionOverlay(ctx, p.x, p.y, p.width, p.height, zoom, "poly");
+      drawSelectionOverlay(ctx, p.x, p.y, p.width, p.height, zoom);
     return;
   }
 
@@ -576,7 +571,7 @@ export const drawPoly = (
   ctx.restore();
 
   if (isSelected) {
-    drawSelectionOverlay(ctx, p.x, p.y, p.width, p.height, zoom, "poly");
+    drawSelectionOverlay(ctx, p.x, p.y, p.width, p.height, zoom);
   }
 };
 
@@ -730,7 +725,6 @@ export const drawConnector = (
     options.toAnchor,
     options.fromBounds,
     options.toBounds,
-    zoom,
     options.allBounds,
     options.waypoints
   );
@@ -908,6 +902,6 @@ export const drawFigure = (
 
   // Selection Overlay (Only around the body)
   if (isSelected) {
-    drawSelectionOverlay(ctx, f.x, f.y, f.width, f.height, zoom, "figure");
+    drawSelectionOverlay(ctx, f.x, f.y, f.width, f.height, zoom);
   }
 };

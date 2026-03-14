@@ -6,6 +6,7 @@
 "use client";
 
 // Import the dynamically loaded editor to avoid SSR (Server-Side Rendering) issues with BlockNote.
+import { Block, PartialBlock } from "@blocknote/core";
 import { BlockNoteEditorView } from "./dynamic-import";
 
 /**
@@ -18,8 +19,8 @@ export default function DocumentTab({
   initialContent,
   onChange,
 }: {
-  initialContent?: any;
-  onChange?: (content: any) => void;
+  initialContent?: PartialBlock[];
+  onChange?: (content: Block[]) => void;
 }) {
   return (
     // Outer container: fills the available space, handles background, and custom scrolling styles.

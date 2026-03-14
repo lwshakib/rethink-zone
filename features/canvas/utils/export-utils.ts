@@ -92,8 +92,8 @@ export const exportToPNG = async (
     
     // 5. Connectors
     (shapes.connectors || []).forEach(c => {
-      const fromPt = getAnchorPoint(c.from, shapes as any);
-      const toPt = getAnchorPoint(c.to, shapes as any);
+      const fromPt = getAnchorPoint(c.from, shapes);
+      const toPt = getAnchorPoint(c.to, shapes);
       if (fromPt && toPt) {
         drawConnector(ctx, fromPt, toPt, themeStroke, 1, {
           label: c.label,
@@ -168,8 +168,8 @@ export const exportToSVG = (
 
   // 5. Connectors (Simpler representation for SVG)
   (shapes.connectors || []).forEach(c => {
-    const fromPt = getAnchorPoint(c.from, shapes as any);
-    const toPt = getAnchorPoint(c.to, shapes as any);
+    const fromPt = getAnchorPoint(c.from, shapes);
+    const toPt = getAnchorPoint(c.to, shapes);
     if (fromPt && toPt) {
       const dash = c.strokeDashArray ? `stroke-dasharray="${c.strokeDashArray.join(',')}"` : "";
       svg += `<line x1="${fromPt.x}" y1="${fromPt.y}" x2="${toPt.x}" y2="${toPt.y}" stroke="${c.stroke || strokeColor}" stroke-width="${c.strokeWidth || 1}" ${dash} />`;

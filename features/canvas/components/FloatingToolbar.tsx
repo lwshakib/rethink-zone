@@ -3,9 +3,6 @@ import React, { useMemo, useState, useEffect, useRef } from "react"; // Core Rea
 import {
   Copy,
   Trash2,
-  Palette,
-  Sun,
-  Circle,
   ChevronDown,
   MoreVertical,
   Layers,
@@ -389,7 +386,7 @@ const FloatingToolbar = React.memo(
                           : s.kind === "code"
                             ? findById(codes)
                             : null;
-        return !!(shape as any)?.groupId;
+        return !!(shape as { groupId?: string })?.groupId;
       });
     }, [
       selectedShape,
@@ -618,10 +615,10 @@ const FloatingToolbar = React.memo(
                     mainKind === "text"
                       ? currentFill === "transparent"
                       : isLineOrArrow
-                        ? (shapeData as any).strokeWidth === 0
+                        ? (shapeData as { strokeWidth?: number }).strokeWidth === 0
                         : colorTarget === "fill"
                           ? currentFill === "transparent"
-                          : (shapeData as any).strokeWidth === 0
+                          : (shapeData as { strokeWidth?: number }).strokeWidth === 0
                   )
                     ? "ring-[3px] ring-[#3bc1ff]"
                     : "hover:scale-105"
@@ -655,7 +652,7 @@ const FloatingToolbar = React.memo(
               }
               className={`flex items-center justify-between px-3 py-2 rounded-md transition-all ${
                 // Highlight the button if it matches the current width
-                (shapeData as any).strokeWidth === preset.width
+                (shapeData as { strokeWidth?: number }).strokeWidth === preset.width
                   ? "bg-[#3bc1ff] text-white"
                   : `${bgHover} text-foreground/80`
               }`}
@@ -680,7 +677,7 @@ const FloatingToolbar = React.memo(
             onClick={() =>
               onUpdateShape(mainKind, mainIndex, { strokeDashArray: undefined })
             }
-            className={`flex-1 h-8 flex items-center justify-center rounded-md border ${(shapeData as any).strokeDashArray ? `border-transparent ${isDark ? "text-white/40" : "text-black/40"}` : "border-[#3bc1ff] bg-[#3bc1ff]/10 text-[#3bc1ff]"}`}
+            className={`flex-1 h-8 flex items-center justify-center rounded-md border ${(shapeData as { strokeDashArray?: number[] }).strokeDashArray ? `border-transparent ${isDark ? "text-white/40" : "text-black/40"}` : "border-[#3bc1ff] bg-[#3bc1ff]/10 text-[#3bc1ff]"}`}
           >
             <div className="h-0.5 w-8 bg-current" />
           </button>
@@ -689,7 +686,7 @@ const FloatingToolbar = React.memo(
             onClick={() =>
               onUpdateShape(mainKind, mainIndex, { strokeDashArray: [5, 5] })
             }
-            className={`flex-1 h-8 flex items-center justify-center rounded-md border ${(shapeData as any).strokeDashArray ? "border-[#3bc1ff] bg-[#3bc1ff]/10 text-[#3bc1ff]" : `border-transparent ${isDark ? "text-white/40" : "text-black/40"}`}`}
+            className={`flex-1 h-8 flex items-center justify-center rounded-md border ${(shapeData as { strokeDashArray?: number[] }).strokeDashArray ? "border-[#3bc1ff] bg-[#3bc1ff]/10 text-[#3bc1ff]" : `border-transparent ${isDark ? "text-white/40" : "text-black/40"}`}`}
           >
             <div className="h-0.5 w-8 border-b border-dashed border-current" />
           </button>
@@ -698,7 +695,7 @@ const FloatingToolbar = React.memo(
             onClick={() =>
               onUpdateShape(mainKind, mainIndex, { strokeWidth: 0 })
             }
-            className={`h-8 w-8 flex items-center justify-center rounded-md border ${(shapeData as any).strokeWidth === 0 ? "border-[#3bc1ff] bg-[#3bc1ff]/10 text-[#3bc1ff]" : `${borderSubtle} ${isDark ? "text-white/40" : "text-black/40"} ${bgHover}`}`}
+            className={`h-8 w-8 flex items-center justify-center rounded-md border ${(shapeData as { strokeWidth?: number }).strokeWidth === 0 ? "border-[#3bc1ff] bg-[#3bc1ff]/10 text-[#3bc1ff]" : `${borderSubtle} ${isDark ? "text-white/40" : "text-black/40"} ${bgHover}`}`}
             title="No Border"
           >
             <div className="h-5 w-5 rounded-full border border-current relative overflow-hidden flex items-center justify-center">

@@ -5,7 +5,7 @@
 
 "use client";
 
-import KanbanArea from "./KanbanArea";
+import KanbanArea, { KanbanColumn, KanbanState } from "./KanbanArea";
 
 /**
  * KanbanTab Component
@@ -17,8 +17,8 @@ export default function KanbanTab({
   board,
   onChange,
 }: {
-  board?: any[];
-  onChange?: (board: any[]) => void;
+  board?: Array<KanbanColumn | KanbanState>;
+  onChange?: (board: KanbanState[]) => void;
 }) {
   return (
     // Outer container: fills the height of the parent and prevents overflow issues.

@@ -8,6 +8,7 @@ import prisma from "@/lib/prisma";
 import { workspacePayloadSchema } from "@/validations/workspace";
 import { ZodError } from "zod";
 import { getUser } from "@/actions/user";
+import { Prisma } from "@/generated/prisma/client";
 
 /**
  * GET Handler
@@ -64,9 +65,9 @@ export async function POST(request: Request) {
         userId: user.id,
         name,
         // Ensure default empty objects if data is missing
-        documentData: documentData === null ? {} : (documentData as any),
-        canvasData: canvasData === null ? {} : (canvasData as any),
-        kanbanBoard: kanbanBoard === null ? {} : (kanbanBoard as any),
+        documentData: documentData === null ? {} : (documentData as Prisma.InputJsonValue),
+        canvasData: canvasData === null ? {} : (canvasData as Prisma.InputJsonValue),
+        kanbanBoard: kanbanBoard === null ? {} : (kanbanBoard as Prisma.InputJsonValue),
       },
     });
 

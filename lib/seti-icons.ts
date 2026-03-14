@@ -865,7 +865,7 @@ export function getSetiIcon(
   name: SetiIconName | string,
   color: string = "currentColor"
 ): string {
-  const icon = (SETI_ICONS as any)[name];
+  const icon = (SETI_ICONS as Record<string, { viewBox: string; innerContent: string }>)[name];
   if (!icon) return "";
 
   let content = icon.innerContent;
@@ -883,5 +883,5 @@ export function getSetiIcon(
  * Useful for custom SVG components.
  */
 export function getSetiIconData(name: SetiIconName | string) {
-  return (SETI_ICONS as any)[name];
+  return (SETI_ICONS as Record<string, { viewBox: string; innerContent: string }>)[name];
 }

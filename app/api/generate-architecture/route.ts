@@ -22,7 +22,7 @@ Classes/Modules: ${repoIndex.classes.map(c => `${c.name} (in ${c.file})`).join("
 Core Interactions: ${repoIndex.calls.slice(0, 50).map(c => `${c.from} -> ${c.to}`).join(", ")}
 
 INSTRUCTION: Use this codebase index to infer the actual software architecture. Map specific files/modules to appropriate cloud services or logical groups.`;
-      } catch (e: any) {
+      } catch (e) {
         console.warn("Repo analysis failed, proceeding with prompt only:", e);
         // We don't fail the whole request, but we could add a warning to the response if we had a way
       }
@@ -53,8 +53,9 @@ INSTRUCTION: Use this codebase index to infer the actual software architecture. 
     });
 
     return NextResponse.json({ result: result.replace(/```[a-z]*\n?/g, "").replace(/\n?```/g, "").trim() });
-  } catch (error: any) {
+  } catch (error) {
     console.error("API Generation Error:", error);
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : "Internal Server Error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

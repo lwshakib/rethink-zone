@@ -1,21 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { 
-  X, 
-  Sparkles, 
-  Code2, 
-  HelpCircle, 
-  ChevronRight, 
-  Layers, 
-  Square, 
   Download,
   Terminal,
-  ArrowRight,
-  Database,
   CloudIcon,
-  Layout,
   Loader2,
-  Trash2,
-  Copy,
   Zap
 } from "lucide-react";
 import Editor from "react-simple-code-editor";
@@ -35,8 +23,8 @@ import { toast } from "sonner";
 
 interface FigureEditorPanelProps {
   isOpen: boolean;
-  onClose: () => void;
-  figureId: string | null;
+  onClose?: () => void;
+  figureId?: string | null;
   figureName: string;
   code: string;
   onCodeChange: (newCode: string) => void;
@@ -79,8 +67,6 @@ import { exportToPNG, exportToSVG, exportCode } from "../utils/export-utils";
  */
 const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
   isOpen,
-  onClose,
-  figureId,
   figureName,
   code,
   onCodeChange,
@@ -100,7 +86,7 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
   const handleExportPNG = async () => {
     const shapes = parseDSL(code, iconRegistry);
     const fileName = figureName.replace(/\s+/g, "_") || "architecture";
-    toast.promise(exportToPNG(shapes as any, fileName, theme), {
+    toast.promise(exportToPNG(shapes, fileName, theme), {
       loading: 'Preparing PNG...',
       success: 'Architecture exported to PNG',
       error: 'Failed to export PNG'
@@ -111,9 +97,9 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
     const shapes = parseDSL(code, iconRegistry);
     const fileName = figureName.replace(/\s+/g, "_") || "architecture";
     try {
-      exportToSVG(shapes as any, fileName, theme);
+      exportToSVG(shapes, fileName, theme);
       toast.success('Architecture exported to SVG');
-    } catch (e) {
+    } catch {
       toast.error('Failed to export SVG');
     }
   };
@@ -187,13 +173,13 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
         setActiveTab("code");
         toast.success("Architecture generated successfully!");
       }
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') {
         console.log("Synthesis request aborted by user");
         return;
       }
-      console.error("AI Generation Error:", error);
-      toast.error(error.message || "Cloud engine failed to generate diagram.");
+      console.error("AI Generation Error:", err);
+      toast.error(err instanceof Error ? err.message : "Cloud engine failed to generate diagram.");
     } finally {
       setIsGenerating(false);
       abortControllerRef.current = null;

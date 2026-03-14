@@ -22,14 +22,6 @@ interface LineActionsProps {
   connectors: Connector[];
   lines: LineShape[];
   arrows: ArrowShape[];
-  rectangles: RectShape[];
-  circles: CircleShape[];
-  images: ImageShape[];
-  texts: TextShape[];
-  frames: FrameShape[];
-  polygons: PolyShape[];
-  figures: FigureShape[];
-  codes: CodeShape[];
   getAnchorPoint: (anchor: ConnectorAnchor) => { x: number; y: number } | null;
   getShapeBounds: (
     anchor: ConnectorAnchor
@@ -47,14 +39,6 @@ export const LineActions: React.FC<LineActionsProps> = ({
   connectors,
   lines,
   arrows,
-  rectangles,
-  circles,
-  images,
-  texts,
-  frames,
-  polygons,
-  figures,
-  codes,
   getAnchorPoint,
   getShapeBounds,
   canvasToClient,
@@ -95,8 +79,7 @@ export const LineActions: React.FC<LineActionsProps> = ({
         c.from.anchor,
         c.to.anchor,
         fromBounds || undefined,
-        toBounds || undefined,
-        zoom
+        toBounds || undefined
       );
 
       if (points.length < 2) return null;

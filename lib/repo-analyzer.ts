@@ -8,6 +8,15 @@ export type RepoIndex = {
   calls: { from: string; to: string }[];
 };
 
+interface GitHubTreeItem {
+  path: string;
+  type: "blob" | "tree";
+  sha: string;
+  url: string;
+  size?: number;
+  mode: string;
+}
+
 function parseRepo(url: string) {
   const match = url.match(/github\.com\/([^/]+)\/([^/]+)/);
   if (!match) throw new Error("Invalid GitHub URL");
@@ -35,7 +44,7 @@ async function getRepoTree(owner: string, repo: string, branch: string) {
     throw new Error(errorData.message || "Failed to fetch repository tree");
   }
 
-  const data = (await res.json()) as any;
+  const data = (await res.json()) as { tree: GitHubTreeItem[] };
   return data.tree;
 }
 
@@ -64,7 +73,7 @@ export async function analyzeRepo(repoUrl: string): Promise<RepoIndex> {
   const tree = await getRepoTree(owner, repo, branch);
 
   const filesToAnalyze = tree.filter(
-    (f: any) => f.type === "blob" && isCodeFile(f.path)
+    (f: GitHubTreeItem) => f.type === "blob" && isCodeFile(f.path)
   );
 
   const index: RepoIndex = {
