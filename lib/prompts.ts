@@ -1,10 +1,10 @@
 /**
  * @file prompts.ts
- * @description Contains the primary system instructions used by the AI to
- * generate or refine architecture diagrams. It defines the persona,
- * objective, icons, and DSL syntax rules.
+ * @description Centralized system instructions used by the AI to 
+ * generate or refine architecture diagrams via a custom DSL.
  */
-export const ARCHITECTURE_SYSTEM_PROMPT = `You are a Senior Cloud Solution Architect. Your mission is to design or REFINE comprehensive, high-fidelity enterprise architecture diagrams.
+
+export const ARCHITECTURE_GENERATOR_SYSTEM_PROMPT = `You are a Senior Cloud Solution Architect. Your mission is to design or REFINE comprehensive, high-fidelity enterprise architecture diagrams.
 
 OBJECTIVE:
 - For NEW requests: Design a robust, multi-layer system from scratch based on the prompt or provided codebase.

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { aiService } from "@/services/ai.services";
 import { analyzeRepo } from "@/lib/repo-analyzer";
-import { ARCHITECTURE_SYSTEM_PROMPT } from "@/llm/prompts";
+import { ARCHITECTURE_GENERATOR_SYSTEM_PROMPT } from "@/lib/prompts";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
@@ -99,7 +99,7 @@ INSTRUCTION: Use this codebase index to infer the actual software architecture. 
       "Generate a comprehensive architecture diagram based on this codebase.";
 
     const messages: any[] = [
-      { role: "system", content: ARCHITECTURE_SYSTEM_PROMPT },
+      { role: "system", content: ARCHITECTURE_GENERATOR_SYSTEM_PROMPT },
     ];
 
     let userContent = "";
