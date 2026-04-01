@@ -12,6 +12,8 @@
     "db:migrate": "bun x prisma generate && bun x prisma migrate dev --name init",
     "db:studio": "bun x prisma studio",
     "db:reset": "bun x prisma migrate reset",
+    "bucket:setup": "bun scripts/bucket-setup.ts",
+    "bucket:teardown": "bun scripts/bucket-teardown.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

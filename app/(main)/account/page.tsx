@@ -26,6 +26,7 @@ import {
 import { UserAvatar } from "@/components/user-avatar";
 import { UserMenu } from "@/components/user-menu";
 import { Card, CardContent } from "@/components/ui/card";
+import Image from "next/image";
 
 interface Session {
   id: string;
