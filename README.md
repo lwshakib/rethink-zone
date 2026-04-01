@@ -93,6 +93,8 @@ Rethink Zone is a modern, full-stack workspace application designed for product 
 - **ORM**: [Prisma 7.2.0](https://www.prisma.io/)
 - **Database**: [PostgreSQL](https://www.postgresql.org/)
 - **Auth**: [Better-Auth 1.4.7](https://www.better-auth.com/)
+- **AI Infrastructure**: [Cloudflare AI Gateway](https://developers.cloudflare.com/ai-gateway/) for unified model access.
+- **Storage**: [Cloudflare R2 / AWS S3](https://aws.amazon.com/s3/) for secure media and asset storage.
 - **Server Actions**: Native Next.js server actions for secure data mutations.
 - **Testing**: [Jest](https://jestjs.io/) & [React Testing Library](https://testing-library.com/) for Unit tests, [Playwright](https://playwright.dev/) for E2E tests.
 
@@ -113,6 +115,8 @@ flowchart TD
     Editor --> Actions
     Kanban --> Actions
 
+    Actions --> AI[Cloudflare AI Gateway]
+    Actions --> S3[Cloudflare R2 / S3]
     Actions --> Prisma[Prisma ORM]
     Prisma --> DB[(PostgreSQL)]
 ```
@@ -122,7 +126,8 @@ flowchart TD
 1. **Interaction**: User performs an action (edits a block, moves a task, draws a line).
 2. **Optimistic Update**: Zustand updates the local state immediately for zero-latency UI.
 3. **Synchronized Persistence**: Debounced calls to Next.js API routes persist changes to PostgreSQL via Prisma.
-4. **Theme Management**: `next-themes` coordinates CSS variables across native Canvas drawings and React components.
+4. **AI & Media**: Requests for generation or translation are routed through the Cloudflare AI Gateway, while media assets are securely handled via signed S3/R2 URLs.
+5. **Theme Management**: `next-themes` coordinates CSS variables across native Canvas drawings and React components.
 
 ## 🚀 Getting Started
 
@@ -156,6 +161,12 @@ flowchart TD
    DATABASE_URL="postgresql://user:password@localhost:5432/rethink"
    BETTER_AUTH_SECRET="your-secret-here"
    NEXT_PUBLIC_BASE_URL="http://localhost:3000"
+   
+   # Storage (S3/R2)
+   AWS_S3_BUCKET_NAME="rethink-assets"
+   AWS_ACCESS_KEY_ID="your-key"
+   AWS_SECRET_ACCESS_KEY="your-secret"
+   AWS_ENDPOINT="your-endpoint"
    ```
 
 4. **Initialize Database**
@@ -164,7 +175,14 @@ flowchart TD
    npm run db:migrate
    ```
 
-5. **Start Developing**
+5. **Infrastructure Setup**
+   Initialize your storage bucket and CORS policy:
+
+   ```bash
+   npm run bucket:setup
+   ```
+
+6. **Start Developing**
    ```bash
    npm run dev
    ```
@@ -192,6 +210,8 @@ rethink-zone/
 | `npm run build`      | Builds the application for production       |
 | `npm run db:migrate` | Runs migrations and generates Prisma client |
 | `npm run db:studio`  | Opens the Prisma database GUI               |
+| `npm run bucket:setup`| Initializes S3/R2 bucket and CORS           |
+| `npm run bucket:teardown`| Removes S3/R2 bucket (use with caution)   |
 | `npm run lint`       | Runs ESLint for code quality checks         |
 | `npm run test`       | Runs Vitest/Jest unit tests                 |
 | `npm run test:e2e`   | Runs Playwright End-to-End tests            |

@@ -59,12 +59,17 @@ Enhancement suggestions are tracked as GitHub issues. Please provide:
    npm install
    ```
 4. **Environment Configuration**:
-   Copy `.env` to `.env.local` and fill in your connection strings.
+   Copy `.env.example` to `.env` and fill in your connection strings. Ensure `AWS_*` and `CLOUDFLARE_AI_GATEWAY_*` variables are set.
 5. **Database Initialization**:
    ```bash
    npm run db:migrate
    ```
-6. **Launch Development Server**:
+6. **Infrastructure Setup**:
+   Initialize your storage bucket and CORS policy:
+   ```bash
+   npm run bucket:setup
+   ```
+7. **Launch Development Server**:
    ```bash
    npm run dev
    ```
@@ -75,6 +80,11 @@ Enhancement suggestions are tracked as GitHub issues. Please provide:
 
 - **Strict Typing**: Avoid use of `any`. Use interfaces for object shapes and types for unions.
 - **Exhaustive Types**: Ensure all possible states are handled, especially in UI and API logic.
+
+### Standardized Services
+
+- **AIService**: All AI-related interactions (text generation, object generation) must go through the centralized `AIService` to ensure proper routing and model management.
+- **S3Service**: Use `S3Service` for all file interactions. Never interact with the S3 bucket directly from components; use the service to generate presigned URLs or handle server-side uploads.
 
 ### React & Components
 
@@ -117,11 +127,13 @@ We follow the [Conventional Commits](https://www.conventionalcommits.org/) speci
 ```
 rethink-zone/
 ├── app/                  # Routes, Layouts, and API Endpoints
-├── components/           # UI Primitives and Layout Elements
+├── components/           # UI Primitives and Reusable Components
 ├── features/             # Core Feature Modules (Canvas, Document, Kanban)
-├── action/               # Server-side mutation logic
-├── context/              # Zustand Store & Context providers
-└── prisma/               # Schema definition and Migrations
+├── actions/              # Server-side mutation logic (Server Actions)
+├── services/             # Centralized Business Logic (AI, S3, etc.)
+├── prisma/               # Schema definition and Migrations
+├── lib/                  # Shared Utilities and Third-party Configs
+└── validations/          # Zod Schemas for Data Integrity
 ```
 
 Thank you for contributing to Rethink Zone! 🎉
