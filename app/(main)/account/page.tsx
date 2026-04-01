@@ -23,10 +23,9 @@ import {
   Key,
   Camera,
 } from "lucide-react";
+import { UserAvatar } from "@/components/user-avatar";
 import { UserMenu } from "@/components/user-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import Image from "next/image";
 
 interface Session {
   id: string;
@@ -112,49 +111,17 @@ export default function AccountPage() {
     }
   };
 
-  const uploadFileToCloudinary = async (file: File, signal?: AbortSignal) => {
-    const sigRes = await fetch("/api/cloudinary-signature");
-    if (!sigRes.ok) {
-      throw new Error("Failed to get upload signature");
-    }
-    const signature = await sigRes.json();
-    const uploadApi = `https://api.cloudinary.com/v1_1/${signature.cloudName}/upload`;
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("api_key", signature.apiKey);
-    formData.append("timestamp", signature.timestamp.toString());
-    formData.append("signature", signature.signature);
-    formData.append("folder", signature.folder ?? "rethink-zone");
-
-    const uploadRes = await fetch(uploadApi, {
-      method: "POST",
-      body: formData,
-      signal,
-    });
-
-    if (!uploadRes.ok) {
-      throw new Error("Cloudinary upload failed");
-    }
-
-    const data = await uploadRes.json();
-    return {
-      secureUrl: data.secure_url as string,
-      publicId: data.public_id as string,
-      resourceType: data.resource_type as string,
-    };
-  };
-
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
       setUploadingImage(true);
-      const { secureUrl } = await uploadFileToCloudinary(file);
+      const { uploadFileToS3 } = await import("@/features/canvas/utils/upload");
+      const { key } = await uploadFileToS3(file, "rethink-zone/avatars");
 
       const { error } = await authClient.updateUser({
-        image: secureUrl,
+        image: key,
       });
 
       if (error) throw error;
@@ -263,12 +230,12 @@ export default function AccountPage() {
               {/* Profile Image Section */}
               <div className="flex flex-col sm:flex-row items-center gap-6 pb-2">
                 <div className="relative group">
-                  <Avatar className="h-24 w-24 border-2 border-border/50 shadow-md">
-                    <AvatarImage src={session.user.image || ""} />
-                    <AvatarFallback className="text-2xl font-bold bg-primary/5 text-primary">
-                      {session.user.name?.[0] || "U"}
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatar
+                    src={session.user.image}
+                    alt={session.user.name || "User"}
+                    fallback={session.user.name?.[0] || "U"}
+                    className="h-24 w-24 border-2 border-border/50 shadow-md"
+                  />
                   {uploadingImage && (
                     <div className="absolute inset-0 flex items-center justify-center rounded-full bg-background/60 backdrop-blur-sm">
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />

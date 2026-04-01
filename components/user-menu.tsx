@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
 import { Settings, LogOut, LayoutGrid } from "lucide-react";
 
@@ -37,15 +37,12 @@ export function UserMenu() {
           variant="ghost"
           className="relative h-8 w-8 rounded-full border border-border/50 hover:bg-accent/50 transition-colors"
         >
-          <Avatar className="h-8 w-8 border border-border">
-            <AvatarImage
-              src={session.user.image || ""}
-              alt={session.user.name || "User"}
-            />
-            <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
-              {session.user.name?.[0] || "U"}
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar
+            src={session.user.image}
+            alt={session.user.name || "User"}
+            fallback={session.user.name?.[0] || "U"}
+            className="h-8 w-8 border border-border"
+          />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

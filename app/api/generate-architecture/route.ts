@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generateText, Message } from "@/llm/generateText";
+import { aiService } from "@/services/ai.services";
 import { analyzeRepo } from "@/lib/repo-analyzer";
 import { ARCHITECTURE_SYSTEM_PROMPT } from "@/llm/prompts";
 import { auth } from "@/lib/auth";
@@ -98,7 +98,7 @@ INSTRUCTION: Use this codebase index to infer the actual software architecture. 
       prompt ||
       "Generate a comprehensive architecture diagram based on this codebase.";
 
-    const messages: Message[] = [
+    const messages: any[] = [
       { role: "system", content: ARCHITECTURE_SYSTEM_PROMPT },
     ];
 
@@ -115,8 +115,7 @@ INSTRUCTION: Use this codebase index to infer the actual software architecture. 
 
     messages.push({ role: "user", content: userContent });
 
-    const result = await generateText({
-      messages,
+    const result = await aiService.generateText(messages, {
       temperature: 0.2,
     });
 
