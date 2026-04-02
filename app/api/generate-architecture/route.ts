@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { aiService } from "@/services/ai.services";
-import { analyzeRepo } from "@/lib/repo-analyzer";
+import { repositoryService } from "@/services/repository.services";
 import { ARCHITECTURE_GENERATOR_SYSTEM_PROMPT } from "@/lib/prompts";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
     let repoContext = "";
     if (repoUrl) {
       try {
-        const repoIndex = await analyzeRepo(repoUrl);
+        const repoIndex = await repositoryService.analyzeRepo(repoUrl);
         repoContext = `CODEBASE INDEX FOR ANALYSIS:
 Files: ${repoIndex.files.map((f) => f.path).join(", ")}
 Significant Functions: ${repoIndex.functions.map((f) => `${f.name} (in ${f.file})`).join(", ")}
