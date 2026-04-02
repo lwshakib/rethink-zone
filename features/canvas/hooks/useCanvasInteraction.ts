@@ -41,7 +41,7 @@ import {
   getAnchorDir,
 } from "../utils/geometry";
 import { measureText } from "../utils/canvas-helpers";
-import { uploadFileToCloudinary } from "../utils/upload";
+import { uploadFileToS3 } from "../utils/upload";
 import { parseDSL } from "../utils/dsl-parser";
 
 type InteractionProps = {
@@ -4631,7 +4631,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
         setTexts((prev) => [...prev, placeholderText]);
 
         try {
-          const result = await uploadFileToCloudinary(file, (percent) => {
+          const result = await uploadFileToS3(file, "canvas", (percent) => {
             setTexts((prev) =>
               prev.map((t) =>
                 t.id === placeholderId
@@ -4647,13 +4647,13 @@ export const useCanvasInteraction = (props: InteractionProps) => {
           const img = new Image();
           img.onload = () => {
             if (imageCacheRef.current)
-              imageCacheRef.current[result.secureUrl] = img;
+              imageCacheRef.current[result.url] = img;
             setImages((prev) => {
               const next = [
                 ...prev,
                 {
                   id: makeId(),
-                  src: result.secureUrl,
+                  src: result.url,
                   x: point.x,
                   y: point.y,
                   width: img.naturalWidth / 2, // Default to half size as generic images can be huge
@@ -4664,7 +4664,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
               return next;
             });
           };
-          img.src = result.secureUrl;
+          img.src = result.url;
         } catch (err) {
           console.error("Upload failed", err);
           setTexts((prev) =>
