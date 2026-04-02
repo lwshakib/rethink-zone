@@ -13,7 +13,7 @@ import {
   useRouter,
   useSearchParams,
 } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { UserMenu } from "@/components/user-menu";
 import { Button } from "@/components/ui/button";
 import {
@@ -139,33 +139,61 @@ export default function WorkspaceDetailPage() {
     }
   }, [workspaceId]);
 
+  // Stable payload object to prevent unnecessary debounce resets
+  const currentPayload = useMemo(
+    () => ({
+      name: workspace?.name,
+      documentData,
+      canvasData,
+      kanbanBoard,
+    }),
+    [workspace?.name, documentData, canvasData, kanbanBoard]
+  );
+
+  // Debounced auto-save effect
+  const debouncedPayload = useDebounce(currentPayload, 2000);
+
+  // Ref to track the latest state without triggering re-renders of the save callback
+  const stateRef = useRef({
+    workspace,
+    dirty,
+    currentPayload,
+  });
+
+  // Sync ref with state on every change
+  useEffect(() => {
+    stateRef.current = { workspace, dirty, currentPayload };
+  }, [workspace, dirty, currentPayload]);
+
   /** Persists all current tab data and workspace metadata to the server */
   const saveWorkspace = useCallback(async () => {
-    if (!workspace || !dirty) return;
+    const { workspace: ws, dirty: isDirty, currentPayload: payload } = stateRef.current;
+    if (!ws || !isDirty) return;
+
     try {
       setSavingStatus("saving");
       setError(null);
-      const payload = {
-        name: workspace.name,
-        documentData,
-        canvasData,
-        kanbanBoard,
-      };
-      const res = await fetch(`/api/workspaces/${workspace.id}`, {
+      const res = await fetch(`/api/workspaces/${ws.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.error || "Failed to save workspace");
       }
+
       const data = await res.json();
       setWorkspace(data.workspace);
-      setDirty(false); // Reset dirty flag after successful save
+
+      // Only reset dirty if the payload hasn't changed since we started the save
+      if (stateRef.current.currentPayload === payload) {
+        setDirty(false);
+      }
       setSavingStatus("saved");
 
-      // Return to idle/unsaved after showing "saved" for a bit
+      // Return to idle after showing "saved" for a bit
       setTimeout(() => {
         setSavingStatus((current) => (current === "saved" ? "idle" : current));
       }, 3000);
@@ -174,24 +202,15 @@ export default function WorkspaceDetailPage() {
       setError(err instanceof Error ? err.message : "Unable to save.");
       setSavingStatus("error");
     }
-  }, [workspace, documentData, canvasData, kanbanBoard, dirty]);
-
-  // Debounced auto-save effect
-  const debouncedPayload = useDebounce(
-    {
-      name: workspace?.name,
-      documentData,
-      canvasData,
-      kanbanBoard,
-    },
-    2000
-  );
+  }, []); // Truly stable callback
 
   useEffect(() => {
-    if (dirty && debouncedPayload) {
+    // Only trigger save when the debounced payload actually updates.
+    // This stops the infinite loop caused by frequent state changes.
+    if (stateRef.current.dirty && debouncedPayload) {
       saveWorkspace();
     }
-  }, [debouncedPayload, saveWorkspace, dirty]);
+  }, [debouncedPayload, saveWorkspace]);
 
   useEffect(() => {
     if (dirty && savingStatus === "idle") {
