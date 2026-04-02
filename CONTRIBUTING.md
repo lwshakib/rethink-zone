@@ -40,7 +40,7 @@ Enhancement suggestions are tracked as GitHub issues. Please provide:
 ### Prerequisites
 
 - **Node.js**: 18.0 or higher
-- **Bun** (Preferred) or **npm**
+- **Bun** (required for this repo; some scripts use `bun x`)
 - **PostgreSQL**: 12.0 or higher
 - **Git**: Latest version
 
@@ -55,23 +55,22 @@ Enhancement suggestions are tracked as GitHub issues. Please provide:
 3. **Install dependencies**:
    ```bash
    bun install
-   # or
-   npm install
+   # (or) npm install (Bun is still required for scripts that use `bun x`)
    ```
 4. **Environment Configuration**:
    Copy `.env.example` to `.env` and fill in your connection strings. Ensure `AWS_*` and `CLOUDFLARE_AI_GATEWAY_*` variables are set.
 5. **Database Initialization**:
    ```bash
-   npm run db:migrate
+   bun run db:migrate
    ```
 6. **Infrastructure Setup**:
    Initialize your storage bucket and CORS policy:
    ```bash
-   npm run bucket:setup
+   bun run bucket:setup
    ```
 7. **Launch Development Server**:
    ```bash
-   npm run dev
+   bun run dev
    ```
 
 ## Coding Standards
@@ -116,8 +115,8 @@ We follow the [Conventional Commits](https://www.conventionalcommits.org/) speci
 ## Pull Request Process
 
 1. **Sync with Main**: Ensure your branch is up-to-date with `upstream/main`.
-2. **Standard Checks**: Run `npm run lint` to check for formatting and linting errors.
-3. **Run Tests**: Ensure all tests pass by running `npm run test` (Unit) and `npm run test:e2e` (E2E).
+2. **Standard Checks**: Run `bun run lint` and `bun run format:check`.
+3. **Tests**: No automated test runner is configured yet. When tests are added, run them here.
 4. **Detail Your Work**: Provide a clear description of what the PR does and why.
 5. **UI Changes**: Include screenshots or GIFs for any visual modifications.
 6. **Review**: Address feedback from maintainers promptly.
@@ -130,10 +129,14 @@ rethink-zone/
 ├── components/           # UI Primitives and Reusable Components
 ├── features/             # Core Feature Modules (Canvas, Document, Kanban)
 ├── actions/              # Server-side mutation logic (Server Actions)
+├── hooks/                # Client hooks (e.g., Zustand wiring)
 ├── services/             # Centralized Business Logic (AI, S3, etc.)
+├── scripts/              # One-off automation (bucket setup/teardown)
 ├── prisma/               # Schema definition and Migrations
 ├── lib/                  # Shared Utilities and Third-party Configs
-└── validations/          # Zod Schemas for Data Integrity
+├── validations/          # Zod Schemas for Data Integrity
+├── public/               # Static assets
+└── proxy.ts              # Route/session middleware (auth propagation)
 ```
 
 Thank you for contributing to Rethink Zone! 🎉

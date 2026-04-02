@@ -21,8 +21,6 @@
 [![React](https://img.shields.io/badge/React-19.2.3-blue)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38bdf8)](https://tailwindcss.com/)
 [![Better-Auth](https://img.shields.io/badge/Better--Auth-1.4.7-6c47ff)](https://www.better-auth.com/)
-[![Jest](https://img.shields.io/badge/Jest-30.3-c21325)](https://jestjs.io/)
-[![Playwright](https://img.shields.io/badge/Playwright-1.58-2ead33)](https://playwright.dev/)
 
 </div>
 
@@ -96,7 +94,7 @@ Rethink Zone is a modern, full-stack workspace application designed for product 
 - **AI Infrastructure**: [Cloudflare AI Gateway](https://developers.cloudflare.com/ai-gateway/) for unified model access.
 - **Storage**: [Cloudflare R2 / AWS S3](https://aws.amazon.com/s3/) for secure media and asset storage.
 - **Server Actions**: Native Next.js server actions for secure data mutations.
-- **Testing**: [Jest](https://jestjs.io/) & [React Testing Library](https://testing-library.com/) for Unit tests, [Playwright](https://playwright.dev/) for E2E tests.
+- **Testing**: No automated test runner is configured yet (use `lint` / `format:check` until tests are added).
 
 ## 🏗 Architecture
 
@@ -134,7 +132,7 @@ flowchart TD
 ### Prerequisites
 
 - **Node.js**: 18.0 or higher
-- **Bun** (Recommended) or npm
+- **Bun**: required for some scripts in this repo (Prisma + bucket setup run via `bun x`)
 - **PostgreSQL**: Local instance or managed service (Supabase, Neon)
 
 ### Installation
@@ -149,42 +147,57 @@ flowchart TD
 2. **Install dependencies**
 
    ```bash
-   npm install
-   # or
    bun install
+   # (or) npm install (Bun is still required for scripts that use `bun x`)
    ```
 
 3. **Environment Setup**
-   Create a `.env` file:
+   Copy `.env.example` to `.env` and fill in the values:
 
    ```env
-   DATABASE_URL="postgresql://user:password@localhost:5432/rethink"
-   BETTER_AUTH_SECRET="your-secret-here"
-   NEXT_PUBLIC_BASE_URL="http://localhost:3000"
-   
-   # Storage (S3/R2)
-   AWS_S3_BUCKET_NAME="rethink-assets"
-   AWS_ACCESS_KEY_ID="your-key"
-   AWS_SECRET_ACCESS_KEY="your-secret"
-   AWS_ENDPOINT="your-endpoint"
+   # Authentication
+   BETTER_AUTH_SECRET=
+   BETTER_AUTH_URL=http://localhost:3000
+   GOOGLE_CLIENT_ID=
+   GOOGLE_CLIENT_SECRET=
+
+   # Cloudflare & Workers (AI Gateway)
+   CLOUDFLARE_AI_GATEWAY_API_KEY=
+   CLOUDFLARE_AI_GATEWAY_ENDPOINT=
+
+   # --- MEDIA STORAGE (AWS S3 / CLOUDFLARE R2) ---
+   AWS_REGION=auto
+   AWS_ENDPOINT=
+   AWS_ACCESS_KEY_ID=
+   AWS_SECRET_ACCESS_KEY=
+   AWS_S3_BUCKET_NAME=
+
+   # Database
+   DATABASE_URL=
+
+   # Email (Resend)
+   RESEND_API_KEY=
+
+   # Public Config
+   NEXT_PUBLIC_BASE_URL=http://localhost:3000
    ```
 
 4. **Initialize Database**
 
    ```bash
-   npm run db:migrate
+   bun run db:migrate
    ```
 
 5. **Infrastructure Setup**
    Initialize your storage bucket and CORS policy:
 
    ```bash
-   npm run bucket:setup
+   bun run bucket:setup
    ```
 
 6. **Start Developing**
    ```bash
-   npm run dev
+   bun run dev
    ```
 
 ## 📁 Project Structure
@@ -195,26 +208,29 @@ rethink-zone/
 ├── components/           # Reusable UI & Core Layout Components
 ├── features/             # Feature-specific logic (Canvas, Document, Kanban)
 ├── actions/              # Server-side actions
-├── context/              # Global state management (Zustand)
+├── hooks/                # Client hooks (e.g., Zustand store wiring)
 ├── lib/                  # Shared utilities and configurations
 ├── prisma/               # Database schema and migrations
+├── services/             # Centralized business logic (AI, S3, etc.)
+├── scripts/              # One-off automation (bucket setup/teardown)
 ├── public/               # Static assets
 └── validations/          # Zod schemas for data integrity
 ```
 
 ## 📜 Scripts
 
-| Command              | Description                                 |
-| :------------------- | :------------------------------------------ |
-| `npm run dev`        | Starts the development server               |
-| `npm run build`      | Builds the application for production       |
-| `npm run db:migrate` | Runs migrations and generates Prisma client |
-| `npm run db:studio`  | Opens the Prisma database GUI               |
-| `npm run bucket:setup`| Initializes S3/R2 bucket and CORS           |
-| `npm run bucket:teardown`| Removes S3/R2 bucket (use with caution)   |
-| `npm run lint`       | Runs ESLint for code quality checks         |
-| `npm run test`       | Runs Vitest/Jest unit tests                 |
-| `npm run test:e2e`   | Runs Playwright End-to-End tests            |
+| Command | Description |
+| :-- | :-- |
+| `bun run dev` | Starts the development server (`next dev`) |
+| `bun run build` | Builds the application for production (`next build`) |
+| `bun run start` | Runs the production server (`next start`) |
+| `bun run lint` | Runs ESLint |
+| `bun run format` | Runs Prettier (`--write .`) |
+| `bun run format:check` | Runs Prettier (`--check .`) |
+| `bun run db:migrate` | Runs Prisma generate + initial migration |
+| `bun run db:studio` | Opens Prisma Studio |
+| `bun run bucket:setup` | Creates/updates the S3/R2 bucket and CORS |
+| `bun run bucket:teardown` | Tears down the S3/R2 bucket (use with caution) |
 
 ## 🤝 Contributing
 

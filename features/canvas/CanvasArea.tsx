@@ -1413,6 +1413,11 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
 
   // Notify parent component of any state changes (shapes, zoom, or pan)
   useEffect(() => {
+    // During view manipulation (panning/space-panning/dragging), we intentionally
+    // don't spam parent state/persistence updates on every pointer move.
+    // This avoids feedback loops where the parent re-renders and triggers
+    // canvas state syncing again.
+    if (isHandPanning || isSpacePanning || isDragging) return;
     onChangeRef.current?.({
       pan,
       zoom,
@@ -1434,6 +1439,9 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
     pan,
     zoom,
     snapshot,
+    isHandPanning,
+    isSpacePanning,
+    isDragging,
   ]);
 
   // Pre-load images into the cache when they appear in the 'images' state
