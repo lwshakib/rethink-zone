@@ -2980,7 +2980,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
       // Anchor Detection for Arrows - find the closest predefined node or nearest border
       let nearest: any = null;
-      if (tool === "Arrow" && !isDragging) {
+      if ((tool === "Arrow" && !isDragging) || !!pendingConnector) {
         const tolerance = 20 / zoom;
         let bestDist = tolerance;
 
