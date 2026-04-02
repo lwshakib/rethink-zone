@@ -57,8 +57,9 @@ export async function getSignedUrlAction(
       return { success: false, error: "Unauthorized." };
     }
 
-    if (!key.startsWith("workspaces/")) {
-      return { success: false, error: "Invalid access key." };
+    const allowedPrefixes = ["workspaces/", "uploads/", "canvas/"];
+    if (!allowedPrefixes.some(p => key.startsWith(p))) {
+      return { success: false, error: "Invalid access key or prefix." };
     }
 
     const signedUrl = await s3Service.getSignedDownloadUrl(key);

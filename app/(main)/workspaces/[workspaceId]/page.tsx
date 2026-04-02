@@ -130,8 +130,12 @@ export default function WorkspaceDetailPage() {
       const { signDocumentUrls } = await import("@/lib/document-utils");
       const signedDocument = await signDocumentUrls(ws.documentData);
 
+      // Pre-process canvas data to sign any S3 keys for secure viewing
+      const { signCanvasUrls } = await import("@/lib/canvas-utils");
+      const signedCanvas = await signCanvasUrls(ws.canvasData);
+
       setDocumentData(signedDocument);
-      setCanvasData(ws.canvasData);
+      setCanvasData(signedCanvas);
       setKanbanBoard(ws.kanbanBoard);
     } catch (err) {
       console.error(err);
@@ -187,9 +191,14 @@ export default function WorkspaceDetailPage() {
       const { sanitizeDocumentUrls } = await import("@/lib/document-utils");
       const sanitizedDocument = sanitizeDocumentUrls(payload.documentData);
 
+      // Sanitize canvas URLs before sending to the server (replacing signed URLs with S3 keys)
+      const { sanitizeCanvasUrls } = await import("@/lib/canvas-utils");
+      const sanitizedCanvas = sanitizeCanvasUrls(payload.canvasData);
+
       const requestBody = {
         ...payload,
         documentData: sanitizedDocument,
+        canvasData: sanitizedCanvas,
       };
 
       const res = await fetch(`/api/workspaces/${ws.id}`, {

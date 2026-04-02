@@ -4641,30 +4641,41 @@ export const useCanvasInteraction = (props: InteractionProps) => {
             );
           });
 
-          // 2. On success, remove placeholder and add image
+          // 2. Fetch a secure viewing (GET) URL for the newly uploaded file
+          const { getSignedUrlAction } = await import("@/actions/files");
+          const signedRes = await getSignedUrlAction(result.key);
+
+          if (!signedRes.success) {
+            throw new Error("Failed to generate viewing URL.");
+          }
+
+          const viewingUrl = signedRes.data;
+
+          // 3. On success, remove placeholder and add image
           setTexts((prev) => prev.filter((t) => t.id !== placeholderId));
 
           const img = new Image();
           img.onload = () => {
             if (imageCacheRef.current)
-              imageCacheRef.current[result.url] = img;
+              imageCacheRef.current[viewingUrl] = img;
             setImages((prev) => {
               const next = [
                 ...prev,
                 {
                   id: makeId(),
-                  src: result.url,
+                  src: result.key, // Store the actual S3 key for persistence
                   x: point.x,
                   y: point.y,
                   width: img.naturalWidth / 2, // Default to half size as generic images can be huge
                   height: img.naturalHeight / 2, // Default to half size
+                  _s3Url: viewingUrl, // Temporary URL for immediate rendering
                 },
               ];
               pushHistory({ images: next });
               return next;
             });
           };
-          img.src = result.url;
+          img.src = viewingUrl;
         } catch (err) {
           console.error("Upload failed", err);
           setTexts((prev) =>
