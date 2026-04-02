@@ -125,7 +125,12 @@ export default function WorkspaceDetailPage() {
       // Populate local state with fetched data
       setWorkspace(ws);
       setNameDraft(ws.name);
-      setDocumentData(ws.documentData);
+
+      // Pre-process document data to sign any S3 keys for secure viewing
+      const { signDocumentUrls } = await import("@/lib/document-utils");
+      const signedDocument = await signDocumentUrls(ws.documentData);
+
+      setDocumentData(signedDocument);
       setCanvasData(ws.canvasData);
       setKanbanBoard(ws.kanbanBoard);
     } catch (err) {
@@ -167,16 +172,30 @@ export default function WorkspaceDetailPage() {
 
   /** Persists all current tab data and workspace metadata to the server */
   const saveWorkspace = useCallback(async () => {
-    const { workspace: ws, dirty: isDirty, currentPayload: payload } = stateRef.current;
+    const {
+      workspace: ws,
+      dirty: isDirty,
+      currentPayload: payload,
+    } = stateRef.current;
     if (!ws || !isDirty) return;
 
     try {
       setSavingStatus("saving");
       setError(null);
+
+      // Sanitize document URLs before sending to the server (replacing signed URLs with S3 keys)
+      const { sanitizeDocumentUrls } = await import("@/lib/document-utils");
+      const sanitizedDocument = sanitizeDocumentUrls(payload.documentData);
+
+      const requestBody = {
+        ...payload,
+        documentData: sanitizedDocument,
+      };
+
       const res = await fetch(`/api/workspaces/${ws.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(requestBody),
       });
 
       if (!res.ok) {

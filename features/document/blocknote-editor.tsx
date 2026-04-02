@@ -35,6 +35,44 @@ const BlockNoteEditor = ({
   // Initialize the editor instance with optional starting content
   const editor = useCreateBlockNote({
     initialContent,
+    uploadFile: async (file) => {
+      // Step 1: Request a presigned URL from the server
+      const { getPresignedUploadUrlAction } = await import("@/actions/files");
+      const res = await getPresignedUploadUrlAction(file.name, file.type);
+      if (!res.success) {
+        throw new Error(res.error || "Failed to generate upload URL.");
+      }
+
+      const { uploadUrl, key } = res.data;
+
+      // Step 2: Upload the file directly to S3/R2 via PUT
+      const uploadRes = await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: {
+          "Content-Type": file.type,
+        },
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error("Unable to upload file to storage.");
+      }
+
+      // Step 3: Return the key so BlockNote can store it (temporarily)
+      // We also want the editor to display the image immediately.
+      // So we fetch a signed GET URL for it.
+      const { getSignedUrlAction } = await import("@/actions/files");
+      const signedRes = await getSignedUrlAction(key);
+
+      if (!signedRes.success) {
+        throw new Error("Failed to generate signed viewing URL.");
+      }
+
+      // We add the original key as a custom _s3Key to the object if possible,
+      // though BlockNote doesn't directly support this.
+      // Our sanitizeDocumentUrls logic expects this structure.
+      return signedRes.data;
+    },
   });
 
   return (
@@ -44,7 +82,9 @@ const BlockNoteEditor = ({
         editor={editor}
         theme={resolvedTheme === "dark" ? "dark" : "light"} // Sync editor theme with application theme
         onChange={() => {
-          // Fire the onChange callback whenever the document structure changes
+          // Fire the onChange callback whenever the document structure changes.
+          // Note: editor.document will now contain the transient signed URLs.
+          // These will be sanitized back to S3 keys before persistence in the page component.
           onChange?.(editor.document);
         }}
         // Injects our application's Shadcn components into the editor for a native feel
