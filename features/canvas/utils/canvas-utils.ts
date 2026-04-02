@@ -1,11 +1,10 @@
 import { getSignedUrlAction } from "@/actions/files";
-import { CanvasData } from "@/features/canvas/types";
 
 /**
  * Traverses the Canvas data structure and replaces S3 keys in 'images' with temporary signed URLs.
  * 
  * @param canvasData - The raw canvas data including the snapshot of all shapes.
- * @returns {Promise<CanvasData | null>} - The canvas data with signed URLs for images.
+ * @returns {Promise<any>} - The canvas data with signed URLs for images.
  */
 export async function signCanvasUrls(canvasData: any): Promise<any> {
   if (!canvasData || !canvasData.snapshot) return canvasData;
@@ -22,7 +21,7 @@ export async function signCanvasUrls(canvasData: any): Promise<any> {
           return {
             ...im,
             src: res.data,
-            // Store the original sequence in a transient field for sanitization
+            // Store the original key in a transient field for sanitization
             _s3Key: im.src,
           };
         }
