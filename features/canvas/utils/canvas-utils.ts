@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getSignedUrlAction } from "@/actions/files";
 
 /**

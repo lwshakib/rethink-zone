@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getSignedUrlAction } from "@/actions/files";
 
 /**
@@ -12,7 +13,7 @@ export async function signDocumentUrls(content: unknown): Promise<unknown> {
   // We use Promise.all to handle concurrent signing for performance
   return await Promise.all(
     content.map(async (block: any) => {
-      let updatedBlock = { ...block };
+      const updatedBlock = { ...block };
 
       // Handle media blocks (image, video, audio)
       if (
@@ -55,7 +56,7 @@ export function sanitizeDocumentUrls(content: unknown): unknown {
   if (!Array.isArray(content)) return content;
 
   return content.map((block: any) => {
-    let updatedBlock = { ...block };
+    const updatedBlock = { ...block };
 
     // If we have a stored S3 key, use it to replace the transient signed URL
     if (block.props?._s3Key) {

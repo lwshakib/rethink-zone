@@ -98,7 +98,7 @@ INSTRUCTION: Use this codebase index to infer the actual software architecture. 
       prompt ||
       "Generate a comprehensive architecture diagram based on this codebase.";
 
-    const messages: any[] = [
+    const messages: { role: string; content: string }[] = [
       { role: "system", content: ARCHITECTURE_GENERATOR_SYSTEM_PROMPT },
     ];
 

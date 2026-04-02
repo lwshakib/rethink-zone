@@ -28,7 +28,7 @@ export class AIService {
    * @param options - Configuration for the generation (temperature, max_tokens).
    */
   async generateText(
-    messages: any[],
+    messages: { role: string; content: string }[],
     options?: { temperature?: number; max_tokens?: number }
   ): Promise<string> {
     const { temperature, max_tokens } = options || {};
@@ -61,7 +61,7 @@ export class AIService {
    * @param messages - An array of chat messages.
    * @param outputSchema - The JSON schema for the response.
    */
-  async generateObject<T>(messages: any[], outputSchema: any): Promise<T> {
+  async generateObject<T>(messages: { role: string; content: string }[], outputSchema: Record<string, unknown>): Promise<T> {
     const response = await fetch(this.gatewayUrl, {
       method: "POST",
       headers: {
