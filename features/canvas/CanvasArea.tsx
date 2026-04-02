@@ -1446,14 +1446,43 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
 
   // Pre-load images into the cache when they appear in the 'images' state
   useEffect(() => {
-    images.forEach((im) => {
-      if (!imageCacheRef.current[im.src]) {
-        const img = new Image();
-        img.src = im.src;
-        img.onload = () => setRerenderTick((t: number) => t + 1); // Redraw once image loads
-        imageCacheRef.current[im.src] = img;
+    const loadImages = async () => {
+      for (const im of images) {
+        if (!imageCacheRef.current[im.src]) {
+          // Determine if the source is an S3 key (path) or a direct URL
+          const isS3Key =
+            !im.src.startsWith("http") &&
+            !im.src.startsWith("data:") &&
+            (im.src.startsWith("canvas/") || im.src.startsWith("uploads/"));
+
+          let finalSrc = im.src;
+
+          if (isS3Key) {
+            try {
+              // Fetch a fresh signed URL for the S3 object
+              const res = await fetch(
+                `/api/s3/signed-url?key=${encodeURIComponent(im.src)}`
+              );
+              if (res.ok) {
+                const data = await res.json();
+                finalSrc = data.url;
+              }
+            } catch (err) {
+              console.error("Failed to resolve signed URL for key:", im.src, err);
+              continue; // Skip this image for now if resolution fails
+            }
+          }
+
+          const img = new Image();
+          img.src = finalSrc;
+          img.onload = () => setRerenderTick((t: number) => t + 1); // Force redraw once binary data is loaded
+          // We use the original path/key as the cache key to maintain a consistent mapping
+          imageCacheRef.current[im.src] = img;
+        }
       }
-    });
+    };
+
+    loadImages();
   }, [images]);
 
   // Handle window resizing to keep the canvas filling its container correctly
