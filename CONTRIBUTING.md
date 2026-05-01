@@ -58,7 +58,7 @@ Enhancement suggestions are tracked as GitHub issues. Please provide:
    # (or) npm install (Bun is still required for scripts that use `bun x`)
    ```
 4. **Environment Configuration**:
-   Copy `.env.example` to `.env` and fill in your connection strings. Ensure `AWS_*` and `CLOUDFLARE_AI_GATEWAY_*` variables are set.
+   Copy `.env.example` to `.env` and fill in your connection strings. Ensure `AWS_*` and `GOOGLE_API_KEY` variables are set.
 5. **Database Initialization**:
    ```bash
    bun run db:migrate
@@ -80,10 +80,11 @@ Enhancement suggestions are tracked as GitHub issues. Please provide:
 - **Strict Typing**: Avoid use of `any`. Use interfaces for object shapes and types for unions.
 - **Exhaustive Types**: Ensure all possible states are handled, especially in UI and API logic.
 
-### Standardized Services
+### Functional Libraries
 
-- **AIService**: All AI-related interactions (text generation, object generation) must go through the centralized `AIService` to ensure proper routing and model management.
-- **S3Service**: Use `S3Service` for all file interactions. Never interact with the S3 bucket directly from components; use the service to generate presigned URLs or handle server-side uploads.
+- **AI Utilities**: All AI-related interactions (text generation, object generation) should go through the specialized functions in `lib/llm/` (e.g., `generateText`, `generateObject`) to ensure proper configuration and multi-turn chat persistence.
+- **S3 Utilities**: Use the exported functional helpers in `lib/s3.ts` for all file interactions. Never interact with the S3 bucket directly from components.
+- **Repository Analysis**: Utilize `lib/repository.ts` for operations related to codebase traversal and summarization.
 
 ### React & Components
 
@@ -130,11 +131,10 @@ rethink-zone/
 ├── features/             # Core Feature Modules (Canvas, Document, Kanban)
 ├── actions/              # Server-side mutation logic (Server Actions)
 ├── hooks/                # Client hooks (e.g., Zustand wiring)
-├── services/             # Centralized Business Logic (AI, S3, etc.)
 ├── scripts/              # One-off automation (bucket setup/teardown)
 ├── prisma/               # Schema definition and Migrations
-├── lib/                  # Shared Utilities and Third-party Configs
-├── validations/          # Zod Schemas for Data Integrity
+├── lib/                  # Shared Utilities, Third-party Configs, LLM Setup
+├── lib/schemas/          # Shared Zod Schemas for Data Integrity
 ├── public/               # Static assets
 └── proxy.ts              # Route/session middleware (auth propagation)
 ```
