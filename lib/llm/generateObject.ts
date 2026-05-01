@@ -26,7 +26,7 @@ export async function generateObject<T>(
     config: {
       systemInstruction: STRUCTURED_OUTPUT_SYSTEM_INSTRUCTION,
       responseMimeType: "application/json",
-      responseJsonSchema: zodToJsonSchema(schema as any),
+      responseJsonSchema: zodToJsonSchema(schema as unknown as Parameters<typeof zodToJsonSchema>[0]),
     },
   });
 
@@ -41,7 +41,7 @@ export async function generateObject<T>(
   try {
     const parsed = JSON.parse(response.text);
     return schema.parse(parsed);
-  } catch (error) {
+  } catch {
     console.error("Failed to parse AI response as JSON:", response.text);
     throw new Error("AI response did not match the expected schema");
   }

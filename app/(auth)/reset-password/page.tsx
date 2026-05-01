@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { LogoIcon } from "@/components/logo";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
