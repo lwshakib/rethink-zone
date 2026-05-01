@@ -1,7 +1,7 @@
 # Rethink Zone
 
 <div align="center">
-  <img src="public/favicon_io/android-chrome-512x512.png" alt="Rethink Zone Logo" width="128"/>
+  <img src="public/logo.svg" alt="Rethink Zone Logo" width="128"/>
   
   <h1>Rethink Zone</h1>
   
