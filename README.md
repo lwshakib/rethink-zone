@@ -91,7 +91,7 @@ Rethink Zone is a modern, full-stack workspace application designed for product 
 - **ORM**: [Prisma 7.2.0](https://www.prisma.io/)
 - **Database**: [PostgreSQL](https://www.postgresql.org/)
 - **Auth**: [Better-Auth 1.4.7](https://www.better-auth.com/)
-- **AI Infrastructure**: Google Gemini via [@google/genai](https://www.npmjs.com/package/@google/genai) with `gemini-2.5-flash-lite`.
+- **AI Infrastructure**: Google Gemini via [@google/genai](https://www.npmjs.com/package/@google/genai) with `gemini-3.1-flash-lite-preview`.
 - **Storage**: [Cloudflare R2 / AWS S3](https://aws.amazon.com/s3/) for secure media and asset storage.
 - **Server Actions**: Native Next.js server actions for secure data mutations.
 - **Testing**: No automated test runner is configured yet (use `lint` / `format:check` until tests are added).
