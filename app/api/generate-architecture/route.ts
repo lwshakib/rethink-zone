@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { aiService } from "@/services/ai.services";
-import { repositoryService } from "@/services/repository.services";
-import { ARCHITECTURE_GENERATOR_SYSTEM_PROMPT } from "@/lib/prompts";
+import { generateText } from "@/lib/llm/generateText";
+import { analyzeRepo } from "@/lib/repository";
+import { ARCHITECTURE_GENERATOR_SYSTEM_PROMPT } from "@/lib/llm/prompts";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
     let repoContext = "";
     if (repoUrl) {
       try {
-        const repoIndex = await repositoryService.analyzeRepo(repoUrl);
+        const repoIndex = await analyzeRepo(repoUrl);
         repoContext = `CODEBASE INDEX FOR ANALYSIS:
 Files: ${repoIndex.files.map((f) => f.path).join(", ")}
 Significant Functions: ${repoIndex.functions.map((f) => `${f.name} (in ${f.file})`).join(", ")}
@@ -115,7 +115,7 @@ INSTRUCTION: Use this codebase index to infer the actual software architecture. 
 
     messages.push({ role: "user", content: userContent });
 
-    const result = await aiService.generateText(messages, {
+    const result = await generateText(messages, {
       temperature: 0.2,
     });
 
