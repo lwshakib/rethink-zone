@@ -5,7 +5,7 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
-import { workspaceUpdateSchema } from "@/validations/workspace";
+import { workspaceUpdateSchema } from "@/actions/workspaces";
 import { ZodError } from "zod";
 import { getUser } from "@/actions/user";
 import { Prisma } from "@/generated/prisma/client";
