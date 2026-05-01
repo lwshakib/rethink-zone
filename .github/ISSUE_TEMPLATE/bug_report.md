@@ -18,6 +18,7 @@ assignees: []
 - [ ] UI/UX Components
 - [ ] Database/Prisma
 - [ ] Authentication (Better Auth)
+- [ ] AI / Google GenAI SDK
 - [ ] Other: **\_\_**
 
 ## 🔁 Reproduction Steps
