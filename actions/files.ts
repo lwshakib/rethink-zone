@@ -1,6 +1,6 @@
 "use server";
 
-import { s3Service } from "@/services/s3.services";
+import { getPresignedUploadUrl, getSignedDownloadUrl } from "@/lib/s3";
 import { getUser } from "@/actions/user";
 import { v4 as uuidv4 } from "uuid";
 
@@ -33,7 +33,7 @@ export async function getPresignedUploadUrlAction(
       extension ? "" : ".bin"
     }`;
 
-    const uploadUrl = await s3Service.getPresignedUploadUrl(key, contentType);
+    const uploadUrl = await getPresignedUploadUrl(key, contentType);
 
     return { success: true, data: { uploadUrl, key } };
   } catch (error) {
@@ -62,7 +62,7 @@ export async function getSignedUrlAction(
       return { success: false, error: "Invalid access key or prefix." };
     }
 
-    const signedUrl = await s3Service.getSignedDownloadUrl(key);
+    const signedUrl = await getSignedDownloadUrl(key);
 
     return { success: true, data: signedUrl };
   } catch (error) {
