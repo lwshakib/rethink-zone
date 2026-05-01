@@ -6,4 +6,4 @@
 /**
  * The model identifier used for chat and structured generation.
  */
-export const CHAT_MODEL_ID = "gemini-2.0-flash";
+export const CHAT_MODEL_ID = "gemini-2.5-flash-lite";
