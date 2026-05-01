@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { s3Service } from "@/services/s3.services";
+import { getSignedDownloadUrl } from "@/lib/s3";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
@@ -29,7 +29,7 @@ export async function GET(req: Request) {
 
     // Get the signed download URL from the S3 service
     // Default expiration is 1 hour (3600 seconds)
-    const signedUrl = await s3Service.getSignedDownloadUrl(key);
+    const signedUrl = await getSignedDownloadUrl(key);
 
     return NextResponse.json({
       url: signedUrl,
