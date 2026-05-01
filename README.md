@@ -91,7 +91,7 @@ Rethink Zone is a modern, full-stack workspace application designed for product 
 - **ORM**: [Prisma 7.2.0](https://www.prisma.io/)
 - **Database**: [PostgreSQL](https://www.postgresql.org/)
 - **Auth**: [Better-Auth 1.4.7](https://www.better-auth.com/)
-- **AI Infrastructure**: [Cloudflare AI Gateway](https://developers.cloudflare.com/ai-gateway/) for unified model access.
+- **AI Infrastructure**: Google Gemini via [@google/genai](https://www.npmjs.com/package/@google/genai) with `gemini-2.5-flash-lite`.
 - **Storage**: [Cloudflare R2 / AWS S3](https://aws.amazon.com/s3/) for secure media and asset storage.
 - **Server Actions**: Native Next.js server actions for secure data mutations.
 - **Testing**: No automated test runner is configured yet (use `lint` / `format:check` until tests are added).
@@ -113,7 +113,7 @@ flowchart TD
     Editor --> Actions
     Kanban --> Actions
 
-    Actions --> AI[Cloudflare AI Gateway]
+    Actions --> AI[Google Gemini API]
     Actions --> S3[Cloudflare R2 / S3]
     Actions --> Prisma[Prisma ORM]
     Prisma --> DB[(PostgreSQL)]
@@ -124,7 +124,7 @@ flowchart TD
 1. **Interaction**: User performs an action (edits a block, moves a task, draws a line).
 2. **Optimistic Update**: Zustand updates the local state immediately for zero-latency UI.
 3. **Synchronized Persistence**: Debounced calls to Next.js API routes persist changes to PostgreSQL via Prisma.
-4. **AI & Media**: Requests for generation or translation are routed through the Cloudflare AI Gateway, while media assets are securely handled via signed S3/R2 URLs.
+4. **AI & Media**: Requests for generation or translation are routed directly to Google Gemini, while media assets are securely handled via signed S3/R2 URLs.
 5. **Theme Management**: `next-themes` coordinates CSS variables across native Canvas drawings and React components.
 
 ## 🚀 Getting Started
@@ -161,9 +161,8 @@ flowchart TD
    GOOGLE_CLIENT_ID=
    GOOGLE_CLIENT_SECRET=
 
-   # Cloudflare & Workers (AI Gateway)
-   CLOUDFLARE_AI_GATEWAY_API_KEY=
-   CLOUDFLARE_AI_GATEWAY_ENDPOINT=
+   # AI Configuration
+   GOOGLE_API_KEY=
 
    # --- MEDIA STORAGE (AWS S3 / CLOUDFLARE R2) ---
    AWS_REGION=auto
@@ -209,12 +208,13 @@ rethink-zone/
 ├── features/             # Feature-specific logic (Canvas, Document, Kanban)
 ├── actions/              # Server-side actions
 ├── hooks/                # Client hooks (e.g., Zustand store wiring)
-├── lib/                  # Shared utilities and configurations
+├── lib/                  # Shared utilities: S3, repository analysis, LLM setup
+├── lib/llm/              # Gemini client, prompts, generateText, generateObject
+├── lib/schemas/          # Shared Zod schemas for data integrity
 ├── prisma/               # Database schema and migrations
-├── services/             # Centralized business logic (AI, S3, etc.)
 ├── scripts/              # One-off automation (bucket setup/teardown)
 ├── public/               # Static assets
-└── validations/          # Zod schemas for data integrity
+└── proxy.ts              # Route/session middleware (auth propagation)
 ```
 
 ## 📜 Scripts
