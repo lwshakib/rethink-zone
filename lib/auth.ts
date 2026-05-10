@@ -9,7 +9,7 @@ import { Resend } from "resend"; // Resend SDK for sending transactional emails
 import { AuthEmailTemplate } from "@/components/emails/auth-email-template"; // React component acting as template for auth emails
 
 // Initialize the Resend mail client using the secret API key from environment variables.
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key");
 
 // Create and export the configured authentication service instance.
 export const auth = betterAuth({
@@ -52,8 +52,9 @@ export const auth = betterAuth({
     google: {
       enabled: true, // Activate "Sign in with Google" strategy.
       // Load Google API credentials from secure environment variables.
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      clientId: (process.env.GOOGLE_CLIENT_ID as string) || "dummy_google_id",
+      clientSecret:
+        (process.env.GOOGLE_CLIENT_SECRET as string) || "dummy_google_secret",
     },
   },
 

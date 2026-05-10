@@ -325,10 +325,12 @@ const PlusMenu: React.FC<PlusMenuProps> = ({
                           if (file) {
                             try {
                               // Securely upload image to S3/R2 storage
-                              const { uploadFileToS3 } = await import(
-                                "../utils/upload"
+                              const { uploadFileToS3 } =
+                                await import("../utils/upload");
+                              const result = await uploadFileToS3(
+                                file,
+                                "canvas"
                               );
-                              const result = await uploadFileToS3(file, "canvas");
                               // Store the S3 key (path) instead of a public URL
                               onAddIcon(file.name, result.key);
                               setActiveTool("IconAdd");

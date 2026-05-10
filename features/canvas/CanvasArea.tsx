@@ -1468,7 +1468,11 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
                 finalSrc = data.url;
               }
             } catch (err) {
-              console.error("Failed to resolve signed URL for key:", im.src, err);
+              console.error(
+                "Failed to resolve signed URL for key:",
+                im.src,
+                err
+              );
               continue; // Skip this image for now if resolution fails
             }
           }

@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
  * UserAvatar Component
  * A wrapper around the standard Avatar that handles the resolution of S3-based image paths
  * to provide secure, temporary signed URLs for private assets.
- * 
+ *
  * @param src - Full URL or S3 key (path) of the avatar image.
  * @param alt - Alternative text for the image.
  * @param className - Additional styling for the avatar container.

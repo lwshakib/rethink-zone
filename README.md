@@ -130,7 +130,7 @@ flowchart TD
 ### Prerequisites
 
 - **Node.js**: 18.0 or higher
-- **Bun**: required for some scripts in this repo (Prisma + bucket setup run via `bun x`)
+- **pnpm**: recommended package manager for this repo.
 - **PostgreSQL**: Local instance or managed service (Supabase, Neon)
 
 ### Installation
@@ -145,8 +145,7 @@ flowchart TD
 2. **Install dependencies**
 
    ```bash
-   bun install
-   # (or) npm install (Bun is still required for scripts that use `bun x`)
+   pnpm install
    ```
 
 3. **Environment Setup**
@@ -182,19 +181,19 @@ flowchart TD
 4. **Initialize Database**
 
    ```bash
-   bun run db:migrate
+   pnpm run db:migrate
    ```
 
 5. **Infrastructure Setup**
    Initialize your storage bucket and CORS policy:
 
    ```bash
-   bun run bucket:setup
+   pnpm run bucket:setup
    ```
 
 6. **Start Developing**
    ```bash
-   bun run dev
+   pnpm run dev
    ```
 
 ## 📁 Project Structure
@@ -217,18 +216,18 @@ rethink-zone/
 
 ## 📜 Scripts
 
-| Command | Description |
-| :-- | :-- |
-| `bun run dev` | Starts the development server (`next dev`) |
-| `bun run build` | Builds the application for production (`next build`) |
-| `bun run start` | Runs the production server (`next start`) |
-| `bun run lint` | Runs ESLint |
-| `bun run format` | Runs Prettier (`--write .`) |
-| `bun run format:check` | Runs Prettier (`--check .`) |
-| `bun run db:migrate` | Runs Prisma generate + initial migration |
-| `bun run db:studio` | Opens Prisma Studio |
-| `bun run bucket:setup` | Creates/updates the S3/R2 bucket and CORS |
-| `bun run bucket:teardown` | Tears down the S3/R2 bucket (use with caution) |
+| Command                    | Description                                          |
+| :------------------------- | :--------------------------------------------------- |
+| `pnpm run dev`             | Starts the development server (`next dev`)           |
+| `pnpm run build`           | Builds the application for production (`next build`) |
+| `pnpm run start`           | Runs the production server (`next start`)            |
+| `pnpm run lint`            | Runs ESLint                                          |
+| `pnpm run format`          | Runs Prettier (`--write .`)                          |
+| `pnpm run format:check`    | Runs Prettier (`--check .`)                          |
+| `pnpm run db:migrate`      | Runs Prisma generate + initial migration             |
+| `pnpm run db:studio`       | Opens Prisma Studio                                  |
+| `pnpm run bucket:setup`    | Creates/updates the S3/R2 bucket and CORS            |
+| `pnpm run bucket:teardown` | Tears down the S3/R2 bucket (use with caution)       |
 
 ## 🤝 Contributing
 

@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 /**
  * POST /api/s3/presigned-url
  * Generates a presigned URL for secure client-side uploading.
- * 
+ *
  * Body: { fileName: string, contentType: string, folder: string }
  */
 export async function POST(req: Request) {

@@ -15,7 +15,7 @@ export async function generateText(
     role: m.role === "assistant" ? "model" : "user",
     parts: [{ text: m.content }],
   }));
-  
+
   const lastMessage = messages[messages.length - 1].content;
 
   const chat = ai.chats.create({

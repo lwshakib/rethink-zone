@@ -16,7 +16,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Variants } from "framer-motion";
+import { Variants } from "motion/react";
 
 import { AnimatedGroup } from "@/components/ui/animated-group";
 import { TextEffect } from "@/components/ui/text-effect";

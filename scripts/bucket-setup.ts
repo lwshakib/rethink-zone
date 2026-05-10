@@ -47,7 +47,10 @@ async function setup() {
       console.log(`✅ Bucket "${bucketName}" already exists.`);
     } catch (err: unknown) {
       const error = err as Error & { $metadata?: { httpStatusCode?: number } };
-      if (error.name === "NotFound" || error.$metadata?.httpStatusCode === 404) {
+      if (
+        error.name === "NotFound" ||
+        error.$metadata?.httpStatusCode === 404
+      ) {
         bucketExists = false;
       } else {
         throw error;

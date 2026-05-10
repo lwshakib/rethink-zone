@@ -3,7 +3,7 @@ import { getSignedUrlAction } from "@/actions/files";
 
 /**
  * Traverses the BlockNote document structure and replaces S3 keys with temporary signed URLs.
- * 
+ *
  * @param content - The raw document data (array of blocks).
  * @returns {Promise<unknown>} - The document data with signed URLs.
  */
@@ -48,7 +48,7 @@ export async function signDocumentUrls(content: unknown): Promise<unknown> {
 
 /**
  * Replaces signed URLs back with their original S3 keys before persistence.
- * 
+ *
  * @param content - The document data containing signed URLs.
  * @returns {unknown} - The sanitized document data for storage.
  */

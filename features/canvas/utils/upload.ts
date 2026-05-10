@@ -12,7 +12,7 @@ export interface S3UploadResult {
  * Orchestrates the secure client-side upload of a file to S3/R2.
  * Uses a two-step process: fetching a presigned PUT URL from the local backend,
  * then performing a direct binary upload to the storage provider.
- * 
+ *
  * @param file - The File object to upload.
  * @param folder - Destination folder in the bucket (e.g., 'canvas', 'avatars').
  * @param onProgress - Optional callback for tracking upload percentage.

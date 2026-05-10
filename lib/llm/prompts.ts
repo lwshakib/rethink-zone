@@ -106,7 +106,8 @@ ICON CONVENTION [provider]-[service]:
  * Helper to construct a user prompt with context, using the recommended template.
  */
 export function constructPrompt(instruction: string, context?: string): string {
-  if (!context) return `
+  if (!context)
+    return `
 <task>
 ${instruction}
 </task>

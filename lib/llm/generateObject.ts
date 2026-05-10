@@ -26,7 +26,9 @@ export async function generateObject<T>(
     config: {
       systemInstruction: STRUCTURED_OUTPUT_SYSTEM_INSTRUCTION,
       responseMimeType: "application/json",
-      responseJsonSchema: zodToJsonSchema(schema as unknown as Parameters<typeof zodToJsonSchema>[0]),
+      responseJsonSchema: zodToJsonSchema(
+        schema as unknown as Parameters<typeof zodToJsonSchema>[0]
+      ),
     },
   });
 

@@ -13,7 +13,7 @@ type ActionResult<T> =
 
 /**
  * Generates a presigned URL for secure client-side uploading to S3/R2.
- * 
+ *
  * @param fileName - The original name of the file being uploaded.
  * @param contentType - The MIME type of the file.
  * @returns {Promise<ActionResult<{ uploadUrl: string; key: string }>>}
@@ -44,7 +44,7 @@ export async function getPresignedUploadUrlAction(
 
 /**
  * Generates a temporary signed URL for viewing a file from S3/R2.
- * 
+ *
  * @param key - The S3 path (key) of the object.
  * @returns {Promise<ActionResult<string>>}
  */
@@ -58,7 +58,7 @@ export async function getSignedUrlAction(
     }
 
     const allowedPrefixes = ["workspaces/", "uploads/", "canvas/"];
-    if (!allowedPrefixes.some(p => key.startsWith(p))) {
+    if (!allowedPrefixes.some((p) => key.startsWith(p))) {
       return { success: false, error: "Invalid access key or prefix." };
     }
 

@@ -40,7 +40,7 @@ Enhancement suggestions are tracked as GitHub issues. Please provide:
 ### Prerequisites
 
 - **Node.js**: 18.0 or higher
-- **Bun** (required for this repo; some scripts use `bun x`)
+- **pnpm**: 8.0 or higher (recommended package manager)
 - **PostgreSQL**: 12.0 or higher
 - **Git**: Latest version
 
@@ -54,23 +54,22 @@ Enhancement suggestions are tracked as GitHub issues. Please provide:
    ```
 3. **Install dependencies**:
    ```bash
-   bun install
-   # (or) npm install (Bun is still required for scripts that use `bun x`)
+   pnpm install
    ```
 4. **Environment Configuration**:
    Copy `.env.example` to `.env` and fill in your connection strings. Ensure `AWS_*` and `GOOGLE_API_KEY` variables are set.
 5. **Database Initialization**:
    ```bash
-   bun run db:migrate
+   pnpm run db:migrate
    ```
 6. **Infrastructure Setup**:
    Initialize your storage bucket and CORS policy:
    ```bash
-   bun run bucket:setup
+   pnpm run bucket:setup
    ```
 7. **Launch Development Server**:
    ```bash
-   bun run dev
+   pnpm run dev
    ```
 
 ## Coding Standards
@@ -116,7 +115,7 @@ We follow the [Conventional Commits](https://www.conventionalcommits.org/) speci
 ## Pull Request Process
 
 1. **Sync with Main**: Ensure your branch is up-to-date with `upstream/main`.
-2. **Standard Checks**: Run `bun run lint` and `bun run format:check`.
+2. **Standard Checks**: Run `pnpm run lint` and `pnpm run format:check`.
 3. **Tests**: No automated test runner is configured yet. When tests are added, run them here.
 4. **Detail Your Work**: Provide a clear description of what the PR does and why.
 5. **UI Changes**: Include screenshots or GIFs for any visual modifications.

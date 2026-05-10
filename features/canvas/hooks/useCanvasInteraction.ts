@@ -4656,8 +4656,7 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
           const img = new Image();
           img.onload = () => {
-            if (imageCacheRef.current)
-              imageCacheRef.current[viewingUrl] = img;
+            if (imageCacheRef.current) imageCacheRef.current[viewingUrl] = img;
             setImages((prev) => {
               const next = [
                 ...prev,
