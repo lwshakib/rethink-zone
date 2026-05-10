@@ -158,7 +158,10 @@ export default function WorkspacesPage() {
   };
 
   useEffect(() => {
-    loadWorkspaces();
+    const handle = requestAnimationFrame(() => {
+      loadWorkspaces();
+    });
+    return () => cancelAnimationFrame(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

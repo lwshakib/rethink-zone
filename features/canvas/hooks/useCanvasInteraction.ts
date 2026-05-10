@@ -343,19 +343,22 @@ export const useCanvasInteraction = (props: InteractionProps) => {
 
   // Update cursor immediately when modifier keys change
   useEffect(() => {
-    if (isSpacePanning) {
-      setCursorStyle("grab");
-    } else if (isModifierPressed) {
-      setCursorStyle("default");
-    } else if (activeTool === "Hand") {
-      setCursorStyle("grab");
-    } else if (activeTool === "Pencil") {
-      // Pencil cursor is complex, better to let handlePointerMove handle it
-    } else if (activeTool === "Select") {
-      setCursorStyle("default");
-    } else {
-      setCursorStyle("crosshair");
-    }
+    const handle = requestAnimationFrame(() => {
+      if (isSpacePanning) {
+        setCursorStyle("grab");
+      } else if (isModifierPressed) {
+        setCursorStyle("default");
+      } else if (activeTool === "Hand") {
+        setCursorStyle("grab");
+      } else if (activeTool === "Pencil") {
+        // Pencil cursor is complex, better to let handlePointerMove handle it
+      } else if (activeTool === "Select") {
+        setCursorStyle("default");
+      } else {
+        setCursorStyle("crosshair");
+      }
+    });
+    return () => cancelAnimationFrame(handle);
   }, [isSpacePanning, isModifierPressed, activeTool]);
 
   useEffect(() => {

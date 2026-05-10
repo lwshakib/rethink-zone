@@ -73,7 +73,9 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [displayExamples, setDisplayExamples] = useState<
     typeof ARCHITECTURE_EXAMPLES
-  >([]);
+  >(() =>
+    [...ARCHITECTURE_EXAMPLES].sort(() => 0.5 - Math.random()).slice(0, 4)
+  );
   const [credits, setCredits] = useState<number | null>(null);
   const sidebarRef = React.useRef<HTMLDivElement>(null);
 
@@ -109,8 +111,12 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
 
   // Reshuffle examples when panel opens
   useEffect(() => {
-    const shuffled = [...ARCHITECTURE_EXAMPLES].sort(() => 0.5 - Math.random());
-    setDisplayExamples(shuffled.slice(0, 4));
+    const handle = requestAnimationFrame(() => {
+      const shuffled = [...ARCHITECTURE_EXAMPLES].sort(
+        () => 0.5 - Math.random()
+      );
+      setDisplayExamples(shuffled.slice(0, 4));
+    });
 
     // Fetch credits when panel opens
     const fetchCredits = async () => {
@@ -126,8 +132,11 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
     };
     if (isOpen) {
       fetchCredits();
+      return () => cancelAnimationFrame(handle);
     }
   }, [isOpen]);
+
+  const abortControllerRef = React.useRef<AbortController | null>(null);
 
   // Safeguard: Abort generation if the panel is closed
   useEffect(() => {
@@ -137,8 +146,6 @@ const FigureEditorPanel: React.FC<FigureEditorPanelProps> = ({
       setIsGenerating(false);
     }
   }, [isOpen, isGenerating]);
-
-  const abortControllerRef = React.useRef<AbortController | null>(null);
 
   const handleGenerate = async () => {
     if (isGenerating) {

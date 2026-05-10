@@ -31,14 +31,18 @@ export function UserAvatar({
   useEffect(() => {
     // If we have no source, clear any previous resolved URL and stop.
     if (!src) {
-      setResolvedUrl(null);
-      return;
+      const handle = requestAnimationFrame(() => {
+        setResolvedUrl(null);
+      });
+      return () => cancelAnimationFrame(handle);
     }
 
     // If the source is already a full URL (legacy Cloudinary, OAuth, etc.), use it immediately.
     if (src.startsWith("http")) {
-      setResolvedUrl(src);
-      return;
+      const handle = requestAnimationFrame(() => {
+        setResolvedUrl(src);
+      });
+      return () => cancelAnimationFrame(handle);
     }
 
     // Otherwise, we assume it's an S3 key (path) and need a signed download URL.

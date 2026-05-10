@@ -63,14 +63,13 @@ export default function WorkspaceDetailPage() {
   // List of available features within a workspace
   const availableTabs = useMemo(() => ["document", "canvas", "kanban"], []);
 
-  /** determines which tab to show on page load based on the 'tab' URL parameter */
-  const initialTab = useMemo(() => {
+  /** determines which tab to show based on the 'tab' URL parameter */
+  const activeTab = useMemo(() => {
     const fromUrl = searchParams?.get("tab") || "";
     return availableTabs.includes(fromUrl) ? fromUrl : "document";
   }, [availableTabs, searchParams]);
 
   // --- LOCAL STATE ---
-  const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [loading, setLoading] = useState(true);
   const [, setError] = useState<string | null>(null);
@@ -86,16 +85,8 @@ export default function WorkspaceDetailPage() {
   const [canvasData, setCanvasData] = useState<unknown>(null);
   const [kanbanBoard, setKanbanBoard] = useState<unknown>(null);
 
-  /** sync active tab state with URL search params */
-  useEffect(() => {
-    const fromUrl = searchParams?.get("tab") || "";
-    const resolved = availableTabs.includes(fromUrl) ? fromUrl : "document";
-    setActiveTab(resolved);
-  }, [availableTabs, searchParams]);
-
   /** switch tabs and update the URL accordingly */
   const handleTabChange = (value: string) => {
-    setActiveTab(value);
     const params = new URLSearchParams(
       Array.from(searchParams?.entries() || [])
     );
@@ -244,10 +235,10 @@ export default function WorkspaceDetailPage() {
     }
   }, [debouncedPayload, saveWorkspace]);
 
-  useEffect(() => {
-    if (dirty && savingStatus === "idle") {
-      setSavingStatus("unsaved");
-    }
+  // Derived saving status for UI display
+  const displaySavingStatus = useMemo(() => {
+    if (dirty && savingStatus === "idle") return "unsaved";
+    return savingStatus;
   }, [dirty, savingStatus]);
 
   /** triggers workspace deletion and redirects to dashboard */
@@ -271,7 +262,11 @@ export default function WorkspaceDetailPage() {
   };
 
   useEffect(() => {
-    loadWorkspace();
+    // Wrap in requestAnimationFrame to avoid synchronous state updates in effect
+    const handle = requestAnimationFrame(() => {
+      loadWorkspace();
+    });
+    return () => cancelAnimationFrame(handle);
   }, [loadWorkspace]);
 
   /** finalizes a workspace title edit */
@@ -412,7 +407,7 @@ export default function WorkspaceDetailPage() {
                   </AlertDialog>
 
                   {/* Saving Status Icon (Auto-save) */}
-                  <SavingStatus status={savingStatus} />
+                  <SavingStatus status={displaySavingStatus} />
                   <ModeToggle />
                 </div>
 

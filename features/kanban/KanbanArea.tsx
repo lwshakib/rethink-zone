@@ -140,7 +140,10 @@ export default function KanbanArea({ board, onChange }: KanbanAreaProps) {
 
   // Update internal state if the external 'board' prop changes
   useEffect(() => {
-    setColumns(initialState);
+    const handle = requestAnimationFrame(() => {
+      setColumns(initialState);
+    });
+    return () => cancelAnimationFrame(handle);
   }, [initialState]);
 
   // Wrapper for updating state that also triggers the 'onChange' callback

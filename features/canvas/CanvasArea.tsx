@@ -1114,17 +1114,23 @@ const CanvasArea = ({ initialData, onChange: _onChange }: CanvasAreaProps) => {
   // Initialization: load data from 'initialData' if provided (e.g., from DB)
   useEffect(() => {
     if (initialData?.snapshot) {
-      applySnapshot(initialData.snapshot); // Apply saved shapes
-      setHistory([initialData.snapshot]); // Initialize history with the starting state
-      setHistoryIndex(0);
-      if (initialData.pan) setPan(initialData.pan); // Restore view position
-      if (initialData.zoom) setZoom(clampZoom(initialData.zoom)); // Restore zoom level
+      const handle = requestAnimationFrame(() => {
+        applySnapshot(initialData.snapshot!); // Apply saved shapes
+        setHistory([initialData.snapshot!]); // Initialize history with the starting state
+        setHistoryIndex(0);
+        if (initialData.pan) setPan(initialData.pan); // Restore view position
+        if (initialData.zoom) setZoom(clampZoom(initialData.zoom)); // Restore zoom level
+      });
+      return () => cancelAnimationFrame(handle);
     }
   }, []);
 
   // Record the initial state into history on first mount
   useEffect(() => {
-    pushHistory();
+    const handle = requestAnimationFrame(() => {
+      pushHistory();
+    });
+    return () => cancelAnimationFrame(handle);
   }, []);
 
   // THE CANVAS DRAWING LOOP: Synchronizes React state with the HTML5 Canvas 2D context

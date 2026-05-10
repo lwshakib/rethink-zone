@@ -89,8 +89,11 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (session?.user) {
-      setName(session.user.name || "");
-      fetchData();
+      const handle = requestAnimationFrame(() => {
+        setName(session.user.name || "");
+        fetchData();
+      });
+      return () => cancelAnimationFrame(handle);
     }
   }, [session]);
 
