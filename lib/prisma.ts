@@ -9,8 +9,13 @@ import { PrismaPg } from "@prisma/adapter-pg"; // Native PostgreSQL adapter for 
 import { PrismaClient } from "@/generated/prisma/client"; // Path to generated Prisma types
 
 // The database connection string sourced from the .env file.
-const connectionString =
-  process.env.DATABASE_URL || "postgres://dummy:dummy@localhost:5432/dummy";
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error(
+    "DATABASE_URL is not defined. The application requires a valid database connection string to start.",
+  );
+}
 
 // Initialize the Prisma adapter with the connection string.
 const adapter = new PrismaPg({ connectionString });
