@@ -131,7 +131,7 @@ export default function WorkspaceDetailPage() {
       setCanvasData(signedCanvas);
       setKanbanBoard(ws.kanbanBoard);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to load workspace:", err);
       setError(
         err instanceof Error ? err.message : "Unable to load workspace."
       );
@@ -221,7 +221,7 @@ export default function WorkspaceDetailPage() {
         setSavingStatus((current) => (current === "saved" ? "idle" : current));
       }, 3000);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to save workspace:", err);
       setError(err instanceof Error ? err.message : "Unable to save.");
       setSavingStatus("error");
     }
@@ -253,7 +253,7 @@ export default function WorkspaceDetailPage() {
       router.push("/workspaces");
       router.refresh();
     } catch (err) {
-      console.error(err);
+      console.error("Failed to delete workspace:", err);
       setError("Unable to delete workspace.");
     } finally {
       setDeleting(false);
