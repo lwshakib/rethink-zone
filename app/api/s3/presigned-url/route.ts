@@ -29,9 +29,32 @@ export async function POST(req: Request) {
       );
     }
 
+    // Permitted upload directories allowlist
+    const ALLOWED_FOLDERS = new Set([
+      "uploads",
+      "avatars",
+      "canvas",
+      "workspaces",
+      "documents",
+    ]);
+
+    // Sanitize and validate folder to prevent directory traversal
+    if (
+      typeof folder !== "string" ||
+      folder.includes("..") ||
+      !ALLOWED_FOLDERS.has(folder.trim())
+    ) {
+      return NextResponse.json(
+        { error: "Invalid or unpermitted folder parameter" },
+        { status: 400 }
+      );
+    }
+
+    const sanitizedFolder = folder.trim();
+
     // Generate a unique key for the file
     const extension = fileName.split(".").pop();
-    const key = `${folder}/${uuidv4()}.${extension}`;
+    const key = `${sanitizedFolder}/${uuidv4()}.${extension}`;
 
     // Get the presigned URL from the S3 service
     const presignedUrl = await getPresignedUploadUrl(key, contentType);
