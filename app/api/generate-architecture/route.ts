@@ -63,16 +63,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // CONSUME CREDIT IMMEDIATELY (Before Repo Analysis or AI Request)
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        credits: {
-          decrement: 1,
-        },
-      },
-    });
-
     // --- 2. REPO ANALYSIS (IF REQUESTED) ---
     let repoContext = "";
     if (repoUrl) {
@@ -117,6 +107,16 @@ INSTRUCTION: Use this codebase index to infer the actual software architecture. 
 
     const result = await generateText(messages, {
       temperature: 0.2,
+    });
+
+    // Deduct credit ONLY after successful generation
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        credits: {
+          decrement: 1,
+        },
+      },
     });
 
     return NextResponse.json({
