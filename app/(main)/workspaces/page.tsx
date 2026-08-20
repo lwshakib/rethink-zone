@@ -117,7 +117,7 @@ export default function WorkspacesPage() {
       const data = await res.json();
       setWorkspaces(data.workspaces ?? []);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to load workspaces:", err);
       setError("Unable to load workspaces right now.");
     } finally {
       setLoading(false);
@@ -150,7 +150,7 @@ export default function WorkspacesPage() {
       setCreateDialogOpen(false);
       setNewWorkspaceName("");
     } catch (err) {
-      console.error(err);
+      console.error("Failed to create workspace:", err);
       setCreateError("Unable to create workspace.");
     } finally {
       setCreating(false);
